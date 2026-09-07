@@ -12,19 +12,20 @@ format:
     incremental: false
     preview-links: auto
     css: custom.css
-    code-fold: true
+    code-fold: false
     embed-resources: true
     scrollable: true
 execute: 
   warning: false
   message: false
-  echo: false
+  echo: true
 editor: 
   markdown: 
     wrap: 72
 ---
 
 ```{r}
+#| label: "Libraries and setup"
 #| include: false
 #| echo: false
 #| code-fold: false
@@ -40,8 +41,7 @@ library(glue)
 library(gt)
 library(gtsummary)
 library(devtools)
-
-load_all()
+library(paindrawr)
 
 theme_set(theme_classic(base_size = 14))
 theme_gtsummary_compact()
@@ -54,12 +54,217 @@ bg_zealand <- here("inst/extdata/zealand.png")
 
 
 ```{r}
+#| label: "load data"
 #| include: false
 #| echo: false
 #| code-fold: false
 
 # Get the Data 
+# Get standard data
+base_data <- read_csv(here("presentation", "2026_09_15_data.csv")) 
+
+# Keep only relevant columns
+base_data <- base_data |>
+  select(
+    record_id = "Record ID", 
+    tool = "Please choose one of the two items", 
+    distance = "Please choose a distance" , 
+    geography = "How well do you know the geography of east Denmark?" 
+  )
+
+
+json_files <- list.files(
+  here("presentation/2026_09_15_drawings/"),
+  pattern = "json$",
+  recursive = TRUE
+)
+
+paindraw_data <- tibble(
+  pdr_data = pdr_import_json(here(
+    "presentation/2026_09_15_drawings/",
+    json_files
+  ))
+)
+
+paindraw_data <- paindraw_data |> 
+  mutate(
+    id = pdr_get_info(pdr_data)
+  )
+
+
+
+## Id is nested in the drawing id string
+paindraw_data <- paindraw_data |>
+  mutate(
+    record_id = str_extract(id, "R[0-9]+F") |>
+      str_remove("^R") |>
+      str_remove("F$") |>
+      as.double()
+  )
+
+# Because we have multible drawings pr id we go wide before joining
+### First extract image type
+paindraw_data_wide <- paindraw_data |>
+  mutate(
+    view = str_extract(id, "F-.+-") |>
+      str_remove("^F-") |>
+      str_remove("-E.+$") |>
+      str_remove("^background_image_")
+  ) |>
+  select(-id) |>
+  pivot_wider(
+    names_from = view,
+    values_from = pdr_data
+  )
+
+my_data <- base_data |>
+  left_join(paindraw_data_wide)
+
+
+### START HERE
+my_data
 
 ```
 
-# test
+
+## The data {.smaller}
+
+```{r}
+#| label: "Show data"
+#| echo: false
+my_data 
+```
+
+
+
+# Imaginary hand pain
+
+## Single drawing
+
+```{r}
+#| output-location: column-fragment
+my_data |> 
+  filter(record_id == 6) |> 
+  pdr_plot_drawing(
+    paindrawr_data = palmar
+    )
+```
+
+
+## Single drawing
+
+```{r}
+#| output-location: column-fragment
+my_data |> 
+  filter(record_id == 6) |> 
+  pdr_plot_drawing(
+    paindrawr_data = palmar, 
+    background_image = bg_palmar
+    )
+```
+
+## 4x random drawings
+```{r}
+my_data |> 
+  slice_sample(n = 4) |> 
+  pdr_plot_drawing(
+    paindrawr_data = palmar, 
+    background_image = bg_palmar
+    )
+```
+
+
+# Visual analysis of imaginary handpain
+
+## Heatmpap
+
+```{r}
+my_data |> 
+  pdr_plot_heatmap(
+    paindrawr_data = "palmar", 
+    background_image = bg_palmar)
+```
+
+
+## Heatmpap
+
+### Hammer vs Apple
+```{r}
+my_data |> 
+  pdr_plot_heatmap(
+    paindrawr_data = "palmar", 
+    variables = "tool",
+    background_image = bg_palmar)
+```
+
+## Heatmpap
+
+### 1m vs 1cm
+```{r}
+my_data |> 
+  pdr_plot_heatmap(
+    paindrawr_data = "palmar", 
+    variables = "distance",
+    background_image = bg_palmar)
+```
+
+
+## Heatmpap
+
+### tool vs distance
+```{r}
+my_data |> 
+  pdr_plot_heatmap(
+    paindrawr_data = "palmar", 
+    variables = c("tool", "distance"),
+    background_image = bg_palmar)
+```
+
+
+# Quantitative analysis of imaginary handpain
+
+## Add an rgba render {.smaller}
+```{r}
+my_data <- my_data |> 
+  mutate(
+    palmar = pdr_add_rgba(palmar))
+
+my_data
+```
+
+## Get summary statistics {.smaller}
+
+```{r}
+my_data <- my_data |> 
+  mutate(
+    palmar_area = pdr_summarize_alpha_area(palmar), 
+    palmar_intensity = pdr_summarize_alpha_intensity(palmar)
+  )
+
+my_data
+
+```
+
+
+## Summarize across groups {.smaller}
+
+```{r}
+my_data |> 
+  group_by(tool, distance) |> 
+  summarise(
+    palmar_area_mean = mean(palmar_area, na.rm = TRUE), 
+    palmar_area_sd  = sd(palmar_area, na.rm = TRUE)
+  )
+```
+
+
+## Summarize across groups
+
+```{r}
+my_data |> 
+  ggplot(aes(x = tool, y = palmar_area, fill = distance))+
+  geom_boxplot(alpha = 0.5) 
+```
+
+
+

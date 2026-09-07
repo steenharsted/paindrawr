@@ -3,7 +3,7 @@
 #' Computes a summary statistic of alpha values across all pixels whose alpha
 #' falls strictly within `alpha_range`. This captures how intensely a patient
 #' drew -- i.e. how dark or opaque the strokes are -- independently of how much
-#' area was covered. Use in combination with [pdr_get_alpha_area()] to
+#' area was covered. Use in combination with [pdr_summarize_alpha_area()] to
 #' distinguish between a small intense drawing and a large light drawing.
 #'
 #' @param rgbas Either a list of RGBA arrays (each `[height, width, 4]`), or a
@@ -23,7 +23,7 @@
 #'   `(alpha_range[1], alpha_range[2]]`, or `NA_real_` if no pixels fall in
 #'   that range.
 #'
-#' @seealso [pdr_get_alpha_area()] for the complementary area-based metric,
+#' @seealso [pdr_summarize_alpha_area()] for the complementary area-based metric,
 #'   [pdr_add_rgba()] to add `.rgba` to paindrawing data.
 #'
 #' @export
@@ -32,17 +32,17 @@
 #'   dplyr::mutate(rgba = pdr_add_rgba(pdr_data))
 #'
 #' # Mean intensity across all drawn pixels (using rgba list-column)
-#' pdr_get_alpha_intensity(pd$rgba)
+#' pdr_summarize_alpha_intensity(pd$rgba)
 #'
 #' # Max intensity, passed pdr_data directly
-#' pdr_get_alpha_intensity(pd$pdr_data, summary_stat = "max")
+#' pdr_summarize_alpha_intensity(pd$pdr_data, summary_stat = "max")
 #'
 #' # Use inside mutate()
 #' pd |> dplyr::mutate(
-#'   intensity_mean = pdr_get_alpha_intensity(pdr_data),
-#'   intensity_max  = pdr_get_alpha_intensity(pdr_data, summary_stat = "max")
+#'   intensity_mean = pdr_summarize_alpha_intensity(pdr_data),
+#'   intensity_max  = pdr_summarize_alpha_intensity(pdr_data, summary_stat = "max")
 #' )
-pdr_get_alpha_intensity <- function(
+pdr_summarize_alpha_intensity <- function(
   rgbas,
   summary_stat = c("mean", "max", "min", "median", "sd"),
   alpha_range = c(0, 1)
@@ -96,7 +96,7 @@ pdr_get_alpha_intensity <- function(
 #' Computes the proportion of total pixels whose alpha value falls strictly
 #' within `alpha_range`. This captures how much of the canvas was drawn on,
 #' independently of stroke intensity. Use in combination with
-#' [pdr_get_alpha_intensity()] to distinguish between a small intense drawing
+#' [pdr_summarize_alpha_intensity()] to distinguish between a small intense drawing
 #' and a large light drawing.
 #'
 #' @param rgbas Either a list of RGBA arrays (each `[height, width, 4]`), or a
@@ -112,7 +112,7 @@ pdr_get_alpha_intensity <- function(
 #'   proportion of canvas pixels with alpha in `(alpha_range[1], alpha_range[2]]`
 #'   for the corresponding drawing, i.e. a value between 0 and 1.
 #'
-#' @seealso [pdr_get_alpha_intensity()] for the complementary intensity-based
+#' @seealso [pdr_summarize_alpha_intensity()] for the complementary intensity-based
 #'   metric, [pdr_add_rgba()] to add `.rgba` to paindrawing data.
 #'
 #' @export
@@ -121,17 +121,17 @@ pdr_get_alpha_intensity <- function(
 #'   dplyr::mutate(rgba = pdr_add_rgba(pdr_data))
 #'
 #' # Proportion of all drawn pixels (using rgba list-column)
-#' pdr_get_alpha_area(pd$rgba)
+#' pdr_summarize_alpha_area(pd$rgba)
 #'
 #' # Passed pdr_data directly
-#' pdr_get_alpha_area(pd$pdr_data)
+#' pdr_summarize_alpha_area(pd$pdr_data)
 #'
 #' # Use inside mutate()
 #' pd |> dplyr::mutate(
-#'   area         = pdr_get_alpha_area(pdr_data),
-#'   area_over_50 = pdr_get_alpha_area(pdr_data, alpha_range = c(0.5, 1))
+#'   area         = pdr_summarize_alpha_area(pdr_data),
+#'   area_over_50 = pdr_summarize_alpha_area(pdr_data, alpha_range = c(0.5, 1))
 #' )
-pdr_get_alpha_area <- function(rgbas, alpha_range = c(0, 1)) {
+pdr_summarize_alpha_area <- function(rgbas, alpha_range = c(0, 1)) {
   # Wrap rgba in list if it provided as a single raw
   if (!is.list(rgbas)) {
     rgbas <- list(rgbas)
