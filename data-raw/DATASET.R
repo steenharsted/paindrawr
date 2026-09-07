@@ -75,6 +75,10 @@ pdr_example_geometry <- tibble::tibble(
     paindrawing_LBP = "(,,)"
   ))
 
+  # pdr_example_zealand <- tibble::tibble(id = "Præstø", paindrawing_LBP = "(,460,709,463,709,464,719,448,720,449,712,454,711,454,714,460,713,)")
+  # pdr_example_zealand <- pdr_example_zealand |> bind_rows(tibble::tibble(id="Holbæk", paindrawing_LBP = "(,393,682,430,672,429,682,423,684,417,688,407,685,399,689,)"))
+  # pdr_example_geometry <- pdr_example_zealand
+
 n <- nrow(pdr_example_geometry)
 pdr_example_geometry <- pdr_example_geometry |>
   dplyr::mutate(
