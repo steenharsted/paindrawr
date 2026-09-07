@@ -4,11 +4,9 @@
 \alias{pdr_modify}
 \title{Modify pain drawing elements}
 \usage{
-pdr_modify(.data, paindrawr_data, ops = "flipy")
+pdr_modify(paindrawr_data, ops = "flipy")
 }
 \arguments{
-\item{.data}{A valid pain drawing tibble}
-
 \item{paindrawr_data}{The pain drawing data list-col in .data (defaults to pdr_data)}
 
 \item{ops}{A string specifying operation. See below:
@@ -17,6 +15,8 @@ The parameter \code{ops} can take one of the following values:
 \itemize{
 \item "flipy" -- flips the y-coordinates which can be useful to re-locate origo to/from top/bottom of canvas.
 }}
+
+\item{.data}{A valid pain drawing tibble}
 }
 \value{
 A valid pain drawing tibble

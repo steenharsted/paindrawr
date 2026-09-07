@@ -53,8 +53,17 @@ pdr_plot_polygons <- function(
       })
     )
   
-  stroke_indexes <- .data |> 
-    dplyr::pull({{ paindrawr_data}}) |>
+  # Filter down the .strokes tibble to the same indices as
+  # the .points tibble (of polygons)
+  .data <- .data |>
+    mutate({{ paindrawr_data}} := {{ paindrawr_data}} |> 
+      purrr::map(\(e) {
+        e$.strokes <- e$.stroke |> 
+          dplyr::filter(.index %in% unique(e$.points$.index))
+        e # return
+      })
+    )
+  
     
   ##########################################################
   #### We probably should reduce the .strokes tibble to ####

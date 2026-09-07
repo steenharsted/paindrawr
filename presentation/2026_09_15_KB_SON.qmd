@@ -1,0 +1,144 @@
+---
+title: "Introduction to PaindrawR"
+author: "S. O'Neill & S. Harsted"
+format: 
+  revealjs:
+    code-fold: true
+    code-summary: "Show the code"
+    echo: true
+    embed-resources: true
+editor: source
+---
+
+```{r}
+#| echo: false
+library(tidyverse)
+library(here)
+library(paindrawr)
+```
+
+## Diving right in ...  {.hscroll .scrollable}
+
+Pain drawings are stored as a _list-column_ in a data frame (a _tibble_)
+
+```{r}
+pdr_example_data[1:3,] |> dplyr::select(-pain)
+```
+
+## A single pain drawing
+
+### from the pdr_data list-column
+
+```{r}
+pdr_example_data[1,]$pdr_data 
+```
+
+## Looking at a plot of the same data
+
+```{r}
+pdr_example_data[1,] |> pdr_plot_drawing()
+```
+
+## Re-introduced the canvas
+
+```{r}
+pdr_example_data[1,] |> 
+  pdr_plot_drawing(background_image = pdr_example_file("mird_body_background.png"))
+```
+
+## A detour..
+
+Another data set:
+
+```{r}
+pdr_example_anatomy
+```
+
+## Filtering and imploding drawings
+
+```{r}
+#| echo: true
+
+pdr_example_anatomy |>
+  filter(str_detect(id, "(Mid_back_bottom)|(Back.+(lowerback|buttock))")) |>
+  pdr_implode() |> 
+  mutate(pdr_data = pdr_polygonize(pdr_data)) |>
+  pdr_plot_polygons(paindrawr_data = pdr_data, background_image = pdr_example_file("mird_body_background.png"))
+  
+```
+
+
+## Merging by union
+
+### ...we store this polygon as 'lb_poly'
+
+```{r}
+#| echo: true
+
+lb_poly <- pdr_example_anatomy |>
+  filter(str_detect(id, "(Mid_back_bottom)|(Back.+(lowerback|buttock))")) |>
+  pdr_implode() |> 
+  mutate(pdr_data = pdr_polygonize(pdr_data)) |>
+  mutate(pdr_data = pdr_modify_polygons(pdr_data, "merge_overlaps")) |>
+  mutate(lb_template = pdr_get_info(pdr_data, ".polygons"))
+lb_poly |> pdr_plot_polygons(paindrawr_data = pdr_data, background_image = pdr_example_file("mird_body_background.png"))
+  
+```
+
+## Bring it all together
+
+### ..the raw pain drawwing
+
+```{r}
+pdr_example_data[1,] |> 
+  pdr_plot_drawing(background_image = pdr_example_file("mird_body_background.png"))
+```
+
+## Bringing it all together
+
+### ..the polygonized and merged pain drawing
+
+```{r}
+pdr1 <- pdr_example_data[1,] |>
+  mutate(pdr_data = pdr_polygonize(pdr_data, buffer=10)) |> 
+  mutate(pdr_data = pdr_modify_polygons(pdr_data, "merge_overlaps")) |>
+  mutate(lb_template = lb_poly$lb_template) 
+pdr1 |>  pdr_plot_polygons(pdr_data, background_image = pdr_example_file("mird_body_background.png"))
+
+area_pdr1 <- pdr1 |>
+  mutate(area = pdr_poly_areas(pdr_data)) |> pull(area)
+```
+
+..which has an area of `r round(area_pdr1)`
+
+## Bring it all together
+
+### ..reduced to 'low back' intersection
+
+```{r}
+pdr2 <- pdr_example_data[1,] |>
+  mutate(pdr_data = pdr_polygonize(pdr_data, buffer=10)) |> 
+  mutate(pdr_data = pdr_modify_polygons(pdr_data, "merge_overlaps")) |>
+  mutate(lb_template = lb_poly$lb_template) |>
+  mutate(pdr_data2 = pdr_modify_polygons(pdr_data, ops="reduce_by_template", template=lb_template)) 
+
+pdr2 |> pdr_plot_polygons(pdr_data2, background_image = pdr_example_file("mird_body_background.png"))
+
+area_pdr2 <- pdr2 |>
+  mutate(area = pdr_poly_areas(pdr_data2)) |> pull(area)
+```
+
+..which has an area of `r round(area_pdr2)`
+
+## All together now
+
+```{r}
+pdr_example_data |>
+  mutate(pdr_data = pdr_polygonize(pdr_data, buffer=10)) |> 
+  mutate(pdr_data = pdr_modify_polygons(pdr_data, "merge_overlaps")) |>
+  mutate(lb_template = lb_poly$lb_template) |>
+  mutate(pdr_data2 = pdr_modify_polygons(pdr_data, ops="reduce_by_template", template=lb_template)) |>
+  mutate(total_area = pdr_poly_areas(pdr_data)) |>
+  mutate(lbp_area = pdr_poly_areas(pdr_data2)) |> 
+  dplyr::select(id, total_area, lbp_area)
+```

@@ -4,7 +4,12 @@
 \alias{pdr_modify_polygons}
 \title{Modify pain drawing elements}
 \usage{
-pdr_modify_polygons(paindrawr_data, ops)
+pdr_modify_polygons(
+  paindrawr_data,
+  ops = NULL,
+  template = NULL,
+  polygons_only = FALSE
+)
 }
 \arguments{
 \item{paindrawr_data}{The name of the pain drawing list-col in .data}

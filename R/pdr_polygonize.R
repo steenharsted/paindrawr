@@ -26,6 +26,7 @@
 #' 
 pdr_polygonize <- function(pdr, buffer=5) {
   # pdr is assumed to be valid pain drawing list-col data
+  if(buffer < 1) { buffer = 1} # Is this what we want? Should buffer==0 be used to delete points and lines?
   buffer = abs(as.integer(buffer))
 
   # Creates new element .polygons in each pain drawing in pdr
@@ -70,8 +71,7 @@ pdr_polygonize <- function(pdr, buffer=5) {
     } else if(nrow(stroke_points) > 1) {
       stroke_points # return .. it is not a point
     } else if(buffer == 0) {
-      NULL
-      #stroke_points[FALSE,] # return empty as buffer == 0
+      NULL      
     } else { # ..return buffered point
       x0 <- stroke_points[[1,'.x']] # pull coordinate values
       y0 <- stroke_points[[1,'.y']] # and create new tibble
@@ -149,6 +149,9 @@ pdr_polygonize <- function(pdr, buffer=5) {
       purrr::map(~as.matrix(.x, ncol=2,byrow=TRUE)) |>
       purrr::keep(~nrow(.x)>1) |>
       purrr::map(~sf::st_polygon(list(.x))) |>
+      purrr::map(~sf::st_convex_hull(.x)) |>
+      #purrr::map(~sf::st_concave_hull(.x, ratio=0.5, allow_holes=FALSE)) |>
+      purrr::map(~sf::st_make_valid(.x)) |>
       sf::st_sfc()
     
     # We now need to deal with lines which have area==0. 

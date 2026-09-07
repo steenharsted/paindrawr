@@ -30,33 +30,36 @@
 #' pdr_example_data |> pdr_get_info(pdr_data, ".id")
 #'
 #' # Extract x coordinates from the .points tibble
-#' pdr_example_data |> pdr_get_info(pdr_data, c(".strokes", ".alpha"))
+#' pdr_example_data |> pdr_get_info(pdr_data, ".strokes", ".alpha")
 #'#'
 #' @seealso [pdr_check_data()]
 #'
 #' @export
 
-pdr_get_info <- function(paindrawr_data, cols=".id") {
-  # data_col is expected to be a valid data_col list-col
-  # var should be a vector of length 1 or 2 -- first element
-  # should be an element name in data_col (list), second element 
-  # (if present) should be a column name in .strokes or 
-  # .points (which should be element 1 or 2)
+pdr_get_info <- function(paindrawr_data, id1=".id", id2=NULL) {
+  # paindrawr_data is expected to be a valid data_col list-col
+  # var1 should be an element name in data_col (list)
+  # var2 should be an element in var1, if var1 is tibble/list
 
-  if(length(cols)==1) {
-    paindrawr_data |> 
-      purrr::map(cols) |>    # Just the one element
-      purrr::list_simplify() # Convert to int, chr, num, ..
-  } else if(length(cols)==2) {
-    if(cols[[2]]=="") {
-      paindrawr_data |>
-        purrr::map(cols[[1]])
+  if(is.null(id1)) {
+    warning("No id1 parameter supplied")
+    return(NA)
+  }
+
+  if(is.null(id2)) {
+    if(id1 %in% c(".points", ".strokes", ".polygons")) {
+      paindrawr_data |> 
+        purrr::map(id1)
     } else {
-      paindrawr_data |>
-        purrr::map(cols[[1]]) |>
-        purrr::map(~.x |> dplyr::pull(cols[[2]]))  
+      paindrawr_data |> 
+        purrr::map(id1) |>    # Just the one element
+        purrr::list_simplify() # Convert to int, chr, num, ..
+        
     }
   } else {
-    NA
+    paindrawr_data |>
+      purrr::map(id1) |>
+      purrr::map(~dplyr::pull(.x, id2)) |>
+      purrr::list_simplify()
   }
 }

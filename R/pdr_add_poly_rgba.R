@@ -1,13 +1,22 @@
-pdr_add_poly_rgba <- function(pdr, invert=FALSE) {
+#' Add an RGBA data set from polygons
+#'
+#' @param paindrawr_data
+#' @param invert
+#'
+#' @returns
+#'
+#' @export
+#' @examples
+pdr_add_poly_rgba <- function(paindrawr_data, invert=FALSE) {
   
-  one <- 1L
-  zero = 0L
+  one <- 1
+  zero = 0
   if(invert) {
-    one <- 0L
-    zero = 1L
+    one <- 0
+    zero = 1
   }
 
-  result <- pdr |> 
+  result <- paindrawr_data |> 
     purrr::map(\(e) {
       xmax = e$.width
       ymax = e$.height
@@ -31,7 +40,7 @@ pdr_add_poly_rgba <- function(pdr, invert=FALSE) {
       
       tmp <- terra::as.matrix(r, wide = TRUE)
       tmp[is.na(tmp)] <- zero
-      storage.mode(tmp) <- "integer"
+      storage.mode(tmp) <- "numeric"
       tmp
     })
 

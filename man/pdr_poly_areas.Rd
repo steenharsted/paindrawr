@@ -4,12 +4,12 @@
 \alias{pdr_poly_areas}
 \title{Calculate area of markings/strokes for pain drawings}
 \usage{
-pdr_poly_areas(pdr = pdr_data, by = "drawings")
+pdr_poly_areas(paindrawr_data = pdr_data, by = "drawings")
 }
 \arguments{
-\item{pdr}{A valid pain drawing data list-col (see @pdr_check_data())}
-
 \item{by}{A string of either 'strokes', 'drawings' or 'both'.}
+
+\item{pdr}{A valid pain drawing data list-col (see @pdr_check_data())}
 }
 \value{
 If \code{by} is "strokes", the function will return a list of tibbles of stroke areas (as integers) -- one list element (tibble) for each row in \code{pdr}.

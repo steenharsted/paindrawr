@@ -34,8 +34,11 @@
 #'   pdr_plot_polygons(pdr_data)
  
 
-pdr_modify_polygons <- function(paindrawr_data, ops) {
-  lcol <- paindrawr_data
+pdr_modify_polygons <- function(paindrawr_data, ops=NULL, template=NULL, polygons_only=FALSE) {
+  if(!is.null(template) && length(template)!=1 && length(template)!=length(paindrawr_data)) {
+    warning("Parameter 'template' should be a list of length 1 or the same as paindrawr_data")
+    return(NA)
+  }
 
   ########## Sanity checks ##########
   accepted_ops <- c("reduce_to_chull", "merge_overlaps", "make_valid", "merge_edges", "reduce_by_template")
@@ -76,13 +79,14 @@ pdr_modify_polygons <- function(paindrawr_data, ops) {
 
   ########## End ops functions ########## 
   if("make_valid" %in% ops) {
-    lcol <- lcol |>
+    paindrawr_data <- paindrawr_data |>
       purrr::map_depth(.depth=1, \(pd) {
         pd <- pd |> 
           purrr::imap(\(element,indx) {
             if(indx==".polygons") {
               element |> 
-                purrr::map(\(poly) {sf::st_make_valid(poly)}) |>
+                purrr::map(~sf::st_make_valid(.x)) |>
+                purrr::map(~sf::st_buffer(.x, dist=0)) |>
                 sf::st_sfc()
             } else {
               element
@@ -92,7 +96,7 @@ pdr_modify_polygons <- function(paindrawr_data, ops) {
   }
 
   if("reduce_to_chull" %in% ops) {
-    lcol <- lcol |>
+    paindrawr_data <- paindrawr_data |>
       purrr::map_depth(.depth=1, \(pd) {
         pd <- pd |> 
           purrr::imap(\(element,indx) {
@@ -108,21 +112,30 @@ pdr_modify_polygons <- function(paindrawr_data, ops) {
   }
 
   if("merge_overlaps" %in% ops) {
-    lcol <- lcol |>
-      purrr::map_depth(.depth=1, \(pd) {
-        pd <- pd |> 
-          purrr::imap(\(element,indx) {
-            if(indx==".polygons") {
-              element |> 
-                sf::st_union() |>
-                sf::st_cast("POLYGON")
-            } else {
-              element
-            }
-          })
+    paindrawr_data <- paindrawr_data |>
+      purrr::map(\(e) {
+        e$.polygons <- e$.polygons |>
+          sf::st_union() |>
+          sf::st_cast("POLYGON")
+        e
       })
   }
 
+  if("reduce_by_template" %in% ops) {
+    # print(str(p$.polygons))
+    # print("---")
+    # print(str(template))
+    paindrawr_data <- purrr::map2(paindrawr_data, template, \(p,t) {
+        p$.polygons <- 
+          sf::st_intersection(p$.polygons, t) |>
+          sf::st_cast("POLYGON")
+        p
+      })
+  }
 
-  lcol # return this
+  if(polygons_only) {
+    paindrawr_data |> purrr::map(".polygons")
+  } else {
+    paindrawr_data # return this
+  }
 }

@@ -20,18 +20,15 @@
 #'   dplyr::mutate(stroke_areas = pdr_poly_areas(pdr_data, by="strokes"))
 #' 
 #'  
-pdr_poly_areas <- function(pdr = pdr_data, by="drawings") {
+pdr_poly_areas <- function(paindrawr_data = pdr_data, by="drawings") {
     
-   tmp <- pdr |> 
-     purrr::map(\(e) {
-      e$.polygons |> 
-        sf::st_area()
-    })
+   tmp <- paindrawr_data |> 
+     purrr::map(~sf::st_area(.x$.polygons))
   
   if (by=="strokes") {
     tmp # return
   } else {
     tmp |>
-      purrr::map_int(\(e) {sum(e)})
+      purrr::map_dbl(\(e) {sum(e)})      
   }
 }

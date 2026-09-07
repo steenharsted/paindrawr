@@ -3,6 +3,7 @@
 export(pdr_add_rgba)
 export(pdr_apply_raster_template)
 export(pdr_check_data)
+export(pdr_example_file)
 export(pdr_explode)
 export(pdr_get_info)
 export(pdr_implode)

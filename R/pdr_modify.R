@@ -21,7 +21,7 @@
 #' # Flip the y-coordinates and store in a new pain drawing list-col
 #' pdr_example_data |> mutate(pdr_data_flipped = pdr_mutate(pdr_data, "flipy"))
 
-pdr_modify <- function(.data, paindrawr_data, ops="flipy") {
+pdr_modify <- function(paindrawr_data, ops="flipy") {
 
   ########## Sanity checks ##########
   accepted_ops <- c("flipy")
@@ -60,8 +60,8 @@ pdr_modify <- function(.data, paindrawr_data, ops="flipy") {
 
 
   if("flipy" %in% ops) {
-    pdr <- flipy(pdr)
+    paindrawr_data <- flipy(paindrawr_data)
   }
 
-  return(pdr)
+  return(paindrawr_data)
 }

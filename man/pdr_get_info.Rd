@@ -4,7 +4,7 @@
 \alias{pdr_get_info}
 \title{Extract information from pain drawing objects}
 \usage{
-pdr_get_info(paindrawr_data, cols = ".id")
+pdr_get_info(paindrawr_data, id1 = ".id", id2 = NULL)
 }
 \arguments{
 \item{data_col}{A valid pain drawing object (typically a list-column) as checked
@@ -39,7 +39,7 @@ returned as a list with one element per pain drawing.
 pdr_example_data |> pdr_get_info(pdr_data, ".id")
 
 # Extract x coordinates from the .points tibble
-pdr_example_data |> pdr_get_info(pdr_data, c(".strokes", ".alpha"))
+pdr_example_data |> pdr_get_info(pdr_data, ".strokes", ".alpha")
 #'
 }
 \seealso{
