@@ -155,7 +155,7 @@ pdr_plot_heatmap <- function(
   background_image = NULL,
   grid_size = 10,
   point_size = 0.25,
-  alpha_scale = c(0.1, 0.5),
+  alpha_scale = c(0, 0.05),
   color_scale = "max",
   label_format = "pct",
   show_n = FALSE,

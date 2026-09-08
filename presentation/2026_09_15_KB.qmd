@@ -120,10 +120,6 @@ paindraw_data_wide <- paindraw_data |>
 my_data <- base_data |>
   left_join(paindraw_data_wide)
 
-
-### START HERE
-my_data
-
 ```
 
 
@@ -217,11 +213,27 @@ my_data |>
   pdr_plot_heatmap(
     paindrawr_data = "palmar", 
     variables = c("tool", "distance"),
+    equal_n = FALSE, 
+    show_n = TRUE,
     background_image = bg_palmar)
 ```
 
 
 # Quantitative analysis of imaginary handpain
+
+## What to quantify?
+
+### Area and Intensity
+
+```{r}
+my_data |> 
+  slice_sample(n = 2) |> 
+  pdr_plot_drawing(
+    paindrawr_data = palmar, 
+    background_image = bg_palmar
+    )
+```
+
 
 ## Add an rgba render {.smaller}
 ```{r}
@@ -263,7 +275,7 @@ my_data |>
 ```{r}
 my_data |> 
   ggplot(aes(x = tool, y = palmar_area, fill = distance))+
-  geom_boxplot(alpha = 0.5) 
+  geom_boxplot(alpha = 0.5)
 ```
 
 
