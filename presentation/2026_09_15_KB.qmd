@@ -15,6 +15,8 @@ format:
     code-fold: false
     embed-resources: true
     scrollable: true
+    fig-width: 6
+    fig-height: 6
 execute: 
   warning: false
   message: false
@@ -138,7 +140,7 @@ my_data
 ## Single drawing
 
 ```{r}
-#| output-location: column-fragment
+#| output-location: slide
 my_data |> 
   filter(record_id == 6) |> 
   pdr_plot_drawing(
@@ -150,7 +152,7 @@ my_data |>
 ## Single drawing
 
 ```{r}
-#| output-location: column-fragment
+#| output-location: slide
 my_data |> 
   filter(record_id == 6) |> 
   pdr_plot_drawing(
@@ -161,6 +163,7 @@ my_data |>
 
 ## 4x random drawings
 ```{r}
+#| output-location: slide
 my_data |> 
   slice_sample(n = 4) |> 
   pdr_plot_drawing(
@@ -186,6 +189,7 @@ my_data |>
 
 ### Hammer vs Apple
 ```{r}
+#| output-location: slide
 my_data |> 
   pdr_plot_heatmap(
     paindrawr_data = "palmar", 
@@ -197,6 +201,7 @@ my_data |>
 
 ### 1m vs 1cm
 ```{r}
+#| output-location: slide
 my_data |> 
   pdr_plot_heatmap(
     paindrawr_data = "palmar", 
@@ -209,6 +214,7 @@ my_data |>
 
 ### tool vs distance
 ```{r}
+#| output-location: slide
 my_data |> 
   pdr_plot_heatmap(
     paindrawr_data = "palmar", 
@@ -226,6 +232,7 @@ my_data |>
 ### Area and Intensity
 
 ```{r}
+#| echo: false
 my_data |> 
   slice_sample(n = 2) |> 
   pdr_plot_drawing(
@@ -258,7 +265,7 @@ my_data
 ```
 
 
-## Summarize across groups {.smaller}
+## Summarize across groups
 
 ```{r}
 my_data |> 
