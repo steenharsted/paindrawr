@@ -4,7 +4,7 @@ library(tidyverse)
 load_all()
 
 # Load sample data
-pdr_example_data
+pd <- pdr_example_data$pdr_data
 
 
 # multi pdr list in multi pdr list with .rgba added out
@@ -12,22 +12,23 @@ pdr_add_rgba(paindrawr_data = pd[1])
 
 # multi pdr list in multi list of rgba arrays out
 pdr_add_rgba(
-  paindrawr_data = pdr_example_data,
+  paindrawr_data = pd,
   rgba_only = TRUE
 )
 
 # single pdr named list in single pdr named list out with .rgba added
-pdr_example_data[1] |> pdr_add_rgba()
+pd[[1]] |> pdr_add_rgba()
 
 ## Intended use
-pd <- pd |> mutate(new_pdr_data = pdr_add_rgba(paindrawr_data = pdr_data))
-pd
+pdr_tib <- pdr_example_data |>
+  mutate(new_pdr_data = pdr_add_rgba(paindrawr_data = pdr_data))
+pdr_tib
 
-pd <- pd |>
+pdr_tib <- pdr_tib|>
   mutate(
     .rgba = pdr_add_rgba(paindrawr_data = pdr_data, rgba_only = TRUE)
   )
-pd
+pdr_tib
 
 
 ## Plot the RGBA arrays
