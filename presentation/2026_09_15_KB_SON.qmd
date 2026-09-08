@@ -142,3 +142,12 @@ pdr_example_data |>
   mutate(lbp_area = pdr_poly_areas(pdr_data2)) |> 
   dplyr::select(id, total_area, lbp_area)
 ```
+
+## Now a different approach
+
+### Spray painting
+
+
+```{r}
+#pdr_example_data[1,] |> pull(pdr_data) |> pdr_add_rgba() |> tibble() |> dplyr::rename(pdr_data= `pdr_add_rgba(pull(pdr_example_data[1, ], pdr_data))`) |> mutate(id = pdr_get_info(pdr_data, ".id"))
+```
