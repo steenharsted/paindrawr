@@ -77,13 +77,13 @@ pdr_implode <- function(.data, paindrawr_data = pdr_data) {
 
   one_or_multiple <- function(pdr, var) {
     # This helper function returns either the string "multiple"
-    # or the one value found for 'var' in 'pdr'
+    # or the one value found for 'var' in 'pdr' (if unique)
     # We use this to retain variable values where there is only one
     # or replace multiple my "multiple" ... when imploding data
     var_values <- pdr |> purrr::map_depth(.depth=1, {{var}}) |> purrr::as_vector()
     ifelse(
       length(unique(var_values))>1, 
-      "mulitple", 
+      "multiple", 
       unique(var_values))
   }
 
@@ -114,9 +114,9 @@ pdr_implode <- function(.data, paindrawr_data = pdr_data) {
   )
 
   result <- tibble::tibble(
-    id=tmp_id,
-    pdr_data=result
-  )
+    id = tmp_id,
+    pdr = result
+  ) |> dplyr::rename({{paindrawr_data}} := pdr)
 
   return(result)
 }

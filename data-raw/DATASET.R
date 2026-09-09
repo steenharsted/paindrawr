@@ -79,6 +79,8 @@ pdr_example_geometry <- tibble::tibble(
   # pdr_example_zealand <- pdr_example_zealand |> bind_rows(tibble::tibble(id="Holbæk", paindrawing_LBP = "(,393,682,430,672,429,682,423,684,417,688,407,685,399,689,)"))
   # pdr_example_geometry <- pdr_example_zealand
 
+  # THIS ^ IS NO GOOD - IT STORES THE VARIABLE pdr_example_geometry ... fix it if we keep pdr_example_zealand in package, otherwise delete it
+
 n <- nrow(pdr_example_geometry)
 pdr_example_geometry <- pdr_example_geometry |>
   dplyr::mutate(

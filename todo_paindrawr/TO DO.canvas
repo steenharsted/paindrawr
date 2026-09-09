@@ -1,0 +1,10 @@
+{
+	"nodes":[
+		{"id":"13d8147c77e5dd70","type":"text","text":"TO DO","x":-580,"y":-440,"width":250,"height":60,"color":"1"},
+		{"id":"bb7dbc58643ae573","type":"text","text":"DONE","x":-300,"y":-440,"width":250,"height":60},
+		{"id":"86bd6e67570fc90d","type":"text","text":"Check funktioner for korrekt brug af hhv:\n* pdr_tib\n* pdr_list\n* pdr_element","x":-580,"y":-360,"width":250,"height":180},
+		{"id":"5d224bb85aadc062","type":"file","file":"portrait_son_cartoon_miniature_80.png","x":-380,"y":-296,"width":50,"height":64},
+		{"id":"ba766fee30a979d3","type":"file","file":"portrait_steen_harsted_miniature.png","x":-380,"y":-360,"width":50,"height":64}
+	],
+	"edges":[]
+}

@@ -17,13 +17,26 @@ library(here)
 library(paindrawr)
 ```
 
-## Diving right in ...  {.hscroll .scrollable}
+## Two fundamentally different image formats
 
-Pain drawings are stored as a _list-column_ in a data frame (a _tibble_)
+#### .. the reason that other guys poster graphics suck!
 
-```{r}
-pdr_example_data[1:3,] |> dplyr::select(-pain)
-```
+
+![](boxers.png){width=25% fig-align="center"}
+
+**Raster** vs **Vector**
+
+* Raster: Selfies on your phone
+* Vector: Fonts on your computer
+
+## Raster  and Vector images
+
+![](raster_v_vector_images.png)
+
+**Raster** vs **Vector**
+
+* Raster: Spray painting hand pain
+* Vector: Polygon around Præstø
 
 ## A single pain drawing
 
@@ -143,11 +156,37 @@ pdr_example_data |>
   dplyr::select(id, total_area, lbp_area)
 ```
 
-## Now a different approach
-
-### Spray painting
-
+## Back to Zealand, Præstø and Holbæk
 
 ```{r}
-#pdr_example_data[1,] |> pull(pdr_data) |> pdr_add_rgba() |> tibble() |> dplyr::rename(pdr_data= `pdr_add_rgba(pull(pdr_example_data[1, ], pdr_data))`) |> mutate(id = pdr_get_info(pdr_data, ".id"))
+tmp_template <- readRDS(here("data/pdr_example_zealand.rds"))
+
+tmp_template <- tmp_template |>
+  mutate(pdr_data = pdr_modify(pdr_data, ops="flipy")) |>
+  pdr_implode() |> 
+  mutate(pdr_data = pdr_polygonize(pdr_data)) |>
+  mutate(lb_template = pdr_get_info(pdr_data, ".polygons"))
+tmp_template |> pdr_plot_polygons(paindrawr_data = pdr_data, background_image = pdr_example_file("zealand.png"))
 ```
+
+## User input
+```{r}
+tmp_data <- readRDS(here("data/temporary_my_data_for_presentation_towns_in_zealand.rds")) |> select(id=record_id, pdr_data=draw_zealand)
+tmp_data <- tmp_data |> 
+  pdr_implode(pdr_data) |>
+  mutate(pdr_data = pdr_polygonize(pdr_data, 10)) 
+
+tmp_data |> pdr_plot_polygons(pdr_data, background_image = pdr_example_file("zealand.png")) 
+```
+
+## Areas inside template
+```{r}
+tmp_data$templates_ph <- tmp_template$lb_template
+
+tmp_data |>
+  mutate(total_area = pdr_poly_areas(pdr_data)) |>
+  mutate(pdr_data = pdr_modify_polygons(pdr_data, ops="reduce_by_template", template=templates_ph)) |>
+  mutate(correct_area = pdr_poly_areas(pdr_data)) |> 
+  select(id, total_area, correct_area)
+```
+
