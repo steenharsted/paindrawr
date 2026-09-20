@@ -129,7 +129,7 @@ pdr_example_data <- pdr_example_data |>
       app = "paindrawr package",
       tool = "pen",
       draw_input_type = "mouse",
-      tool_width = as.integer(1),
+      tool_width = as.integer(5),
       color = "#FF0000",
       point_density = as.integer(1),
       spray_radius = as.integer(0),

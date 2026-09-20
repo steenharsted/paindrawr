@@ -13,7 +13,7 @@ pdr_plot_polygons(
   method = "memory",
   clean_up = TRUE,
   dpi = 96,
-  type = "path"
+  type = "polygon"
 )
 }
 \description{
@@ -33,13 +33,13 @@ see \code{pdr_plot_drawing()} documentation.
 pdr_example_geometry |> pdr_plot_drawing()
 
 # Plot as polygons -- note closure and buffering
-pdr_example_geometry |> 
-  mutate(pdr_data = pdr_polygonize(pdr_data, buffer=5)) |> 
+pdr_example_geometry |>
+  mutate(pdr_data = pdr_polygonize(pdr_data, buffer=5)) |>
   pdr_plot_polygons()
 
 # Merge overlapping strokes before plotting polygons
-pdr_example_geometry |> 
-  mutate(pdr_data = pdr_polygonize(pdr_data, buffer=5)) |> 
-  mutate(pdr_data = pdr_modify_polygons(pdr_data, "merge_overlaps")) |> 
+pdr_example_geometry |>
+  mutate(pdr_data = pdr_polygonize(pdr_data, buffer=5)) |>
+  mutate(pdr_data = pdr_modify_polygons(pdr_data, "merge_overlaps")) |>
   pdr_plot_polygons()
 }

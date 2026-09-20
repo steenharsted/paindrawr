@@ -3,8 +3,12 @@
 #' This function facilitates users' access to example files 
 #' such as e.g. background images, stored in the inst/extdata 
 #' folder of the package.
+#' 
+#' **Pain drawing data structure**: This function does not 
+#' take a pain drawing data structure as input, nor return 
+#' one as output.
 #'
-#' @param path Typically just the name the file.
+#' @param path File name or path to example file in inst/extdata
 #'
 #' @returns An absolute file path to the specified file. 
 #' In case no file is specified, a vector of file names from 

@@ -1,14 +1,14 @@
 #' Add an RGBA data set from polygons
 #'
-#' @param paindrawr_data
+#' @param pdr_list A valid pain drawing list-col -- see `pdr_check_data()` for details
 #' @param invert
 #'
 #' @returns
 #'
 #' @export
 #' @examples
-pdr_add_poly_rgba <- function(paindrawr_data, invert=FALSE) {
-  
+pdr_get_rgba_from_poly <- function(pdr_list, invert=FALSE) {
+
   one <- 1
   zero = 0
   if(invert) {
@@ -16,7 +16,7 @@ pdr_add_poly_rgba <- function(paindrawr_data, invert=FALSE) {
     zero = 1
   }
 
-  result <- paindrawr_data |> 
+  result <- pdr_list |>
     purrr::map(\(e) {
       xmax = e$.width
       ymax = e$.height
@@ -31,13 +31,13 @@ pdr_add_poly_rgba <- function(paindrawr_data, invert=FALSE) {
         ymin = 0,
         ymax = ymax
       )
-      
+
       r <- terra::rasterize(
-        v, 
+        v,
         r,
         field = rep(one, length(v))
       )
-      
+
       tmp <- terra::as.matrix(r, wide = TRUE)
       tmp[is.na(tmp)] <- zero
       storage.mode(tmp) <- "numeric"

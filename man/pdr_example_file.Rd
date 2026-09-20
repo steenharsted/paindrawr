@@ -7,7 +7,7 @@
 pdr_example_file(path = NULL)
 }
 \arguments{
-\item{path}{Typically just the name the file.}
+\item{path}{File name or path to example file in inst/extdata}
 }
 \value{
 An absolute file path to the specified file.
@@ -18,6 +18,11 @@ the folder, is returned.
 This function facilitates users' access to example files
 such as e.g. background images, stored in the inst/extdata
 folder of the package.
+}
+\details{
+\strong{Pain drawing data structure}: This function does not
+take a pain drawing data structure as input, nor return
+one as output.
 }
 \examples{
 # Get a vector of files in the _example files_ folder
