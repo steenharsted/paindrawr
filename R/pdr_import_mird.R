@@ -241,5 +241,5 @@ pdr_import_mird <- function(
     })
 
   #warning("You may want to emply the 'flipy' functionality of the pdr_modify function to MIRD data")
-  list_col # return
+  tibble::tibble(pdr_data = list_col) |> mutate(id = pdr_get_info(pdr_data, ".id")) # return
 }
