@@ -6,14 +6,9 @@
 \usage{
 pdr_plot_polygons(
   .data,
-  paindrawr_data = pdr_data,
+  pdr_list = pdr_data,
   background_image = NULL,
-  include_id = FALSE,
-  rasterize = TRUE,
-  method = "memory",
-  clean_up = TRUE,
-  dpi = 96,
-  type = "polygon"
+  include_id = FALSE
 )
 }
 \description{

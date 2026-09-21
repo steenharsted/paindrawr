@@ -50,8 +50,8 @@ A valid pain drawing data structure must satisfy all of the following:
 \strong{\code{.strokes} tibble or NA (stroke metadata)}
 If .strokes is a tibble, it must be structured as:
 \itemize{
-\item Columns: \code{.index}, \code{.draw_input_type}, \code{.tool}, \code{.tool_width}, \code{.color}, \code{.spray_radius}, \code{.point_density}, \code{.alpha}
-\item Types: integer, character, integer, character, integer, character, integer, integer, integer
+\item Columns: \code{.index}, \code{.draw_input_type}, \code{.tool}, \code{.tool_width}, \code{.color}, \code{.spray_radius}, \code{.point_density}, \code{.alpha}, \code{scaleFactor}, \code{dpr}
+\item Types: integer, character, integer, character, integer, character, integer, integer, numeric, numeric, integer
 \item One row per stroke (\code{.index} must be unique)
 \item Exactly one unique value of \code{.color} per tibble
 }

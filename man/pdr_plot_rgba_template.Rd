@@ -4,7 +4,7 @@
 \alias{pdr_plot_rgba_template}
 \title{Plot an RGBA template}
 \usage{
-pdr_plot_rgba_template(pdr_rgba, background_image = "")
+pdr_plot_rgba_template(.data, pdr_rgba, background_image = NULL)
 }
 \arguments{
 \item{pdr_rgba}{A 2-dimensional matrix corresponding to the canvas size (width x height) with values of 0 or 1}

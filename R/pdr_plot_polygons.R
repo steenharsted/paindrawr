@@ -29,56 +29,57 @@
 
 pdr_plot_polygons <- function(
   .data,
-  paindrawr_data = pdr_data,
+  pdr_list = pdr_data,
   background_image = NULL,
-  include_id = FALSE,
-  rasterize = TRUE,
-  method = "memory",
-  clean_up = TRUE,
-  dpi = 96,
-  type = "polygon"
+  include_id = FALSE
 ) {
-  # This function is a simple wrapper for the
-  # dpr_plot_drawing() function
+  
+  #### From SHFs plot drawing function:
+  # Validate and process background_image
+  if (!is.null(background_image)) {
+    if (is.character(background_image)) {
+      # It's a file path
+      if (!file.exists(background_image)) {
+        cli::cli_abort(
+          "Background image file does not exist: {.path {background_image}}"
+        )
+      }
+      if (!grepl("\\.png$", background_image, ignore.case = TRUE)) {
+        cli::cli_abort(
+          "Background image must be a PNG file (ending in {.val .png})."
+        )
+      }
+      background_image <- png::readPNG(background_image)
+    } else if (!is.numeric(background_image) || !is.array(background_image)) {
+      # Not a numeric array (expected output from png::readPNG)
+      cli::cli_abort(
+        "{.arg background_image} must be either a file path to a PNG image
+        (character string) or a raster array from {.fn png::readPNG}."
+      )
+    }
+  }
 
-  # Extract coordinates from the polygons and substitute
-  # them for .points
-  .data <- .data |>
-    mutate({{ paindrawr_data}} := {{ paindrawr_data}} |>
-      purrr::map(\(e) {
-        e$.points <- e$.polygons |> sf::st_coordinates() |>
-          tibble::as_tibble() |>
-          dplyr::select(.x=X, .y=Y, .index=L2)
-        e # return
-      })
-    )
 
-  # Filter down the .strokes tibble to the same indices as
-  # the .points tibble (of polygons)
-  .data <- .data |>
-    mutate({{ paindrawr_data}} := {{ paindrawr_data}} |>
-      purrr::map(\(e) {
-        e$.strokes <- e$.stroke |>
-          dplyr::filter(.index %in% unique(e$.points$.index))
-        e # return
-      })
-    )
+  #### This is temporary -- how to deal with multi-plots?
+  dd <- .data |> dplyr::pull({{pdr_list}})
+  dd <- dd[[1]]
 
+  
+  gp <- ggplot2::ggplot(data.frame(x=c(0, dd$.width), y = c(dd$.height,0)), aes(x, y)) + ggplot2::geom_point()
 
-  ##########################################################
-  #### We probably should reduce the .strokes tibble to ####
-  #### reflect the new values in .points                ####
-  ##########################################################
+  if (!is.null(background_image)) {
+    gp <- gp <- ggplot2::ggplot() + 
+      ggplot2::annotation_raster(
+        as.raster(background_image),
+        -Inf,
+        Inf,
+        -Inf,
+        Inf
+      )
+  }
 
-  pdr_plot_drawing(
-    .data,
-    {{ paindrawr_data }},
-    background_image,
-    include_id,
-    rasterize,
-    method,
-    clean_up,
-    dpi,
-    type
-  )
+  gp <- gp + ggplot2::geom_sf(data = dd$.polygons, alpha=0.5)
+
+  gp
+  
 }

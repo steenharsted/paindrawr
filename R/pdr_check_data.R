@@ -24,8 +24,8 @@
 #'
 #' **`.strokes` tibble or NA (stroke metadata)**
 #' If .strokes is a tibble, it must be structured as:
-#' * Columns: `.index`, `.draw_input_type`, `.tool`, `.tool_width`, `.color`, `.spray_radius`, `.point_density`, `.alpha`
-#' * Types: integer, character, integer, character, integer, character, integer, integer, integer
+#' * Columns: `.index`, `.draw_input_type`, `.tool`, `.tool_width`, `.color`, `.spray_radius`, `.point_density`, `.alpha`, `scaleFactor`, `dpr`
+#' * Types: integer, character, integer, character, integer, character, integer, integer, numeric, numeric, integer
 #' * One row per stroke (`.index` must be unique)
 #' * Exactly one unique value of `.color` per tibble
 #'
@@ -89,15 +89,17 @@ pdr_check_data <- function(.data, paindrawr_data = pdr_data, verbose = TRUE) {
   # ---- validators for nested tibbles ----
   valid_strokes_tbl <- function(x) {
     tibble::is_tibble(x) &&
-      setequal(names(x), c(".index", ".draw_input_type", ".tool", ".tool_width", ".color", ".alpha", ".point_density", ".spray_radius")) &&
+      setequal(names(x), c(".index", ".draw_input_type", ".tool", ".tool_width", ".color", ".alpha", ".point_density", ".spray_radius", "scaleFactor", "dpr")) &&
       is.integer(x$.index) &&
       is.character(x$.draw_input_type) &&
       is.character(x$.tool) &&
       is.integer(x$.tool_width) &&
       is.character(x$.color) &&
-      is.integer(x$.alpha) &&
+      is.numeric(x$.alpha) &&
       is.integer(x$.point_density) &&
       is.integer(x$.spray_radius) &&
+      is.numeric(x$scaleFactor) &&
+      is.integer(x$dpr) &&
       length(unique(x$.color)) == 1 &&
       !any(duplicated(x$.index))
   }
