@@ -78,7 +78,7 @@ pdr_summarize_alpha_intensity <- function(
 
   # --- get summary stat ---
 
-  purrr::map_dbl(rgbas, function(rgba) {
+  unname(purrr::map_dbl(rgbas, function(rgba) {
     if (!is.array(rgba) || length(dim(rgba)) != 3 || dim(rgba)[3] < 4) {
       stop(
         "`rgbas` must be a list of numeric arrays with dimensions [height, width, 4]."
@@ -87,7 +87,7 @@ pdr_summarize_alpha_intensity <- function(
     a <- as.double(rgba[,, 4])
     drawn <- a[a > alpha_range[1] & a <= alpha_range[2]]
     if (length(drawn) == 0) NA_real_ else do.call(summary_stat, list(drawn))
-  })
+  }))
 }
 
 
@@ -159,7 +159,7 @@ pdr_summarize_alpha_area <- function(rgbas, alpha_range = c(0, 1)) {
     )
   }
 
-  purrr::map_dbl(rgbas, function(rgba) {
+  unname(purrr::map_dbl(rgbas, function(rgba) {
     if (!is.array(rgba) || length(dim(rgba)) != 3 || dim(rgba)[3] < 4) {
       stop(
         "`rgbas` must be a list of numeric arrays with dimensions [height, width, 4]."
@@ -167,5 +167,5 @@ pdr_summarize_alpha_area <- function(rgbas, alpha_range = c(0, 1)) {
     }
     a <- as.double(rgba[,, 4])
     sum(a > alpha_range[1] & a <= alpha_range[2]) / length(a)
-  })
+  }))
 }

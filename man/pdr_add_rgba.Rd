@@ -35,14 +35,19 @@ retain the file for debugging.}
 
 \item{dpi}{Resolution used during rasterization. Defaults to \code{96}. Increase for print-quality output (e.g. \code{300}), noting this
 does not affect the canvas dimensions, only output pixel density.}
-
-\item{rgba_only}{Logical. If \code{FALSE} (default), returns the input
-drawing(s) with a \verb{$.rgba} element appended to each. If \code{TRUE}, returns
-only the RGBA array (single drawing) or a list of RGBA arrays (multiple
-drawings). Use \code{TRUE} when assigning into a tibble list-column:
-\code{mutate(.rgba = pdr_add_rgba(pdr_data, rgba_only = TRUE))}.}
 }
 \value{
+A named list per drawing (or a list of such lists when multiple
+drawings are supplied):
+\itemize{
+\item \code{rgba_only = FALSE} (default): the input drawing with \verb{$.rgba} appended.
+\item \code{rgba_only = TRUE}: a named list with a single \verb{$.rgba} element.
+}
+
+The \verb{$.rgba} element is a numeric array of dimensions
+\verb{height × width × 4} (RGBA channels, values in [0, 1]). Transparent
+pixels are set to black (\code{RGB = 0}).
+
 \itemize{
 \item \code{rgba_only = FALSE} (default): the input drawing (named list) with
 \verb{$.rgba} appended, or a list of such augmented drawings when multiple

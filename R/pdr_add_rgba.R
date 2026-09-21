@@ -21,11 +21,14 @@
 #'   retain the file for debugging.
 #' @param dpi Resolution used during rasterization. Defaults to `96`. Increase for print-quality output (e.g. `300`), noting this
 #'   does not affect the canvas dimensions, only output pixel density.
-#' @param rgba_only Logical. If `FALSE` (default), returns the input
-#'   drawing(s) with a `$.rgba` element appended to each. If `TRUE`, returns
-#'   only the RGBA array (single drawing) or a list of RGBA arrays (multiple
-#'   drawings). Use `TRUE` when assigning into a tibble list-column:
-#'   `mutate(.rgba = pdr_add_rgba(pdr_data, rgba_only = TRUE))`.
+#' @return A named list per drawing (or a list of such lists when multiple
+#'   drawings are supplied):
+#'   * `rgba_only = FALSE` (default): the input drawing with `$.rgba` appended.
+#'   * `rgba_only = TRUE`: a named list with a single `$.rgba` element.
+#'
+#'   The `$.rgba` element is a numeric array of dimensions
+#'   `height × width × 4` (RGBA channels, values in \[0, 1\]). Transparent
+#'   pixels are set to black (`RGB = 0`).
 #'
 #' @return
 #'   * `rgba_only = FALSE` (default): the input drawing (named list) with
@@ -80,14 +83,17 @@ pdr_add_rgba <- function(
   dpi = 96,
   rgba_only = FALSE
 ) {
-  input_data <- paindrawr_data # preserved before normalisation for re-attaching .rgba
-
-  # Wrap in list() if it's a single drawing (named list), not a list-of-named-lists
-  if (!is.list(paindrawr_data[[1]])) {
+  # Detect whether we were handed a single bare drawing (vs a list-of-drawings).
+  single_input <- is.list(paindrawr_data) && ".id" %in% names(paindrawr_data)
+  if (single_input) {
     paindrawr_data <- list(paindrawr_data)
   }
 
-  # If multiple drawings, return a list
+  input_data <- paindrawr_data[[1]] # single drawing, preserved for re-attaching .rgba
+
+  # Always process element-wise and return a list-of-results. This keeps the
+  # return type consistent for tibble list-columns (one list element per row).
+  # A bare single-drawing input is unwrapped again at the end.
   if (length(paindrawr_data) > 1) {
     return(
       purrr::map(
@@ -199,7 +205,7 @@ pdr_add_rgba <- function(
       res = dpi,
       bg = "transparent"
     )
-    print(plot_out) # must explicitly print to render to the device
+    suppressMessages(print(plot_out)) # must explicitly print to render to the device
     cap <- arr()
     dev.off()
 
@@ -215,13 +221,15 @@ pdr_add_rgba <- function(
       on.exit(unlink(tmp), add = TRUE)
     }
 
-    ggplot2::ggsave(
-      plot = plot_out,
-      file = tmp,
-      width = width_mm,
-      height = height_mm,
-      units = "mm",
-      dpi = dpi
+    suppressMessages(
+      ggplot2::ggsave(
+        plot = plot_out,
+        file = tmp,
+        width = width_mm,
+        height = height_mm,
+        units = "mm",
+        dpi = dpi
+      )
     )
 
     rgba_arr <- png::readPNG(tmp)
@@ -231,9 +239,18 @@ pdr_add_rgba <- function(
   rgba_arr[,, 1:3][rgba_arr[,, 4] == 0] <- 0
 
   if (rgba_only) {
-    return(rgba_arr)
+    result <- list(.rgba = rgba_arr)
   } else {
     input_data$.rgba <- rgba_arr
-    return(input_data)
+    result <- input_data
+  }
+
+  # Bare single-drawing input → return the result directly.
+  # Any other input (incl. a length-1 list-column) → return a list, so each
+  # tibble row receives one list element.
+  if (single_input) {
+    result
+  } else {
+    list(result)
   }
 }

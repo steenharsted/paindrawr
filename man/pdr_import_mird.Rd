@@ -20,7 +20,7 @@ pdr_import_mird(
   point_density = as.integer(1),
   spray_radius = as.integer(1),
   alpha = as.integer(255),
-  color = "#FFFFFF"
+  color = "#ff0000"
 )
 }
 \arguments{
