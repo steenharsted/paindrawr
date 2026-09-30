@@ -7,7 +7,7 @@
 #'
 #' @export
 #' @examples
-pdr_get_rgba_from_poly <- function(pdr_list, invert=FALSE) {
+pdr_get_rgba_from_pen <- function(pdr_list, invert=FALSE) {
 
   one <- 1
   zero = 0
@@ -41,7 +41,8 @@ pdr_get_rgba_from_poly <- function(pdr_list, invert=FALSE) {
       tmp <- terra::as.matrix(r, wide = TRUE)
       tmp[is.na(tmp)] <- zero
       storage.mode(tmp) <- "numeric"
-      tmp
+      e$.rgba <- tmp
+      e
     })
 
   result # return

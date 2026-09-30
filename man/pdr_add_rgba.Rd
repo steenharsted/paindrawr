@@ -2,16 +2,20 @@
 % Please edit documentation in R/pdr_add_rgba.R
 \name{pdr_add_rgba}
 \alias{pdr_add_rgba}
-\title{Add an RGBA raster array to a pain drawing}
+\title{Create a new named (.rgba) element in the pdr list column}
 \usage{
 pdr_add_rgba(
-  paindrawr_data,
+  pdr_list,
   method = "memory",
   clean_up = TRUE,
   dpi = 96,
-  rgba_only = FALSE
+  rgba_only = FALSE,
+  buffer = 5,
+  invert = FALSE,
+  type = "auto"
 )
 }
+<<<<<<< HEAD
 \arguments{
 \item{paindrawr_data}{A pain drawing in one of two forms:
 \itemize{
@@ -58,36 +62,19 @@ such arrays when multiple drawings are supplied. Transparent pixels are
 set to black (\code{RGB = 0}).
 }
 }
+=======
+>>>>>>> 4925d03 (Main change: Changed pdr_add_rgba to be a wrapper for pdr_add_rgba_from_spray and pdr_get_rgba_from_pen. Secondary changes: half-way through chaning import_mird function .. unfinished)
 \description{
-Renders the strokes and spray points from one or more pain drawings into
-RGBA numeric arrays. By default, the array is attached as a \verb{$.rgba} element
-to each drawing and the augmented drawing(s) are returned. Set
-\code{rgba_only = TRUE} to return the bare array(s) instead, which is useful
-when assigning into a tibble list-column directly.
+The function handles the rgba matrix calculation in two
+distinctly different ways (as specified by the 'type'
+parameter).
 }
-\examples{
-\dontrun{
-# Single drawing — returns drawing with $.rgba appended
-drawing_with_rgba <- pdr_example_data[[1]] |> pdr_add_rgba()
-grid::grid.newpage()
-grid::grid.raster(drawing_with_rgba$.rgba)
+\details{
+If 'type' is set to spray -- the rgba value of each pixel
+is based on a weighted combination of spray strokes in
+the drawing.
 
-# Multiple drawings at once
-drawings_with_rgba <- pdr_example_data |> pdr_add_rgba()
-
-# Tibble workflow
-
-## Data
-pd <- tibble(pdr_data = pdr_example_data)
-
-## add .rgba to the input list-column
-pd |> dplyr::mutate(pdr_data = pdr_add_rgba(pdr_data))
-
-## add rgba arrays in a separate list-column
-pd |>
-  dplyr::mutate(
-    rgba_arrays = pdr_add_rgba(pdr_data, rgba_only = TRUE)
-    )
-}
-
+If 'type' is set to pen -- each pixel will have an rgba
+value of 0 or 1 indicating whether the pixel in inside or
+outside the polygons defined by each pen stroke.
 }
