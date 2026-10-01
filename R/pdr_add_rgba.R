@@ -64,9 +64,9 @@ pdr_add_rgba <- function(
       rgba_only)
   } else if (type == "pen") {
     # First ensure there is a .polygons element in data
-    names_of_elements <- pdr_example_anatomy$pdr_data |> 
+    names_of_elements <- pdr_list |> 
       purrr::map(\(e) {names(e)})
-    if(any(!".polygons" %in% names_of_elements)) {
+    if(!all(".polygons" %in% names_of_elements)) {
       pdr_list <- pdr_add_polygons(pdr_list, buffer)
     }
     # Then return this
