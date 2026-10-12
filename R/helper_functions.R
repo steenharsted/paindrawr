@@ -485,5 +485,22 @@ check_p_col <- function(p) {
   return(TRUE)
 }
 
+pdr_list2tibble <- function(pdr_list, keep="") {
+  if(!".id" %in% keep) {keep <- c(keep, ".id")}
+  if(!".points" %in% keep) {keep <- c(keep, ".points")}
+  if(!".strokes" %in% keep) {keep <- c(keep, ".strokes")}
 
+  pdr_list <- pdr_list |> purrr::map(\(pdr_drawing) {pdr_drawing |> purrr::keep(names(pdr_drawing) %in% keep)})
+
+  pdr_list |> purrr::map_dfr(\(pdr_drawing) {
+    tib1 <- dplyr::full_join(
+      pdr_drawing$.points, pdr_drawing$.strokes, by = ".index"
+    )
+    tib2 <- pdr_drawing |> 
+      purrr::discard(tibble::is_tibble) |>
+      purrr::discard(is.list) |>
+      tibble::as_tibble()
+    dplyr::bind_cols(tib2, tib1)
+  })
+}
 
