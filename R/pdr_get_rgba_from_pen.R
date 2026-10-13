@@ -1,49 +1,43 @@
-#' Add an RGBA data set from polygons
-#'
-#' @param pdr_list A valid pain drawing list-col -- see `pdr_check_data()` for details
-#' @param invert
-#'
-#' @returns
-#'
-#' @export
-#' @examples
-pdr_get_rgba_from_pen <- function(pdr_list, invert=FALSE) {
+pdr_get_rgba_from_pen <- function(pdr_list) {
+  #### Sanity checks
+    if(!is.list(pdr_list) || 
+     !all(pdr_list |> purrr::map_lgl(~is.list(.x))) ||
+     !all(pdr_list |> purrr::map_lgl(~".points" %in% names(.x)))) {
+        warning("Parameter 'pdr_list' is not a list of lists with a named element '.points'.")
+        stop()
+    }
 
-  one <- 1
-  zero = 0
-  if(invert) {
-    one <- 0
-    zero = 1
-  }
-
-  result <- pdr_list |>
-    purrr::map(\(e) {
-      xmax = e$.width
-      ymax = e$.height
-
-      v <- terra::vect(e$.polygons)
-
-      r <- terra::rast(
-        nrows = ymax,
-        ncols = xmax,
-        xmin = 0,
-        xmax = xmax,
-        ymin = 0,
-        ymax = ymax
-      )
-
-      r <- terra::rasterize(
-        v,
-        r,
-        field = rep(one, length(v))
-      )
-
-      tmp <- terra::as.matrix(r, wide = TRUE)
-      tmp[is.na(tmp)] <- zero
-      storage.mode(tmp) <- "numeric"
-      e$.rgba <- tmp
-      e
-    })
-
-  result # return
+  pdr_list |> purrr::map(\(pdr_drawing) {
+    if(identical(NA, pdr_drawing$.points)) {
+      pdr_drawings.rgba <- NA
+    } else {
+      image_width <- pdr_drawing$.width
+      image_height <- pdr_drawing$.height
+      base_plot <- 
+        dplyr::left_join(pdr_drawing$.points, pdr_drawing$.strokes, by=".index") |>
+          ggplot2::ggplot(ggplot2::aes(
+            x = .x,
+            y = .y,
+            color = .color,
+            alpha = .alpha
+          )) +
+          ggplot2::coord_fixed(
+            xlim = c(0, image_width),
+            ylim = c(0, image_height),
+            expand = FALSE
+          ) +
+          ggplot2::theme_void(base_size = 12) +
+          ggplot2::scale_color_identity() +
+          ggplot2::scale_size_identity() +
+          ggplot2::scale_alpha_identity() +
+          ggplot2::scale_linewidth_identity() +
+          ggplot2::geom_path(
+            ggplot2::aes(
+              group = paste0(.id, "_", .index),
+              linewidth = size_mm + 1
+            ),
+            linetype = 1
+          )
+    }
+  })
 }

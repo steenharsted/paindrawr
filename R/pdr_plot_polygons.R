@@ -1,37 +1,9 @@
-#' Plot polygons
-#'
-#' This function is a simple wrapper for the
-#' `pdr_plot_drawing()` function.
-#'
-#' It substitutes the polygon coordinates for the raw data
-#' coordinates in the pain drawing data list-col, before
-#' plotting.
-#'
-#' For a description of parameters and other details,
-#' see `pdr_plot_drawing()` documentation.
-#'
-#' @export
-#'
-#' @examples
-#' # Plot the raw data from geometry examples
-#' pdr_example_geometry |> pdr_plot_drawing()
-#'
-#' # Plot as polygons -- note closure and buffering
-#' pdr_example_geometry |>
-#'   mutate(pdr_data = pdr_polygonize(pdr_data, buffer=5)) |>
-#'   pdr_plot_polygons()
-#'
-#' # Merge overlapping strokes before plotting polygons
-#' pdr_example_geometry |>
-#'   mutate(pdr_data = pdr_polygonize(pdr_data, buffer=5)) |>
-#'   mutate(pdr_data = pdr_modify_polygons(pdr_data, "merge_overlaps")) |>
-#'   pdr_plot_polygons()
-
 pdr_plot_polygons <- function(
-  .data,
+  pdr_tib,
   pdr_list = pdr_data,
   background_image = NULL,
-  include_id = FALSE
+  include_id = FALSE,
+  multi = "facet"
 ) {
   
   #### From SHFs plot drawing function:
@@ -60,26 +32,35 @@ pdr_plot_polygons <- function(
   }
 
 
-  #### This is temporary -- how to deal with multi-plots?
-  dd <- .data |> dplyr::pull({{pdr_list}})
-  dd <- dd[[1]]
-
+  dd <- pdr_tib |> dplyr::pull({{pdr_list}})
   
-  gp <- ggplot2::ggplot(data.frame(x=c(0, dd$.width), y = c(dd$.height,0)), aes(x, y)) + ggplot2::geom_point()
+  width <- dd |> purrr::map_int(\(pdr_drawing) {pdr_drawing$width}) |> max()
+  height <- dd |> purrr::map_int(\(pdr_drawing) {pdr_drawing$height}) |> max()
 
-  if (!is.null(background_image)) {
-    gp <- gp <- ggplot2::ggplot() + 
+  dd <- dd |> pdr_get_info()
+
+  if(!is.null(background_image)) {
+    gp <- ggplot() +
+      ggplot2::scale_x_continuous(limits = c(0, width), expand = c(0, 0)) +
+      ggplot2::scale_y_continuous(limits = c(0, height), expand = c(0, 0)) +
       ggplot2::annotation_raster(
-        as.raster(background_image),
-        -Inf,
-        Inf,
-        -Inf,
-        Inf
-      )
+      as.raster(background_image),
+      0, width, 0, height
+    )
+  } else {
+    gp <- ggplot() +
+      ggplot2::scale_x_continuous(limits = c(0, width), expand = c(0, 0)) +
+      ggplot2::scale_y_continuous(limits = c(0, height), expand = c(0, 0))
   }
 
-  gp <- gp + ggplot2::geom_sf(data = dd$.polygons, alpha=0.5)
-
-  gp
+  if(identical(NA, dd$.polygons)) {
+    gp 
+  } else {    
+    if(multi=="facet") {
+      gp + ggplot2::geom_sf(data = dd$.polygons, color="black", fill="white", alpha=0.6) + facet_wrap(~dd$.id)
+    } else {
+      gp + ggplot2::geom_sf(data = dd$.polygons, color=forcats::as_factor(dd$.id), fill="white", alpha=0.6)
+    }
+  }
   
 }

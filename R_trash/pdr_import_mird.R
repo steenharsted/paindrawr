@@ -7,9 +7,8 @@
 #' @export
 #' @examples
 pdr_import_mird <- function(
-  csv_file, 
-  paindrawing_col="paindrawing_LBP",
-  ids = "",
+  mird_pd,
+  id = "",
   file = "",
   version = "",
   width = as.integer(450),
@@ -23,39 +22,13 @@ pdr_import_mird <- function(
   point_density = as.integer(1),
   spray_radius = as.integer(1),
   alpha = as.integer(255),
-  color = "#ff0000",
-  pdr_data_col_name = "pdr_data") {
-  #### Sanity checks
-  if(!fs::file_exists(csv_file)) {
-    warning(paste0("The file ",csv_file," does not exist."))
-    return(NA)
-  }
-  if(!fs::file_size(csv_file)==0) {
-    warning(paste0("The file ",csv_file," is empty."))
-    return(NA)
-  }
-
-  content <- read.csv(csv_file)
+  color = "#ff0000") {
   
   #### Sanity check
-  if(!(paindrawing_col %in% names(content))) {
-    stop(paste0("The file ",csv_file," does not include a column ",paindrawing_col, "."))
-  }
-
-  if({{pdr_data_col_name}} %in% names(content)) {
-    warning(paste0("Column ",pdr_data_col_name," in data from file ",
-    csv_file," will be replaced by new pain drawing data list column -- consider specifying a different column name with parameter 'pdr_data_col_name'."))
-  }
-
-  # Re-use (some) data from MIRD in the pdr_list column, IF
-  # they are not specified by user and they are in the mird data
-  if(ids=="" && any("id" %in% names(content))) { ids = content$id}
-  if(file=="") { file = csv_file }
-  if(timestamp=="" && any("date_of_completion" %in% names(content))) { timestamp = content$data_of_completion}
-
+  
   #### Helper functions
     # This function is vectorized and returns a list
-  # Each string in mird_string becomes an element in the list
+  # Each string in mird_pd becomes an element in the list
   # Each string corresponds to a pain drawing which may
   # contain one or more strokes -- if no strokes: NA
 
@@ -125,13 +98,12 @@ pdr_import_mird <- function(
   # .file, ..etc) -- most are parameters passed when calling
   # this function (e.g. .width and .height), but some are 
   # replaced by values from the MIRD data if the parameter 
-  # is not specified (ids, file and timestamp), and lastly 
+  # is not specified (id, file and timestamp), and lastly 
   # the .points and .strokes are calculated from the MIRD 
   # pain drawing string strings
-  pdr_data <- content |> 
-    dplyr::pull({{ paindrawing_col}}) |>
-    purrr::map(\(a_string) {
-      points <- convert_mird_to_tibble(a_string)
+  pdr_data <- mird_pd |> 
+    purrr::map(\(a_mird_pd) {
+      points <- convert_mird_to_tibble(a_mird_pd) # tibble
       strokes <- convert_points_to_strokes(
         p = points, 
         tool = tool,
@@ -143,7 +115,7 @@ pdr_import_mird <- function(
         color = color,
       )
       list(        
-        .id = ids,
+        .id = id,
         .file = file,
         .version = version,
         .width = width,
@@ -157,6 +129,5 @@ pdr_import_mird <- function(
     })
   
   # Return this
-  content |>
-    dplyr::mutate({{pdr_data_new_col = pdr_data}})
+  pdr_data
 }

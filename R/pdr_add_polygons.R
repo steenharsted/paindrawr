@@ -4,7 +4,7 @@
 #'
 #' @param pdr_list A valid pain drawing list-col -- see `pdr_check_data()` for details
 #'
-#' @param buffer A single integer value > 0 and < ½ the smaller of the two canvas dimension, specifying the distance of polygon buffering. If set to -1 (default), the buffer distance will be set according to the tool width  for each stroke as defined in 'pdr'. Note, that buffering may enlarge polygons beyond the canvas limits and will be trimmed accordingly.
+#' @param buffer A single integer value > 0 and < ½ the smaller of the two canvas dimension, specifying the distance of polygon buffering. If set to -1 (default), the buffer distance will be set according to (half) the tool width for each stroke as defined in 'pdr'. Note, that buffering may enlarge polygons beyond the canvas limits and will be trimmed accordingly.
 #'
 #' @returns A modified version of the input parameter `pdr` with a new `.polygons` element added to each pain drawing. The new .polygon element is a _simple feature_ geometric object (POLYGON) -- see sf package for details.
 #'
@@ -32,6 +32,8 @@ pdr_add_polygons <- function(pdr_list, buffer=-1) {
 
   # Helper functions
   remove_consecutive_duplicates <- function(stroke_points) {
+    # This function removes consecutive duplicate coordinates
+    # from the raw .points data
     if(identical(NA, stroke_points) || is.null(stroke_points)) {
       stroke_points
     } else {
@@ -41,6 +43,8 @@ pdr_add_polygons <- function(pdr_list, buffer=-1) {
   }
 
   clip2canvas <- function(stroke_points, xmax, ymax) {
+    # This function is used torestrict any POINT and 
+    # LINESEGMENT buffering to stay within the canvas borders
     stroke_points |>
       dplyr::mutate(.x = ifelse(.x<0, 0, .x)) |>
       dplyr::mutate(.y = ifelse(.y<0, 0, .y)) |>
@@ -49,16 +53,17 @@ pdr_add_polygons <- function(pdr_list, buffer=-1) {
   }
 
   buff_if_point <- function(stroke_points, buffer=1, xmax, ymax) {
+    # POINT is not a vlid POLYGON -- thus force buffering
     # stroke_points must be tibble of .index, .x and .y
     # This function assumes no consecutive duplicate rows
     # If buffer is 0 - return empty tibble
 
     if(identical(NA, stroke_points) || is.null(stroke_points)) {
-      stroke_points # return NA or NULL
+      stroke_points # no data : return NA or NULL
     } else if(nrow(stroke_points) > 1) {
-      stroke_points # return .. it is not a point
+      stroke_points # data is not a point : return data
     } else if(buffer == 0) {
-      NULL
+      NULL # user wants to remove points, not buffer
     } else { # ..return buffered point
       x0 <- stroke_points[[1,'.x']] # pull coordinate values
       y0 <- stroke_points[[1,'.y']] # and create new tibble
@@ -71,11 +76,12 @@ pdr_add_polygons <- function(pdr_list, buffer=-1) {
       # We need to reconsider clip2canvas
       # ..should we 'intersect' with canvas bounding box instead?
       # Are there situations where clip2canvas produces new
-      # polygons witth no area?
+      # polygons with no area?
     }
   }
 
   close_polygon <- function(stroke_points) {
+    # Valid POLYGON must be closed - fix this in raw .points
     if(identical(stroke_points, NA) ||
       is.null(stroke_points) ||
       nrow(stroke_points)==0) {
@@ -91,17 +97,22 @@ pdr_add_polygons <- function(pdr_list, buffer=-1) {
     }
   }
 
-  cast_all_to_polygon <- function(sf_obj, buffer=10) {
-    type = as.character(sf::st_geometry_type(sf_obj))
-
-    if(type == "POLYGON") {
-      return(sf_obj)
+  cast_all_to_outer_polygon <- function(sf_obj, buffer=10) {
+    # This function is necessary to handle complex strokes
+    # with self-intersections etc -- we aim to coerce each
+    # stroke into a simple valid POLYGON
+    if(is.na(sf_obj) || is.null(sf_obj)) {
+      return(NA)
     }
-    if (type == "LINESTRING") {
+    if(inherits(sf_obj, "POLYGON")) {
+      sf::st_polygon(list(sf_obj[[1]]))
+    }
+    if(inherits(sf_obj, "LINESTRING")) {
       return(sf::st_buffer(sf_obj, buffer, nQuadSegs = 2))
     }
-    if (type == "MULTIPOLYGON") {
-      return(sf_obj |> sf::st_buffer(dist=1) |> sf::st_union() |> sf::st_make_valid() |> sf::st_cast("POLYGON"))
+    if(inherits(sf_obj, "MULTIPOLYGON")) {
+      sf_obj <- sf_obj |> sf::st_buffer(dist=1) |> sf::st_union() |> sf::st_make_valid() |> sf::st_cast("POLYGON")
+      return(sf_obj)
     }
   }
 
@@ -113,34 +124,39 @@ pdr_add_polygons <- function(pdr_list, buffer=-1) {
   # Look at each pain drawing in turn, then at each stroke
   # in turn
   pdr_list <- pdr_list |> purrr::map(\(a_drawing) {
-    tmp <- a_drawing$.points
-    if (buffer == -1) {
-      use_buffer = a_drawing$.strokes$.tool_width * 0.5
+    if(identical(NA, a_drawing$.points) || is.null(a_drawing$.points) || nrow(a_drawing$.points)==0) {
+      a_drawing$.polygons <- NA 
+      a_drawing # map return
     } else {
-      use_buffer = buffer
+      tmp <- a_drawing$.points
+      if (buffer == -1) {
+        use_buffer = a_drawing$.strokes$.tool_width * 0.5
+      } else {
+        use_buffer = buffer
+      }
+
+      # Looking at a single pain drawing:
+      # First group and split by stroke index, to make a list where each element is a stroke. Then remove any sequential duplicates, buffer any points, close each as a polygon, then convert to matrix, remove any empty strokes (shouldn't happen actually) and finally convert to an sf::sfc_polygon object..
+      tmp <- tmp |>
+        dplyr::group_by(.index) |>
+        dplyr::group_split(.keep=FALSE) |>
+        purrr::map(\(e) remove_consecutive_duplicates(e)) |>
+        purrr::map(\(e) buff_if_point(e, 1, a_drawing$.width, a_drawing$.height)) |>
+        purrr::discard(\(e) is.null(e)) |>
+        purrr::map(\(e) close_polygon(e)) |>
+        purrr::map(\(e) as.matrix(e, ncol=2,byrow=TRUE)) |>
+        purrr::keep(\(e) nrow(e)>1) |>
+        purrr::map(\(e) sf::st_polygon(list(e))) |>
+        purrr::map(\(e) sf::st_make_valid(e))
+      # cast everything to POLYGON
+      # tmp <- purrr::map2(tmp, use_buffer, \(i_tmp, i_use_buffer) sf::st_buffer(i_tmp, i_use_buffer))
+      tmp <- purrr::map2(.x=tmp, .y=use_buffer, ~cast_all_to_outer_polygon(.x, .y))
+      tmp <- tmp |> sf::st_sfc()
+
+      if(length(tmp)==0) { tmp <- NA }
+      a_drawing$.polygons <- tmp
+      a_drawing # map-return
     }
-
-    # Looking at a single pain drawing:
-    # First group and split by stroke index, to make a list where each element is a stroke. Then remove any sequential duplicates, buffer any points, close each as a polygon, then convert to matrix, remove any empty strokes (shouldn't happen actually) and finally convert to an sf::sfc_polygon object..
-    tmp <- tmp |>
-      dplyr::group_by(.index) |>
-      dplyr::group_split(.keep=FALSE) |>
-      purrr::map(~remove_consecutive_duplicates(.x)) |>
-      purrr::map(~buff_if_point(.x, 1, a_drawing$.width, a_drawing$.height)) |>
-      purrr::discard(~is.null(.x)) |>
-      purrr::map(~close_polygon(.x)) |>
-      purrr::map(~as.matrix(.x, ncol=2,byrow=TRUE)) |>
-      purrr::keep(~nrow(.x)>1) |>
-      purrr::map(~sf::st_polygon(list(.x))) |>
-      purrr::map(~sf::st_make_valid(.x))
-    # ..then buffer with .tool_width or user provided constant and cast everything to POLYGON
-    tmp <- purrr::map2(.x=tmp, .y=use_buffer, ~ sf::st_buffer(.x, .y))
-    tmp <- purrr::map2(.x=tmp, .y=use_buffer, ~cast_all_to_polygon(.x, .y))
-    tmp <- tmp |> sf::st_sfc()
-
-    if(length(tmp)==0) { tmp <- NA }
-    a_drawing$.polygons <- tmp
-    a_drawing # map-return
   })
 
   return(pdr_list)

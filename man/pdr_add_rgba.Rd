@@ -6,64 +6,15 @@
 \usage{
 pdr_add_rgba(
   pdr_list,
-  method = "memory",
-  clean_up = TRUE,
-  dpi = 96,
-  rgba_only = FALSE,
   buffer = 5,
   invert = FALSE,
-  type = "auto"
+  type_override = NA,
+  method = "memory",
+  dpi = 96,
+  clean_up = TRUE,
+  rgba_only = TRUE
 )
 }
-<<<<<<< HEAD
-\arguments{
-\item{paindrawr_data}{A pain drawing in one of two forms:
-\itemize{
-\item A single named list as produced by \code{\link[=pdr_import_json]{pdr_import_json()}} or extracted
-from a list-column (e.g. \code{pd$pdr_data[[1]]}).
-\item A list-of-named-lists containing multiple drawings (e.g.
-\code{pdr_example_data}).
-}}
-
-\item{method}{Character. Controls the rasterization back-end. Either:
-\itemize{
-\item \code{"memory"} (default) — renders in-memory via \code{\link[ragg:agg_capture]{ragg::agg_capture()}},
-no temp file is written to disk.
-\item \code{"file"} — saves to a temporary PNG via \code{\link[ggplot2:ggsave]{ggplot2::ggsave()}} and reads
-it back with \code{\link[png:readPNG]{png::readPNG()}}. Use this if the \code{"memory"} path is slow.
-}}
-
-\item{clean_up}{Logical. If \code{TRUE} (default), the temporary PNG file is
-deleted on exit. Only relevant when \code{method = "file"}. Set to \code{FALSE} to
-retain the file for debugging.}
-
-\item{dpi}{Resolution used during rasterization. Defaults to \code{96}. Increase for print-quality output (e.g. \code{300}), noting this
-does not affect the canvas dimensions, only output pixel density.}
-}
-\value{
-A named list per drawing (or a list of such lists when multiple
-drawings are supplied):
-\itemize{
-\item \code{rgba_only = FALSE} (default): the input drawing with \verb{$.rgba} appended.
-\item \code{rgba_only = TRUE}: a named list with a single \verb{$.rgba} element.
-}
-
-The \verb{$.rgba} element is a numeric array of dimensions
-\verb{height × width × 4} (RGBA channels, values in [0, 1]). Transparent
-pixels are set to black (\code{RGB = 0}).
-
-\itemize{
-\item \code{rgba_only = FALSE} (default): the input drawing (named list) with
-\verb{$.rgba} appended, or a list of such augmented drawings when multiple
-drawings are supplied.
-\item \code{rgba_only = TRUE}: a numeric array of dimensions
-\verb{height × width × 4} (RGBA channels, values in [0, 1]), or a list of
-such arrays when multiple drawings are supplied. Transparent pixels are
-set to black (\code{RGB = 0}).
-}
-}
-=======
->>>>>>> 4925d03 (Main change: Changed pdr_add_rgba to be a wrapper for pdr_add_rgba_from_spray and pdr_get_rgba_from_pen. Secondary changes: half-way through chaning import_mird function .. unfinished)
 \description{
 The function handles the rgba matrix calculation in two
 distinctly different ways (as specified by the 'type'

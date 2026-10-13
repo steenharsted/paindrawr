@@ -38,6 +38,7 @@ assign(var_name, pdr_xa)
 do.call(save, list(var_name, file = "data/pdr_example_anatomy.rda"))
 
 # ---- GENERATE SOME GEOMTRIC EXAMPLE CASES ----
+# It's easier to write as MIRD format and convert :-)
 pdr_example_geometry <- tibble::tibble(
   id = "no_area",
   paindrawing_LBP = "(,100,100,),(,150,150,175,175,)"
@@ -71,6 +72,10 @@ pdr_example_geometry <- tibble::tibble(
     paindrawing_LBP = "(,130,50,130,100,180,100,180,50,),(,100,100,100,130,130,130,130,100,),(,100,130,100,160,130,160,130,130,),(,100,170,100,200,130,200,130,170,)"
   )) |>
   dplyr::bind_rows(tibble::tibble(
+    id = "complex_fig_8",
+    paindrawing_LBP = "(,50,100,50,50,100,50,150,100,200,100,200,50,150,50,100,100,50,100,)"
+  )) |>
+  dplyr::bind_rows(tibble::tibble(
     id = "empty",
     paindrawing_LBP = "(,,)"
   ))
@@ -81,26 +86,24 @@ pdr_example_geometry <- tibble::tibble(
 
   # THIS ^ IS NO GOOD - IT STORES THE VARIABLE pdr_example_geometry ... fix it if we keep pdr_example_zealand in package, otherwise delete it
 
-n <- nrow(pdr_example_geometry)
-pdr_example_geometry <- pdr_example_geometry |>
-  dplyr::mutate(
-    pdr_data = pdr_import_mird(
-      paindrawing_LBP,
-      id,
-      file = "data/pdr_example_data.csv",
-      version = "2",
-      width = as.integer(450), # Try to add different canvas dimensions?
-      height = as.integer(500),
-      units = "px",
-      timestamp = as.character(Sys.time()),
-      app = "paindrawr package",
-      tool = "pen",
-      draw_input_type = "mouse",
-      tool_width = as.integer(1),
-      color = "#FF0000",
-      point_density = as.integer(1),
-      spray_radius = as.integer(0),
-      alpha = as.integer(255)
+pdr_example_geometry <- pdr_example_geometry |> 
+  mutate(pdr_data = pdr_mird2pdr(
+    paindrawing_LBP, 
+    id,
+    file = "data/pdr_example_data.csv",
+    version = "2",
+    width = as.integer(450), # Try to add different canvas dimensions?
+    height = as.integer(500),
+    units = "px",
+    timestamp = as.character(Sys.time()),
+    app = "paindrawr package",
+    tool = "pen",
+    draw_input_type = "mouse",
+    tool_width = as.integer(1),
+    color = "#FF0000",
+    point_density = as.integer(1),
+    spray_radius = as.integer(0),
+    alpha = as.integer(255)
     )
   ) |>
   dplyr::select(-paindrawing_LBP)
@@ -110,14 +113,14 @@ save(
   file = "data/pdr_example_geometry.rda"
 )
 
-# We could probably replace all of this by a call to the pdr_import_mird function
 
+# Some actual real data
 pdr_example_data <- read.csv("data-raw/demo_data.csv", ) |>
   dplyr::select(-X)
-n <- nrow(pdr_example_data)
+
 pdr_example_data <- pdr_example_data |>
   dplyr::mutate(
-    pdr_data = pdr_import_mird(
+    pdr_data = pdr_mird2pdr(
       paindrawing_LBP,
       id,
       file = "data/pdr_example_data.csv",
@@ -156,7 +159,7 @@ pdr_example_data <- pdr_example_data |>
     pain = ifelse(pain > 10, 10, pain),
     pain = ifelse(pain < 0, 0, pain)
   ) |>
-  mutate(pdr_data = pdr_modify(pdr_data, ops = "flipy")) |>
+  mutate(pdr_data = pdr_modify_points(pdr_data, ops = "flipy")) |>
   tibble::as_tibble()
 
 save(

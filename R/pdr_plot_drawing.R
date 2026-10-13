@@ -248,6 +248,7 @@ pdr_plot_drawing <- function(
           linewidth = size_mm + 1
         ),
         linetype = 1,
+        #linewidth = 0.5,
         color = "black",
         fill = "black",
         alpha = 1

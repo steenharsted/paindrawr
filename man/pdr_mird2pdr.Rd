@@ -2,131 +2,89 @@
 % Please edit documentation in R/pdr_mird2pdr.R
 \name{pdr_mird2pdr}
 \alias{pdr_mird2pdr}
-\title{Convert MiRD pain drawing strings to coordinate data}
+\title{Convert MIRD pain drawings to paindrawr}
 \usage{
 pdr_mird2pdr(
-  mird_string = "mird_string",
-  ids = "id",
+  mird_pd,
+  id = 1:length(mird_pd),
   file = "",
   version = "",
   width = as.integer(450),
   height = as.integer(500),
   units = "px",
-  timestamp = as.character(Sys.time()),
+  timestamp = "",
   app = "",
   tool = "pen",
   draw_input_type = "mouse",
   tool_width = as.integer(1),
   point_density = as.integer(1),
   spray_radius = as.integer(1),
-  alpha = as.integer(255),
-  color = "#ff0000"
+  alpha = as.numeric(1),
+  color = "#ff0000",
+  flipy = TRUE
 )
 }
 \arguments{
-\item{mird_string}{Character vector of MiRD-encoded pain drawing strings.}
+\item{mird_pd}{A vector of MIRD pain drawings}
 
-\item{ids}{A list or vector of unique strings which must be of same length as mird_string.}
+\item{id}{A unique id for each drawing (default: 1:length(mird_pd))}
 
-\item{file}{A list or vector (strings) which is empty, of length 1 or of same length as mird_string}
+\item{file}{Defaults to ""}
 
-\item{version}{A list or vector (strings) which is empty, of length 1 or of same length as mird_string}
+\item{version}{Defaults to ""}
 
-\item{width}{An list or vector (integers) which is empty, of length 1 or of same length as mird_string}
+\item{width}{of canvas -- Defaults to 450}
 
-\item{height}{An list or vector (integers) which is empty, of length 1 or of same length as mird_string}
+\item{height}{of canvas -- Defaults to 500}
 
-\item{units}{A list or vector (strings) which is empty, of length 1 or of same length as mird_string}
+\item{units}{Defaults to "px"}
 
-\item{timestamp}{A list or vector (strings) which is empty, of length 1 or of same length as mird_string}
+\item{timestamp}{Defaults to ""}
 
-\item{app}{A list or vector (strings) which is empty, of length 1 or of same length as mird_string}
+\item{app}{Defaults to ""}
 
-\item{tool}{A list or vector (strings) which is empty, of length 1 or of same length as mird_string. If
-tool is a list of the same length as mird_string, each element should be a list or vector
-which is of length 1 or same length as the number of strokes in that mird string.}
+\item{tool}{Defaults to "pen"}
 
-\item{draw_input_type}{A list or vector (strings) which is empty, of length 1 or of same length as mird_string. If
-dar_input_type is a list of the same length as mird_string, each element should be a list or vector
-which is of length 1 or same length as the number of strokes in that mird string.}
+\item{draw_input_type}{Defaults to "mouse"}
 
-\item{tool_width}{A list or vector (integers) which is empty, of length 1 or of same length as mird_string. If
-tool_width is a list of the same length as mird_string, each element should be a list or vector
-which is of length 1 or same length as the number of strokes in that mird string.}
+\item{tool_width}{Defaults to "1"}
 
-\item{point_density}{A list or vector (integers) which is empty, of length 1 or of same length as mird_string. If
-point_density is a list of the same length as mird_string, each element should be a list or vector
-which is of length 1 or same length as the number of strokes in that mird string.}
+\item{point_density}{Defaults to "1"}
 
-\item{spray_radius}{A list or vector (integers) which is empty, of length 1 or of same length as mird_string. If
-spray_radius is a list of the same length as mird_string, each element should be a list or vector
-which is of length 1 or same length as the number of strokes in that mird string.}
+\item{spray_radius}{Defaults to "1"}
 
-\item{alpha}{A list or vector (integers) which is empty, of length 1 or of same length as mird_string. If
-alpha is a list of the same length as mird_string, each element should be a list or vector
-which is of length 1 or same length as the number of strokes in that mird string.}
+\item{alpha}{Defaults to "1.0"}
 
-\item{color}{A list or vector (strings) which is empty, of length 1 or of same length as mird_string. If
-color is a list of the same length as mird_string, each element should be a list or vector
-which is of length 1 or same length as the number of strokes in that mird string.}
+\item{color}{Defaults to "#ff0000"}
 }
 \value{
-A list of lists adhering to the format of a pain drawing
-list-col. Any of the other data stored in a pain drawing
-lost-col can be included as parameters -- sush as 'file',
-'version', etc. This also applies to parameters stored in
-the '.strokes. element, such as 'tool', 'alpha', etc.
+A valid pain drawing data list column
 }
 \description{
-Parses pain drawing data stored in the legacy \emph{MiRD} string format and
-converts it into a list-column of stroke coordinate tibbles compatible with
-the \code{pdr_data} column of a pain drawing data structure (see \code{\link[=pdr_check_data]{pdr_check_data()}}).
+MIRD exports pain drawings in a custom format like:
+(,1,2,5,4,),(,8,8,7,7,)
+which corresponds to:\tabular{lll}{
+   x \tab y \tab index \cr
+   1 \tab 2 \tab 1 \cr
+   5 \tab 4 \tab 1 \cr
+   8 \tab 8 \tab 2 \cr
+   7 \tab 7 \tab 2 \cr
+}
 }
 \details{
-Each input string represents one pain drawing and is converted into a tibble
-with columns \code{i}, \code{x}, and \code{y}, where \code{i} indexes individual strokes.
+This functions takes a vector of length n of such MIRD
+strings and converts it into a list of length n of valid
+paindrawr data list col.
 
-\strong{MiRD string format}
+The intended use case, is a data frame (tibble) of MIRD
+data including pain drawing data. A new paindrawr data
+list cloumn can be generate with a simple mutate() call.
 
-A MiRD pain drawing is encoded as a character string containing one or more
-strokes. Each stroke is represented as a sequence of x/y coordinate pairs:
-\itemize{
-\item Coordinates are stored as a flat sequence: \verb{(,x1,y1,x2,y2,...)}
-\item Multiple strokes are concatenated as:
-\verb{(,x1,y1,...,),(,x1,y1,...)}
-}
-
-This function:
-\itemize{
-\item Splits the string into individual strokes
-\item Converts coordinate sequences into \verb{(x, y)} pairs
-\item Assigns a stroke index \code{i} to each group of coordinates
-}
-
-\strong{Coordinate system}
-
-MiRD uses a coordinate system with origin in the upper-left corner.
-so it may be necessary to 'flip' the y axis -- see pdr_modify()
-
-\strong{Missing or invalid input}
-\itemize{
-\item \code{NA} or malformed strings return \code{NA} in place of .points and .strokes
-\item No validation of coordinate consistency (e.g. odd-length sequences) is performed
-}
+Each of the parameters supplied must be either of the
+same length as MIRD pain drawing vector or of length 1,
+in which case it will be repeated.
 }
 \examples{
-mird_tibble <- tibble::tibble(
-  ids = letters[1:4],
-  mird_string = c(
-    NA,
-    "(,293,201,300,202,303,202,)",
-    "(,198,104,206,103,),(,203,100,209,108,)",
-    "(,335,215,336,215,),(,331,211,331,212,331,213,331,214,),(,341,263,),(,341,272,),(,341,287,)"
-    )
-)
-
-# Convert to list-column of coordinate tibbles
-mird_tibble |> mutate(pdr_data =  pdr_mird2pdr(mird_string, ids, app = "my_app", file = c("file1", "file2", "file3", "file4")))
-
+readr::read_csv("data-raw/short_demo_data_with_NA.csv") |> mutate(pdr_data = pdr_mird2pdr(paindrawing_LBP, id=id))
 
 }

@@ -6,8 +6,7 @@
 #' the same length. It is thus suited for `mutate()` operations.
 #' 
 #' 
-#' @param .data A valid pain drawing tibble
-#' @param paindrawr_data The name of the pain drawing list-col in .data
+#' @param pdr_list The name of the pain drawing list-col in .data
 #' @param ops A string vector of operations to perform. See below:
 #' 
 #' Parameter 'ops' can be one of the following, which will be performed the listd order:
@@ -34,7 +33,7 @@
 #'   pdr_plot_polygons(pdr_data)
  
 
-pdr_modify_polygons <- function(paindrawr_data, ops=NULL, template=NULL, polygons_only=FALSE) {
+pdr_modify_polygons <- function(pdr_list, ops=NULL, template=NULL, polygons_only=FALSE) {
   if(!is.null(template) && length(template)!=1 && length(template)!=length(paindrawr_data)) {
     warning("Parameter 'template' should be a list of length 1 or the same as paindrawr_data")
     return(NA)
@@ -79,7 +78,7 @@ pdr_modify_polygons <- function(paindrawr_data, ops=NULL, template=NULL, polygon
 
   ########## End ops functions ########## 
   if("make_valid" %in% ops) {
-    paindrawr_data <- paindrawr_data |>
+    pdr_list <- pdr_list |>
       purrr::map_depth(.depth=1, \(pd) {
         pd <- pd |> 
           purrr::imap(\(element,indx) {
@@ -96,7 +95,7 @@ pdr_modify_polygons <- function(paindrawr_data, ops=NULL, template=NULL, polygon
   }
 
   if("reduce_to_chull" %in% ops) {
-    paindrawr_data <- paindrawr_data |>
+    pdr_list <- pdr_list |>
       purrr::map_depth(.depth=1, \(pd) {
         pd <- pd |> 
           purrr::imap(\(element,indx) {
@@ -112,12 +111,17 @@ pdr_modify_polygons <- function(paindrawr_data, ops=NULL, template=NULL, polygon
   }
 
   if("merge_overlaps" %in% ops) {
-    paindrawr_data <- paindrawr_data |>
-      purrr::map(\(e) {
-        e$.polygons <- e$.polygons |>
-          sf::st_union() |>
-          sf::st_cast("POLYGON")
-        e
+    pdr_list <- pdr_list |>
+      purrr::map(\(pdr_drawing) {
+        if(identical(NA, pdr_drawing$.polygons) || 
+           is.null(pdr_drawing$.polygons)) {
+            pdr_drawing$.polygons <- NA
+        } else {
+            pdr_drawing$.polygons <- pdr_drawing$.polygons |> 
+              sf::st_union() |> 
+              sf::st_cast("POLYGON")
+        }
+        pdr_drawing
       })
   }
 
@@ -125,7 +129,7 @@ pdr_modify_polygons <- function(paindrawr_data, ops=NULL, template=NULL, polygon
     # print(str(p$.polygons))
     # print("---")
     # print(str(template))
-    paindrawr_data <- purrr::map2(paindrawr_data, template, \(p,t) {
+    pdr_list <- purrr::map2(pdr_list, template, \(p,t) {
         p$.polygons <- 
           sf::st_intersection(p$.polygons, t) |>
           sf::st_cast("POLYGON")
@@ -134,8 +138,8 @@ pdr_modify_polygons <- function(paindrawr_data, ops=NULL, template=NULL, polygon
   }
 
   if(polygons_only) {
-    paindrawr_data |> purrr::map(".polygons")
+    pdr_list |> purrr::map(".polygons")
   } else {
-    paindrawr_data # return this
+    pdr_list # return this
   }
 }

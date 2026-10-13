@@ -9,7 +9,7 @@ pdr_add_polygons(pdr_list, buffer = -1)
 \arguments{
 \item{pdr_list}{A valid pain drawing list-col -- see \code{pdr_check_data()} for details}
 
-\item{buffer}{A single integer value > 0 and < ½ the smaller of the two canvas dimension, specifying the distance of polygon buffering. If set to -1 (default), the buffer distance will be set according to the tool width  for each stroke as defined in 'pdr'. Note, that buffering may enlarge polygons beyond the canvas limits and will be trimmed accordingly.}
+\item{buffer}{A single integer value > 0 and < ½ the smaller of the two canvas dimension, specifying the distance of polygon buffering. If set to -1 (default), the buffer distance will be set according to (half) the tool width for each stroke as defined in 'pdr'. Note, that buffering may enlarge polygons beyond the canvas limits and will be trimmed accordingly.}
 }
 \value{
 A modified version of the input parameter \code{pdr} with a new \code{.polygons} element added to each pain drawing. The new .polygon element is a \emph{simple feature} geometric object (POLYGON) -- see sf package for details.

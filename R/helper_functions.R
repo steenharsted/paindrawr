@@ -485,15 +485,20 @@ check_p_col <- function(p) {
   return(TRUE)
 }
 
-pdr_list2tibble <- function(pdr_list, keep="") {
-  if(!".id" %in% keep) {keep <- c(keep, ".id")}
-  if(!".points" %in% keep) {keep <- c(keep, ".points")}
-  if(!".strokes" %in% keep) {keep <- c(keep, ".strokes")}
+pdrlist2tibble <- function(pdr_list, keep="") {
+  # This function takes a valid pdr list element and coerces
+  # it into a tibble suited for e.g. ggplot calls
 
+  # Handle cases where input is a single pain drawing
+  if(pdr_match(pdr_list, check_only=TRUE, mode="superficial") == "pdr_drawing") {pdr_list <- list(pdr_list)}
+
+  # Reduce data to the columns/elements the user wants to keep
+  # but always keep .id, .width, .height, .points and .strokes
+  keep <- unique(c(keep, c(".id", ".points", ".strokes", ".width", ".height")))
   pdr_list <- pdr_list |> purrr::map(\(pdr_drawing) {pdr_drawing |> purrr::keep(names(pdr_drawing) %in% keep)})
 
   pdr_list |> purrr::map_dfr(\(pdr_drawing) {
-    tib1 <- dplyr::full_join(
+    tib1 <- dplyr::left_join( 
       pdr_drawing$.points, pdr_drawing$.strokes, by = ".index"
     )
     tib2 <- pdr_drawing |> 

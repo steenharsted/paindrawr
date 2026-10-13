@@ -5,14 +5,14 @@
 \title{Modify pain drawing elements}
 \usage{
 pdr_modify_polygons(
-  paindrawr_data,
+  pdr_list,
   ops = NULL,
   template = NULL,
   polygons_only = FALSE
 )
 }
 \arguments{
-\item{paindrawr_data}{The name of the pain drawing list-col in .data}
+\item{pdr_list}{The name of the pain drawing list-col in .data}
 
 \item{ops}{A string vector of operations to perform. See below:
 
@@ -22,8 +22,6 @@ Parameter 'ops' can be one of the following, which will be performed the listd o
 \item "reduce_to_chull" Reduces polygons to their convex hull -- see \code{sf::st_convex_hull()}
 \item "merge_overlaps" Merges (union) overlapping polygons into one -- see \code{sf::st_union()}
 }}
-
-\item{.data}{A valid pain drawing tibble}
 }
 \value{
 A valid pain drawing tibble

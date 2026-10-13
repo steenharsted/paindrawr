@@ -7,21 +7,20 @@
 #' the same length. It is thus suited for `mutate()` operations.
 #' 
 #' 
-#' @param .data A valid pain drawing tibble
-#' @param paindrawr_data The pain drawing data list-col in .data (defaults to pdr_data) 
+#' @param pdr_list The pain drawing data list-col in .data (defaults to pdr_data) 
 #' @param ops A string specifying operation. See below:
 #' 
 #' The parameter `ops` can take one of the following values:
 #' * "flipy" -- flips the y-coordinates which can be useful to re-locate origo to/from top/bottom of canvas.
 #'
-#' @returns A valid pain drawing tibble
+#' @returns A valid pain drawing data list column
 #'
 #' @export
 #' @examples
 #' # Flip the y-coordinates and store in a new pain drawing list-col
 #' pdr_example_data |> mutate(pdr_data_flipped = pdr_mutate(pdr_data, "flipy"))
 
-pdr_modify <- function(paindrawr_data, ops="flipy") {
+pdr_modify_points <- function(pdr_list, ops="flipy") {
 
   ########## Sanity checks ##########
   accepted_ops <- c("flipy")
@@ -48,20 +47,21 @@ pdr_modify <- function(paindrawr_data, ops="flipy") {
       # with origo at the _lower_ left whereas computer screens
       # typically place the origo in the _upper_ left
 
-      pdr <- pdr |> 
+      pdr |> 
         purrr::map(\(e) {
-          e$.points$.y <- e$.height - e$.points$.y
-          e
+          if(!identical(NA, e$.points) && !is.null(e$.points)) {
+            e$.points$.y <- e$.height - e$.points$.y
+          }
+          e # map return
         })
-      return(pdr)
   }
 
   ########## End ops functions ########## 
 
 
   if("flipy" %in% ops) {
-    paindrawr_data <- flipy(paindrawr_data)
+    pdr_list <- flipy(pdr_list)
   }
 
-  return(paindrawr_data)
+  return(pdr_list)
 }
