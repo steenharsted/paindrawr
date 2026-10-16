@@ -32,6 +32,13 @@ for (c in fs::dir_ls("data-raw/regions_of_full_body_template/")) {
 pdr_xa <- tibble::tibble(pdr_data = pdr_xa) |>
   dplyr::mutate(id = pdr_get_info(pdr_data, '.id'))
 
+# pdr_xa is now a valid pdr_tibble `pdr_xa |> pdr_match("eval")`
+# Lets add .rgba and make a silhouette template as well
+pdr_xa <- pdr_xa |> 
+  mutate(pdr_data = pdr_add_rgba(pdr_data)) |>
+  mutate(pdr_data = pdr_add_stencil(pdr_data, threshold=0.5)) |>
+  mutate(stencil = pdr_get_info(pdr_data, ".stencil")) 
+
 # This is a bit quirky ... but necessary to ensure the variable is named correctly in rda:
 var_name <- "pdr_example_anatomy"
 assign(var_name, pdr_xa)
@@ -92,8 +99,8 @@ pdr_example_geometry <- pdr_example_geometry |>
     id,
     file = "data/pdr_example_data.csv",
     version = "2",
-    width = as.integer(450), # Try to add different canvas dimensions?
-    height = as.integer(500),
+    width = as.integer(356), 
+    height = as.integer(300),
     units = "px",
     timestamp = as.character(Sys.time()),
     app = "paindrawr package",
@@ -142,16 +149,16 @@ pdr_example_data <- pdr_example_data |>
   dplyr::select(-paindrawing_LBP) |>
   dplyr::mutate(
     sex = factor(
-      sample(0:1, n, replace = TRUE),
+      sample(0:1, n(), replace = TRUE),
       levels = c(0, 1),
       labels = c("Female", "Male")
     ),
-    age = round(rnorm(n, 45, 20), 1),
+    age = round(rnorm(n(), 45, 20), 1),
     duration = factor(
-      sample(c("Acute", "Subacute", "Chronic"), n, replace = TRUE),
+      sample(c("Acute", "Subacute", "Chronic"), n(), replace = TRUE),
       levels = c("Acute", "Subacute", "Chronic")
     ),
-    pain = as.integer(round(rnorm(n, 5, 4)))
+    pain = as.integer(round(rnorm(n(), 5, 4)))
   ) |>
   dplyr::mutate(
     age = ifelse(age > 98, 98, age),
