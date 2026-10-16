@@ -87,7 +87,9 @@ pdr_match <- function(input, action="eval", as="", mode="validate") {
 
     if(action=="eval") {
       if(num_pdr_lists > 0) {
-        return(ifelse(as=="pdr_tibble", TRUE, "pdr_tibble"))
+        if(as=="pdr_tibble") {return(TRUE)}
+        else if(as=="") {return("pdr_tibble")}
+        else {return(FALSE)}
       } else {
         return("invalid")
       } 
@@ -112,7 +114,9 @@ pdr_match <- function(input, action="eval", as="", mode="validate") {
     }))) {
       # When all elements are pdr_drawings:
       if(action=="eval") {
-        return(ifelse(as=="pdr_list", TRUE, "pdr_list") )
+        if(as=="pdr_list") {return(TRUE)}
+        else if(as=="") {return("pdr_list")}
+        else {return(FALSE)}
       } else {  # action=="coerce"
         if(as == "pdr_tibble") {return(
           tibble::tibble(id=input |> purrr::map_chr(".id"), pdr_data=input)
@@ -148,11 +152,9 @@ pdr_match <- function(input, action="eval", as="", mode="validate") {
    ) {
     # It's a valid pdr_drawing, so do this:
     if(action=="eval") {
-      if(as == "pdr_drawing") {
-        return(TRUE)
-      } else {
-        return("pdr_drawing")
-      }
+      if(as=="pdr_drawing") {return(TRUE)} 
+      else if(as=="") {return("pdr_drawing")}
+      else {return(FALSE)}
     } else { # action == "coerce"
       if(as == "pdr_tibble") { 
         return(tibble::tibble(id=input$.id, pdrdata=list(input)))
