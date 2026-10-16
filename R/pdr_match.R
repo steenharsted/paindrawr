@@ -15,130 +15,156 @@
 #'
 #' If the parameter 'check_only' is TRUE, the function returns a string of 'pdr_tibble', 'pdr_list', 'pdr_drawing' or 'invalid'.
 #' 
-#' If the para
+#' If the parameter 'mode' is "superficial" a quick and simple check of the structure of arg is done. If 'mode' is "validate", a more detailed check of data structure and content requirements is performed.
+#' 
+#' When the parameter 'as' is "list", the function will return a pdr_list if 'arg' is a pdr_drawing. Similarly, if 'as' is "tibble", an 'arg' which is a pdr_drawing or a pdr_list will be returned as a pdr_tibble, with columns 'id' and 'pdr_data'. When 'as' is specified, the function defauls to 'mode' = "validate" and 'check_only' = FALSE.
 #'
-#' @param arg a variable to be matched against 'pdr_tibble', 'pdr_list' and 'pdr_drawing' data types.
-#' @param check_only a logical specifying whether to enforce match or return a result string
-#' @param mode a string of 'validate' or 'superficial' specifying superficial matching or actual validation
+#' @param arg A variable to be matched against 'pdr_tibble', 'pdr_list' and 'pdr_drawing' data types.
+#' @param check_only A logical specifying whether to enforce match or return a result string
+#' @param mode A string of 'validate' or 'superficial' specifying superficial matching or actual validation
+#' @param as A string of "", "list" or "tibble", specifying whether to coerce a a pdr_drawing or pdr_list to pdr_list or pdr_tibble.
 #'
 #' @returns
 #'
 #' @export
 #' @examples
-pdr_match <- function(arg, check_only=FALSE, mode="validate") {
+pdr_match <- function(input, action="eval", as="", mode="validate") {
   # This function takes as input a variable presumed to be a 
-  # valid 'pdr_list' (i.e. a list of pdr_drawing elements) 
-  # or a single 'pdr_drawing' element (i.e. a list of named 
-  # elements of which some are required).
+  # valid 'pdr_tibble', 'pdr_list' or 'pdr_drawing'.
 
-  # The function halts execution if pdr_v is invalid and 
-  # check_only is FALSE.
-
-  # The function works by testing for pdr_tibble first
-  # Only if arg is not a tibble, we test for list (list_pdr)
-  # Then if arg is not a list of lists we test for drawing
-
-  if(!is.logical(check_only)) {warning("! 'check_only* should be TRUE or FALSE"); stop()}
-  mode <- match.arg(mode, choices = c("validate", "superficial"))
-  # Specify required named elements in a pdr_drawing:
+  # Sanity checks
+  if(!as %in% c("","pdr_list","pdr_tibble", "pdr_drawing")) {stop("Invalid 'as' parameter.")}
+  # If as is specified, always validate data:
+  # if(as != "") {mode <- "validate"; check_only <- FALSE}
+  if(!action %in% c("coerce","eval")) {stop("Invalid 'action' parameter.")}
+  if(!mode %in% c("superficial","validate")) {stop("Invalid 'mode' parameter.")}
+  
+  
+  # These are the required named elements in a pdr_drawing:
   required_elements <- 
     c(".id", ".points", ".strokes", ".width", ".height")
 
   ########## SUPERFICIAL MATCHING ##########
   if(mode=="superficial") {
-    if(tibble::is_tibble(arg) && all(c("id","pdr_data") %in% names(arg))) {
-      return(ifelse(check_only, "pdr_tibble", arg))
+    if(tibble::is_tibble(input) && all(c("id","pdr_data") %in% names(input))) {
+      return("pdr_tibble")
     }
-    if(is.list(arg) && all(arg |> purrr::map_lgl(is.list))) {
-      return(ifelse(check_only, "pdr_list", arg))
+    if(is.list(input) && all(input |> purrr::map_lgl(is.list))) {
+      return("pdr_list")
     }
-    if(is.list(arg) && all(required_elements %in% names(arg))) {
-      return(ifelse(check_only, "pdr_drawing", arg))
+    if(is.list(input) && all(required_elements %in% names(input))) {
+      return("pdr_drawing")
     }
-    ifelse(check_only,"invalid", {warning("! 'arg' is not a valid pain drawing data type"); stop()})
+    return("invalid")
   }
 
   ########## END SUPERFICIAL MATCHING ##########
   
   ##########################################################
 
+  # When we make it this far, mode is 'validate'
+
   ########## VALIDATATION MATCHING #########
   
   ##### INVALID #####
-  # If arg is not a list or a tibble, it is invalid in any case
-  if(!is.list(arg) & !tibble::is_tibble(arg)) {
-    if(check_only) {
-      return("invalid")
-    } else {
-      warning(
-        paste0("! 'arg' should be one of list-data types 'pdr_tibble', 'pdr_list' or 'pdr_drawing', not ", class(arg)))
-      stop()
-    }
+  # If input is not a list or a tibble, it is invalid in any case
+  if(!is.list(input) & !tibble::is_tibble(input)) {
+    if(action=="coerce") {stop("! 'input' is not a pdr_tibble, pdr_list or pdr_drawing and can not be coerced into such")}
+    if(action=="eval") return("invalid")
   }
   ##### END INVALID #####
 
-  # ..this far means arg is either a tibble or a list
+  # ..this far means input is either a tibble or a list
 
   ##### TIBBLE #####
-  if(tibble::is_tibble(arg)) {
-    # When it is a tibble, we should check for valid pdr_list 
-    # columns. We count list-cols that macth pdr_list:
-    n_pdr_lists <- arg |> dplyr::summarize_if(is.list, \(c) {pdr_match(c, check_only=TRUE, mode="validate") == "pdr_list"}) |> sum()
-    if(check_only) {
-      if(n_pdr_lists > 0) {
-        return("pdr_tibble")
+  if(tibble::is_tibble(input)) {
+    # When input is a tibble, we should check for one at least
+    # one valid pdr_list column and macth it as pdr_list:
+    num_pdr_lists <- input |>
+      dplyr::summarize_if(is.list, \(x) {
+        pdr_match(x, action="eval") == "pdr_list"
+      }) |> sum()
+
+    if(action=="eval") {
+      if(num_pdr_lists > 0) {
+        return(ifelse(as=="pdr_tibble", TRUE, "pdr_tibble"))
       } else {
         return("invalid")
       } 
-    } else {
-      if(n_pdr_lists > 0) {
-        return(arg)
+    } 
+    if(action=="coerce") {
+      if(num_pdr_lists > 0) {
+        return(input) # We can not coerce into anything
       } else {
-        warning("! 'arg' is a tibble with no valid pdr_list columns.")
-        stop()
+        stop("! 'input' is a tibble with no valid pdr_list columns.")
       }
     }
   }
   ##### END TIBBLE #####
 
-  # ..this far means arg is a list
+  # ..this far means input is a list
 
   ##### LIST #####
-  if(all(arg |> purrr::map_lgl(is.list))) {
-    # When arg is a list of lists, check whether it is a valid pdr_list
-    if(all(arg |> purrr::map_lgl(\(x) {pdr_match(x, check_only=TRUE, mode="validate") == "pdr_drawing"}))) {
-      # When all elements are pdr_drawings
-      return(ifelse(check_only, "pdr_list", arg))
+  if(all(input |> purrr::map_lgl(is.list))) {
+    # When input is a list of lists, iterate and check whether each is a valid pdr_drawing
+    if(all(input |> purrr::map_lgl(\(x) {
+      pdr_match(x, action="eval", as="pdr_drawing")
+    }))) {
+      # When all elements are pdr_drawings:
+      if(action=="eval") {
+        return(ifelse(as=="pdr_list", TRUE, "pdr_list") )
+      } else {  # action=="coerce"
+        if(as == "pdr_tibble") {return(
+          tibble::tibble(id=input |> purrr::map_chr(".id"), pdr_data=input)
+        )} else {}
+          return(input)
+      }        
     } else {
       # When not all elements are pdr_drawing
-      return(ifelse(check_only, "invalid", {stop("! 'arg' is a list of lists, but contains non-pdr_drawing elements.")}))
+      return(ifelse(action=="eval", "invalid", {stop("! 'input' is a list of lists, but contains non-pdr_drawing elements.")}))
     }
-  }
+    }
 
   ##### END LIST ##### 
 
-  # ..this far means a list but not list-of-lists
+  # ..this far means input is a list but not list-of-lists
 
   ##### DRAWING #####
-  if(is.null(names(arg)) || length(setdiff(required_elements, names(arg)))>0)  {
-    # When all or some required names are missing from arg
-    return(ifelse(check_only, "invalid", stop(paste0("! 'arg' is like a pdr_drawing, but missing some of ",required_elements))))    
-  } else {
-    # When all required names are present, check whether element data types okay
-    if(
-        is.character(arg$.id) && 
-        is.integer(arg$.width) &&
-        is.integer(arg$.height) &&
-        tibble::is_tibble(arg$.points) &&
-        tibble::is_tibble(arg$.strokes) &&
-        all(c(".x", ".y", ".index") %in% names(arg$.points)) &&
-        all(c(".index") %in% names(arg$.strokes)) &&# Should we test data type of .x, .y and .index?
-        setequal(arg$.points$.index, arg$.strokes$.index)
-      ) {
-      return(ifelse(check_only, "pdr_drawing", arg))
-    } else {
-      return(ifelse(check_only, "invalid", stop("! 'arg' is like a pdr_drawing, but with wrong data types or corrupted .strokes and .points.")))
+  if(
+    !is.null(names(input)) && 
+    all(required_elements %in% names(input)) && 
+    is.character(input$.id) && 
+    is.integer(input$.width) &&
+    is.integer(input$.height) &&
+    tibble::is_tibble(input$.points) &&
+    tibble::is_tibble(input$.strokes) &&
+    all(c(".x", ".y", ".index") %in% names(input$.points)) &&
+    ".index" %in% names(input$.strokes) && 
+    is.integer(input$.points$.x) &&
+    is.integer(input$.points$.y) &&
+    is.integer(input$.points$.index) &&
+    is.integer(input$.strokes$.index) &&
+    setequal(input$.points$.index, input$.strokes$.index)
+   ) {
+    # It's a valid pdr_drawing, so do this:
+    if(action=="eval") {
+      if(as == "pdr_drawing") {
+        return(TRUE)
+      } else {
+        return("pdr_drawing")
+      }
+    } else { # action == "coerce"
+      if(as == "pdr_tibble") { 
+        return(tibble::tibble(id=input$.id, pdrdata=list(input)))
+      } else if(as == "pdr_list") {
+        return(list(input))
+      } else {
+        return(input)
+      }
     }
+  } else {
+    # It is not a valid pdr_drawing, so do this:
+    return(ifelse(action=="eval", "invalid", stop(paste0("! 'input' is like a pdr_drawing, but one or more of ",required_elements, " is missing og wrong data type."))))  
   }
 
   return(NA) # We should never get to this line
