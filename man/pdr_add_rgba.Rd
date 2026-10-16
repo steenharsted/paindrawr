@@ -4,28 +4,32 @@
 \alias{pdr_add_rgba}
 \title{Create a new named (.rgba) element in the pdr list column}
 \usage{
-pdr_add_rgba(
-  pdr_list,
-  buffer = 5,
-  invert = FALSE,
-  type_override = NA,
-  method = "memory",
-  dpi = 96,
-  clean_up = TRUE,
-  rgba_only = TRUE
-)
+pdr_add_rgba(pdr_list, tool_width_override = NULL, tool_override = NULL)
+}
+\arguments{
+\item{pdr_list}{A valid pain drawing pdr_list}
+
+\item{tool_width_override}{A numeric value specifying pen width}
+
+\item{tool_override}{A string of NULL, 'pen', 'spray' or 'polygon'}
+}
+\value{
+A modified pdr_list with .rgba elements added
 }
 \description{
-The function handles the rgba matrix calculation in two
-distinctly different ways (as specified by the 'type'
-parameter).
+The function handles the rgba matrix calculation in three
+distinctly different ways, as determined by the .tool
+value in the pain drawing data or as specified by the
+tool_override parameter.
 }
 \details{
-If 'type' is set to spray -- the rgba value of each pixel
-is based on a weighted combination of spray strokes in
-the drawing.
+The original drawing can be re-created with tools 'spray'
+and 'pen' as recorded in the data (or with tool_override).
 
-If 'type' is set to pen -- each pixel will have an rgba
-value of 0 or 1 indicating whether the pixel in inside or
-outside the polygons defined by each pen stroke.
+If tool_override is set to 'polygon', each drawing stroke
+will be handled as drawn by a pen tool, but strokes will
+be coerced into filled-in geometric polygons.
+
+If pen_width_override is set to NULL (default) the pen
+width will be set as recorded in the data.
 }

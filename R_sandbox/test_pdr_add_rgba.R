@@ -9,11 +9,11 @@ pd <- pdr_example_data$pdr_data
 pd
 
 # multi pdr list in multi pdr list with .rgba added out
-pdr_add_rgba(paindrawr_data = pdr_example_data$pdr_data[[1]])
+pdr_add_rgba(pdr_list = pdr_example_data$pdr_data[1])
 
 # multi pdr list in multi list of rgba arrays out
 pdr_add_rgba(
-  paindrawr_data = pd,
+  pdr_list = ,
   rgba_only = TRUE
 )
 
