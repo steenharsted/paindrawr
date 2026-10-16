@@ -7,8 +7,9 @@
 * SFH:
     - pdr_add_rgba.R
     - pdr_alpha.R
-    - pdr_heatmap.R
-    - pdr_recreate_drawing.R
+    - pdr_plot_heatmap.R
+    - pdr_plot_drawing.R
+    - pdr_summarize_alpha_
 * SON
     - pdr_check_data.R
     - pdr_explode.R
@@ -57,8 +58,8 @@ Convert to new structure (mark with DONE, when converted and working)?
     - DOCUMENTATION !!
     
 * SFH:
-    - pdr_add_rgba.R
-    - pdr_alpha.R
+    - **DONE** pdr_add_rgba.R
+    - **DONE** pdr_alpha.R
     - **DONE** pdr_heatmap.R
     - **DONE** pdr_recreate_drawing.R
     - pdr_spray_areas.R **SHOULD BE SPRAY_RGBA**
