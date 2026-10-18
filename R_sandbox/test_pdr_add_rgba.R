@@ -13,12 +13,11 @@ pdr_add_rgba(pdr_list = pdr_example_data$pdr_data[1])
 
 # multi pdr list in multi list of rgba arrays out
 pdr_add_rgba(
-  pdr_list = ,
-  rgba_only = TRUE
+  pdr_list = pd
 )
 
 # single pdr named list in single pdr named list out with .rgba added
-pd[[1]] |> pdr_add_rgba()
+pd[1] |> pdr_add_rgba()
 
 ## Intended use
 pdr_tib <- pdr_example_data |>
