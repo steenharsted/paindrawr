@@ -1,4 +1,8 @@
-#' Create and add a stencil to pain drawings
+#' Create and add a stencil to pain drawings.
+#' 
+#' Only add a stencil to pain drawings that are intended to 
+#' serve as stencils for other pain drawings. To apply 
+#' stencils see `pdr_modify_rgba()`.
 #' 
 #' Pain drawings can be used as stencils and applied to 
 #' other pain drawings. This is typically useful, when a 
@@ -19,7 +23,7 @@
 #'
 #' @export
 #' @examples
-pdr_add_stencil <- function(pdr_list, threshold) {
+pdr_add_stencil <- function(pdr_list, threshold=1) {
   # NOTE. This function is based on any one of the
   # R, G or B levels/channels of the .rgba array being 
   # smaller than the threshold value (i.e darker) ... if 
