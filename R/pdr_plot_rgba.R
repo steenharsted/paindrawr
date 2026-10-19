@@ -77,12 +77,6 @@ pdr_plot_rgba <- function(
   # Make into a list of rgbas
   .data <- .data |> dplyr::pull(.rgba)
 
-  # Read background once
-  bg <- NULL
-  if (!is.null(background_image)) {
-    bg <- png::readPNG(background_image)
-  }
-
   # One grob per element: background underneath, rgba on top
   plots <- lapply(.data, function(rgba) {
     if (is.null(rgba) || length(rgba) == 0) {
@@ -92,11 +86,11 @@ pdr_plot_rgba <- function(
       rgba
     )
 
-    if (is.null(bg)) {
+    if (is.null(background_image)) {
       return(fg)
     }
     bg_grob <- grid::rasterGrob(
-      bg
+      background_image
     )
     grid::gTree(children = grid::gList(bg_grob, fg))
   })
