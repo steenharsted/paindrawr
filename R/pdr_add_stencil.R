@@ -52,22 +52,31 @@ pdr_add_stencil <- function(pdr_list, threshold=1, base="A", by = "<") {
     stop("Not all elements of the parameter 'pdr_list' contain a .rgba element")
   }
 
-  R <- "R" %in% base
-  G <- "G" %in% base
-  B <- "B" %in% base
-  A <- "A" %in% base
-  if(!any(R, G, B, A) %in% base) {stop("Invalid parameter 'base'. ")}
+  R <- stringr::str_detect(base, "R")
+  G <- stringr::str_detect(base, "G")
+  B <- stringr::str_detect(base, "B")
+  A <- stringr::str_detect(base, "A")
+  if(!any(R, G, B, A)) {stop("Invalid parameter 'base'. ")}
 
-  # This code: (R && get(by)(pdr_drawing$.rgba[,,1] , threshold))
-  # evaluates to TRUE if R is in base AND pdr_drawing$.. is > or < than threshold,
-  # where 'by' determined < or >
-  pdr_list |> purrr::map(\(pdr_drawing) {
+  # This code is a little opaque, but
+  # (A && get(by)(pdr_drawing$.rgba[,,4] , threshold))
+  # evaluates to TRUE if A is in 'base' parameter AND 
+  # pdr_drawing$.. is > than threshold, or < than threshold
+  # where < or > is determined by the 'by' parameter
+  pdr_list <- pdr_list |> purrr::map(\(pdr_drawing) {
     pdr_drawing$.stencil <- (
-      (R && get(by)(pdr_drawing$.rgba[,,1] , threshold)) |
-      (G && get(by)(pdr_drawing$.rgba[,,2] , threshold)) |
-      (B && get(by)(pdr_drawing$.rgba[,,3] , threshold)) |
-      (A && get(by)(pdr_drawing$.rgba[,,4] , threshold)) 
+      (A & get(by)(pdr_drawing$.rgba[,,4] , threshold)) |
+      (R & get(by)(pdr_drawing$.rgba[,,1] , threshold)) |
+      (G & get(by)(pdr_drawing$.rgba[,,2] , threshold)) |
+      (B & get(by)(pdr_drawing$.rgba[,,3] , threshold)) 
     ) + 0 # Make it integer
     pdr_drawing # map return
   })
+
+  pdr_list <- pdr_list |> purrr::map(\(pdr_drawing) {
+    pdr_drawing$.stencil_inverted <- 
+      (pdr_drawing$.stencil == FALSE) + 0 # Make it integer
+    pdr_drawing # map return
+  })
+  pdr_list # func return
 }

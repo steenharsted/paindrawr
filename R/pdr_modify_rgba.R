@@ -13,6 +13,7 @@ pdr_modify_rgba <- function(pdr_list, op="", stencil=NULL, threshold = 0.5) {
   pdr_list <- pdr_match(pdr_list, action="coerce", as="pdr_list")
 
   
+
   #### Now coerce the stencil parameter to a list of matrices:
   # stencil can be a pdr_list with a .stencil element, or
   # stencil can be a single matrix, or a list of matrices 
@@ -33,14 +34,13 @@ pdr_modify_rgba <- function(pdr_list, op="", stencil=NULL, threshold = 0.5) {
       stop("Parameter 'stencil' must be a) a matrix, b) a list of matrices or c) pain drawing list column with .stencil elements.")
     }
   
-    # Sanity check for array/matrix x,y dimentions?
-    # Further sanity checks?  -- see stop message for explanation
-    # if(length(stencil)!=1 && length(stencil)!=length(pdr_list)) {
-    #   stop("Parameter stencil must be coercible to a list of matrices of length 1 or same length as parameter pdr_list")
-    # } 
-    # if(!all(purrr::map2_lgl(pdr_list, stencil, \(e_pl, e_stencil) {identical(dim(e_pl$.rgba), dim(e_stencil))}))) {
-    #   stop("Matrix dimensions of pdr_list and stencil do not match pairwise.")
-    # }
+    # Further sanity checks  -- see stop message for explanation
+    if(length(stencil)!=1 && length(stencil)!=length(pdr_list)) {
+      stop("Parameter stencil must be coercible to a list of matrices of length 1 or same length as parameter pdr_list")
+    } 
+    if(!all(purrr::map2_lgl(pdr_list, stencil, \(e_pl, e_stencil) {identical(dim(e_pl$.rgba)[1:2], dim(e_stencil)[1:2])}))) {
+      stop("The x and y dimensions of .rgba array from pdr_list and the stencil do not match pairwise.")
+    }
   }
   
   #### This function can modify the .rgba data stored in
@@ -75,6 +75,11 @@ pdr_modify_rgba <- function(pdr_list, op="", stencil=NULL, threshold = 0.5) {
         pdr_drawing$.rgba <-  ifelse(pdr_drawing$.rgba>threshold,1,pdr_drawing$.rgba)
         pdr_drawing
       })
-  } 
+  } else if(op=="apply_stencil") {
+    pdr_list <- purrr::map2(pdr_list, stencil, \(pd, st) {
+      pd$.rgba[,,4] <- pd$.rgba[,,4] * st
+      pd
+    })
+  }
   return(pdr_list)
 }
