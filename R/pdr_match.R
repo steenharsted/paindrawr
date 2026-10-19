@@ -41,6 +41,20 @@ pdr_match <- function(input, action="eval", as="", mode="superficial") {
   required_elements <- 
     c(".id", ".points", ".strokes", ".width", ".height")
 
+  # Helper functions
+  is_valid_rgba <- function(v) {
+    if(is.null(v)) {return(TRUE)} # v is not required
+
+    # ..but if present:
+    is_valid <- (
+      is.array(v) &&
+      is.numeric(v) &&
+      length(dim(v)) == 3 &&
+      dim(v)[3] == 4    
+    )
+    if(!is_valid) {warning("Invalid .rgba element")}
+    return(is_valid)
+  }
 
   ########## ATTEMPT COERCION ##########
   if(action == "coerce") {
@@ -161,7 +175,8 @@ pdr_match <- function(input, action="eval", as="", mode="superficial") {
         is.integer(input$.points$.y) &&
         is.integer(input$.points$.index) &&
         is.integer(input$.strokes$.index) &&
-        setequal(input$.points$.index, input$.strokes$.index))
+        setequal(input$.points$.index, input$.strokes$.index) &&
+        is_valid_rgba(input$.rgba))
       {
         # It's a valid pdr_drawing, so do this:
           if(as=="pdr_drawing") {return(TRUE)} 

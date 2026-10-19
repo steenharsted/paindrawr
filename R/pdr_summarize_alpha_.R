@@ -6,19 +6,25 @@
 #' area was covered. Use in combination with [pdr_summarize_alpha_area()] to
 #' distinguish between a small intense drawing and a large light drawing.
 #'
-#' @param rgbas Either a list of RGBA arrays (each `[height, width, 4]`), or a
+#' @param pdr_data Either a list of RGBA arrays (each `[height, width, 4]`), or a
 #'   list of paindrawing data objects containing a `.rgba` element (as produced
 #'   by [pdr_add_rgba()]). Typically passed as a list-column inside
 #'   `dplyr::mutate()`.
 #' @param summary_stat A string specifying the summary statistic to compute
 #'   over drawn pixel alpha values. One of `"mean"` (default), `"max"`,
-#'   `"min"`, `"median"`, or `"sd"`.
+#'   `"min"`, `"median"`, `"sd"`, `"raw"` or `"seven"`. If `"seven"` the function 
+#'   returns a list column 5 summary stats. If `"raw"` the function returns
+#'   a list column of numeric vectors will all resulting alpha values.
 #' @param alpha_range A numeric vector of length 2 specifying the lower
 #'   (exclusive) and upper (inclusive) bounds of the alpha range to include.
 #'   Defaults to `c(0, 1)`, i.e. all drawn pixels. Use e.g. `c(0.5, 1)` to
 #'   restrict to heavily drawn pixels only.
+#' @param stencils A list (length == 1 or same length as pdr_data) of (2-dimensional)
+#'   matrices of the same x and y dimension as pdr_data Expected values are 0
+#'   and 1 -- if provided, the stencils are applied (multiplied) with the
+#'   rgba arrays before summarising.
 #'
-#' @returns A numeric vector the same length as `rgbas`. Each element is the
+#' @returns A numeric vector the same length as `pdr_data`. Each element is the
 #'   requested summary statistic of alpha values for pixels within
 #'   `(alpha_range[1], alpha_range[2]]`, or `NA_real_` if no pixels fall in
 #'   that range.
@@ -43,24 +49,23 @@
 #'   intensity_max  = pdr_summarize_alpha_intensity(pdr_data, summary_stat = "max")
 #' )
 pdr_summarize_alpha_intensity <- function(
-  rgbas,
-  summary_stat = c("mean", "max", "min", "median", "sd"),
-  alpha_range = c(0, 1)
+  pdr_data,
+  summary_stat = c("mean", "max", "min", "median", "sd", "raw", "five"),
+  alpha_range = c(0, 1),
+  stencil = NULL
 ) {
-  # Wrap rgba in list if it provided as a single raw
-  if (!is.list(rgbas)) {
-    rgbas <- list(rgbas)
-  }
-
-  # If given paindrawing data, extract .rgba
-  if (!is.array(rgbas[[1]])) {
-    if (is.null(rgbas[[1]][[".rgba"]])) {
-      stop("No `.rgba` found. Run `pdr_add_rgba()` first.")
-    }
-    rgbas <- purrr::map(rgbas, ".rgba")
-  }
-
-  # --- input checks ---
+  #########################
+  ##### Sanity checks #####
+  #########################
+  # pdr_data is pdr_list
+  pdr_data <- pdr_match(pdr_data, action="coerce", as="pdr_list", mode="validate")
+  # ..with .rgba in each (if present it was validated by pdr_match)
+  if(!all(pdr_data |> purrr::map_lgl(\(pdr_drawing) {
+    ".rgba" %in% names(pdr_drawing) 
+  }))) {
+    stop("Parameter 'pdr_list' is invalid as not all elements contain .rgba data")
+  }  
+  # alpha_range is valid
   if (
     !is.numeric(alpha_range) ||
       length(alpha_range) != 2 ||
@@ -74,20 +79,36 @@ pdr_summarize_alpha_intensity <- function(
     )
   }
 
+  # summary_stat ok
   summary_stat <- match.arg(summary_stat)
+  #########################
+  ### End sanity cheks ####
+  #########################
 
-  # --- get summary stat ---
+  
+  #########################
+  ####### Main loop #######
+  #########################
+  
+  # reduce to list of matrices -- just the R channel from .rgba
+  a <- pdr_data |> purrr::map(\(pdr_drawing) {pdr_drawing$.a[,,4] + 0.0}) # make it num
 
-  unname(purrr::map_dbl(rgbas, function(rgba) {
-    if (!is.array(rgba) || length(dim(rgba)) != 3 || dim(rgba)[3] < 4) {
-      stop(
-        "`rgbas` must be a list of numeric arrays with dimensions [height, width, 4]."
-      )
-    }
-    a <- as.double(rgba[,, 4])
-    drawn <- a[a > alpha_range[1] & a <= alpha_range[2]]
-    if (length(drawn) == 0) NA_real_ else do.call(summary_stat, list(drawn))
-  }))
+  # reduce by stencil 
+  if(!is.null(stencil)) {
+    a <- purrr::map2(a, stencil, \(i_a, i_stencil) {
+      i_a <- i_a * i_stencil
+    })
+  }
+
+  if(alpha_range[1]!=0 | alpha_range[2]!=1) {
+    a <- purrr::map(a, \(i_a) {
+      i_a <- i_a[i_a >= alpha_range[1] & i_a <= alpha_range[2]]
+    })
+  }
+
+  
+
+  
 }
 
 
@@ -99,7 +120,7 @@ pdr_summarize_alpha_intensity <- function(
 #' [pdr_summarize_alpha_intensity()] to distinguish between a small intense drawing
 #' and a large light drawing.
 #'
-#' @param rgbas Either a list of RGBA arrays (each `[height, width, 4]`), or a
+#' @param pdr_data Either a list of RGBA arrays (each `[height, width, 4]`), or a
 #'   list of paindrawing data objects containing a `.rgba` element (as produced
 #'   by [pdr_add_rgba()]). Typically passed as a list-column inside
 #'   `dplyr::mutate()`.
@@ -108,7 +129,7 @@ pdr_summarize_alpha_intensity <- function(
 #'   Defaults to `c(0, 1)`, i.e. all drawn pixels. Use e.g. `c(0.5, 1)` to
 #'   restrict to heavily drawn pixels only.
 #'
-#' @returns A numeric vector the same length as `rgbas`. Each element is the
+#' @returns A numeric vector the same length as `pdr_data`. Each element is the
 #'   proportion of canvas pixels with alpha in `(alpha_range[1], alpha_range[2]]`
 #'   for the corresponding drawing, i.e. a value between 0 and 1.
 #'
@@ -131,18 +152,18 @@ pdr_summarize_alpha_intensity <- function(
 #'   area         = pdr_summarize_alpha_area(pdr_data),
 #'   area_over_50 = pdr_summarize_alpha_area(pdr_data, alpha_range = c(0.5, 1))
 #' )
-pdr_summarize_alpha_area <- function(rgbas, alpha_range = c(0, 1)) {
+pdr_summarize_alpha_area <- function(pdr_data, alpha_range = c(0, 1)) {
   # Wrap rgba in list if it provided as a single raw
-  if (!is.list(rgbas)) {
-    rgbas <- list(rgbas)
+  if (!is.list(pdr_data)) {
+    pdr_data <- list(pdr_data)
   }
 
   # If given paindrawing data, extract .rgba
-  if (!is.array(rgbas[[1]])) {
-    if (is.null(rgbas[[1]][[".rgba"]])) {
+  if (!is.array(pdr_data[[1]])) {
+    if (is.null(pdr_data[[1]][[".rgba"]])) {
       stop("No `.rgba` found. Run `pdr_add_rgba()` first.")
     }
-    rgbas <- purrr::map(rgbas, ".rgba")
+    pdr_data <- purrr::map(pdr_data, ".rgba")
   }
 
   # --- input checks ---
@@ -159,10 +180,10 @@ pdr_summarize_alpha_area <- function(rgbas, alpha_range = c(0, 1)) {
     )
   }
 
-  unname(purrr::map_dbl(rgbas, function(rgba) {
+  unname(purrr::map_dbl(pdr_data, function(rgba) {
     if (!is.array(rgba) || length(dim(rgba)) != 3 || dim(rgba)[3] < 4) {
       stop(
-        "`rgbas` must be a list of numeric arrays with dimensions [height, width, 4]."
+        "`pdr_data` must be a list of numeric arrays with dimensions [height, width, 4]."
       )
     }
     a <- as.double(rgba[,, 4])

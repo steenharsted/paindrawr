@@ -35,9 +35,8 @@ pdr_xa <- tibble::tibble(pdr_data = pdr_xa) |>
 # pdr_xa is now a valid pdr_tibble `pdr_xa |> pdr_match("eval")`
 # Lets add .rgba and make a silhouette template as well
 pdr_xa <- pdr_xa |> 
-  mutate(pdr_data = pdr_add_rgba(pdr_data)) |>
-  mutate(pdr_data = pdr_add_stencil(pdr_data, threshold=1, base="RGBA", by="<")) |>
-  mutate(stencil = pdr_get_info(pdr_data, ".stencil")) 
+  mutate(pdr_data = pdr_add_rgba(pdr_data, method="memory", polygon = "both")) |>
+  mutate(pdr_data = pdr_add_stencil(pdr_data, threshold=1, base="A", by="<")) 
 
 # This is a bit quirky ... but necessary to ensure the variable is named correctly in rda:
 var_name <- "pdr_example_anatomy"

@@ -237,9 +237,10 @@ pdr_mird2pdr <- function(
       )
     })
   
-  if(flipy) {
-    pdr_list <- pdr_list |> pdr_modify_points(ops="flipy")
-  }
+  # if(flipy) {
+  #   pdr_list <- pdr_list |> pdr_modify_points(ops="flipy")
+  # }
+  
   # Return this
   pdr_list
 }
