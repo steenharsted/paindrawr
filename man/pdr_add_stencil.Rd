@@ -4,7 +4,7 @@
 \alias{pdr_add_stencil}
 \title{Create and add a stencil to pain drawings.}
 \usage{
-pdr_add_stencil(pdr_list, threshold = 1, base = "RGBA", by = "<")
+pdr_add_stencil(pdr_list, threshold = 1, base = "A", by = "<")
 }
 \arguments{
 \item{pdr_list}{A valid pdr_list -- see \code{pdr_match()}}
@@ -38,7 +38,9 @@ the RGBA data is reduced to a single level (alpha) with
 just 0 and 1 values.
 
 The 'threshold' parameter determines the threshold at
-which a pixels value is dichotomized to 0 or 1.
+which a pixel's value is dichotomized to 0 or 1 (FALSE or
+TRUE) as per the 'by' parameter. E.g. a pixel with alpha
+value 0.4 will evaluate to 0 by '>' a 'threshold' of 0.5
 
 The 'base' parameter determines which of the R, G, B and
 A channels should be evaluated in reference to the

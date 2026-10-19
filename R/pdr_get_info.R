@@ -46,7 +46,6 @@ pdr_get_info <- function(pdr_list, id1=".id", id2=NULL) {
     # Should probably check to see if id2 is in names(id1)
     pdr_list |>
       purrr::map(id1) |>
-      purrr::map(~dplyr::pull(.x, id2)) |>
-      purrr::list_simplify()
+      purrr::map(~dplyr::pull(.x, id2)) 
   }
 }

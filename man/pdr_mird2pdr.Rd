@@ -2,7 +2,7 @@
 % Please edit documentation in R/pdr_mird2pdr.R
 \name{pdr_mird2pdr}
 \alias{pdr_mird2pdr}
-\title{Convert MIRD pain drawings to paindrawr}
+\title{Convert MIRD pain drawings to pdr_tibble}
 \usage{
 pdr_mird2pdr(
   mird_pd,

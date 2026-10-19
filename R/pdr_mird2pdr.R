@@ -1,4 +1,4 @@
-#' Convert MIRD pain drawings to paindrawr 
+#' Convert MIRD pain drawings to pdr_tibble 
 #' 
 #' MIRD exports pain drawings in a custom format like:
 #' (,1,2,5,4,),(,8,8,7,7,)
