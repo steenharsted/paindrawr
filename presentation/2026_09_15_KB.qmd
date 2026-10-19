@@ -43,7 +43,8 @@ library(glue)
 library(gt)
 library(gtsummary)
 library(devtools)
-library(paindrawr)
+#library(paindrawr)
+load_all()
 
 theme_set(theme_classic(base_size = 14))
 theme_gtsummary_compact()
@@ -81,19 +82,10 @@ json_files <- list.files(
   recursive = TRUE
 )
 
-paindraw_data <- tibble(
-  pdr_data = pdr_import_json(here(
+paindraw_data <- pdr_import_json(here(
     "presentation/2026_09_15_drawings/",
     json_files
   ))
-)
-
-paindraw_data <- paindraw_data |> 
-  mutate(
-    id = pdr_get_info(pdr_data)
-  )
-
-
 
 ## Id is nested in the drawing id string
 paindraw_data <- paindraw_data |>
@@ -246,7 +238,8 @@ my_data |>
 ```{r}
 my_data <- my_data |> 
   mutate(
-    palmar = pdr_add_rgba(palmar))
+    #palmar = pdr_add_rgba(palmar), 
+    palmar2 = pdr_get_rgba_from_spray(palmar))
 
 my_data
 ```
