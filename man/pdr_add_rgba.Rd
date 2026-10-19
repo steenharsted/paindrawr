@@ -2,34 +2,87 @@
 % Please edit documentation in R/pdr_add_rgba.R
 \name{pdr_add_rgba}
 \alias{pdr_add_rgba}
-\title{Create a new named (.rgba) element in the pdr list column}
+\title{Add an RGBA raster array to a pain drawing based on spray coordinates}
 \usage{
-pdr_add_rgba(pdr_list, tool_width_override = NULL, tool_override = NULL)
+pdr_add_rgba(
+  paindrawr_data,
+  method = "memory",
+  clean_up = TRUE,
+  polygon = "none",
+  rgba_only = FALSE
+)
 }
 \arguments{
-\item{pdr_list}{A valid pain drawing pdr_list}
+\item{paindrawr_data}{A pain drawing in one of two forms:
+\itemize{
+\item A single named list as produced by \code{\link[=pdr_import_json]{pdr_import_json()}} or extracted
+from a list-column (e.g. \code{pd$pdr_data[[1]]}).
+\item A list-of-named-lists containing multiple drawings (e.g.
+\code{pdr_example_data}).
+}}
 
-\item{tool_width_override}{A numeric value specifying pen width}
+\item{method}{Character. Controls the rasterization back-end. Either:
+\itemize{
+\item \code{"memory"} (default) — renders in-memory via \code{\link[ragg:agg_capture]{ragg::agg_capture()}},
+no temp file is written to disk.
+\item \code{"file"} — saves to a temporary PNG via \code{\link[ggplot2:ggsave]{ggplot2::ggsave()}} and reads
+it back with \code{\link[png:readPNG]{png::readPNG()}}. Use this if the \code{"memory"} path is slow.
+}}
 
-\item{tool_override}{A string of NULL, 'pen', 'spray' or 'polygon'}
+\item{clean_up}{Logical. If \code{TRUE} (default), the temporary PNG file is
+deleted on exit. Only relevant when \code{method = "file"}. Set to \code{FALSE} to
+retain the file for debugging.}
+
+\item{rgba_only}{Logical. If \code{FALSE} (default), returns the input
+drawing(s) with a \verb{$.rgba} element appended to each. If \code{TRUE}, returns
+only the RGBA array (single drawing) or a list of RGBA arrays (multiple
+drawings). Use \code{TRUE} when assigning into a tibble list-column:
+\code{mutate(.rgba = pdr_add_rgba(pdr_data, rgba_only = TRUE))}.}
+
+\item{dpi}{Resolution used during rasterization. Defaults to \code{96}. Increase for print-quality output (e.g. \code{300}), noting this
+does not affect the canvas dimensions, only output pixel density.}
 }
 \value{
-A modified pdr_list with .rgba elements added
+\itemize{
+\item \code{rgba_only = FALSE} (default): the input drawing (named list) with
+\verb{$.rgba} appended, or a list of such augmented drawings when multiple
+drawings are supplied.
+\item \code{rgba_only = TRUE}: a numeric array of dimensions
+\verb{height × width × 4} (RGBA channels, values in [0, 1]), or a list of
+such arrays when multiple drawings are supplied. Transparent pixels are
+set to black (\code{RGB = 0}).
+}
 }
 \description{
-The function handles the rgba matrix calculation in three
-distinctly different ways, as determined by the .tool
-value in the pain drawing data or as specified by the
-tool_override parameter.
+Renders the strokes and spray points from one or more pain drawings into
+RGBA numeric arrays. By default, the array is attached as a \verb{$.rgba} element
+to each drawing and the augmented drawing(s) are returned. Set
+\code{rgba_only = TRUE} to return the bare array(s) instead, which is useful
+when assigning into a tibble list-column directly.
 }
-\details{
-The original drawing can be re-created with tools 'spray'
-and 'pen' as recorded in the data (or with tool_override).
+\examples{
+\dontrun{
+# Single drawing — returns drawing with $.rgba appended
+drawing_with_rgba <- pdr_example_data[[1]] |> pdr_add_rgba()
+grid::grid.newpage()
+grid::grid.raster(drawing_with_rgba$.rgba)
 
-If tool_override is set to 'polygon', each drawing stroke
-will be handled as drawn by a pen tool, but strokes will
-be coerced into filled-in geometric polygons.
+# Multiple drawings at once
+drawings_with_rgba <- pdr_example_data |> pdr_add_rgba()
 
-If pen_width_override is set to NULL (default) the pen
-width will be set as recorded in the data.
+# Tibble workflow
+
+## Data
+pd <- tibble(pdr_data = pdr_example_data)
+
+## add .rgba to the input list-column
+pd |> dplyr::mutate(pdr_data = pdr_add_rgba(pdr_data))
+
+## add rgba arrays in a separate list-column
+pd |>
+  dplyr::mutate(
+    rgba_arrays = pdr_add_rgba(pdr_data, rgba_only = TRUE)
+    )
+}
+
 }

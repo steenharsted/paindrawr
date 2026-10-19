@@ -262,15 +262,53 @@ my_data
 
 
 ```{r}
-grid::grid.newpage()
-my_data$palmar[[2]]$.rgba |> grid::grid.raster()
+my_data |> 
+  head(1) |> 
+  pdr_plot_rgba(
+    paindrawr_data = palmar
+  )
 
-
-grid::grid.newpage()
-my_data$palmar_polygon[[2]]$.rgba |> grid::grid.raster()
-
-
+my_data |> 
+  head(1) |> 
+  pdr_plot_rgba(
+    paindrawr_data = palmar, 
+    background_image = bg_palmar
+  )
 ```
+
+
+```{r}
+my_data |> 
+  head(1) |> 
+  pdr_plot_rgba(
+    paindrawr_data = palmar_polygon
+  )
+
+my_data |> 
+  head(1) |> 
+  pdr_plot_rgba(
+    paindrawr_data = palmar_polygon, 
+    background_image = bg_palmar
+  )
+```
+
+
+```{r}
+my_data |> 
+  head(5) |> 
+  pdr_plot_rgba(
+    paindrawr_data = palmar_polygon
+  )
+
+my_data |> 
+  head(5) |> 
+  pdr_plot_rgba(
+    paindrawr_data = palmar_polygon, 
+    background_image = bg_palmar
+  )
+```
+
+
 
 ## Summarize across groups
 
