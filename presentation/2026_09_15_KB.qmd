@@ -238,8 +238,9 @@ my_data |>
 ```{r}
 my_data <- my_data |> 
   mutate(
-    #palmar = pdr_add_rgba(palmar), 
-    palmar2 = pdr_get_rgba_from_spray(palmar))
+    palmar = pdr_add_rgba(palmar), 
+    palmar_polygon = pdr_add_rgba(palmar, polygon = "both")
+  )
 
 my_data
 ```
@@ -250,13 +251,26 @@ my_data
 my_data <- my_data |> 
   mutate(
     palmar_area = pdr_summarize_alpha_area(palmar), 
-    palmar_intensity = pdr_summarize_alpha_intensity(palmar)
+    palmar_area_poly = pdr_summarize_alpha_area(palmar_polygon),
+    palmar_intensity = pdr_summarize_alpha_intensity(palmar), 
+    palmar_intensity_poly = pdr_summarize_alpha_intensity(palmar_polygon), 
   )
 
 my_data
 
 ```
 
+
+```{r}
+grid::grid.newpage()
+my_data$palmar[[2]]$.rgba |> grid::grid.raster()
+
+
+grid::grid.newpage()
+my_data$palmar_polygon[[2]]$.rgba |> grid::grid.raster()
+
+
+```
 
 ## Summarize across groups
 

@@ -36,7 +36,10 @@ Imports:
     dplyr,
     tidyr,
     jsonlite,
-    ggplot2
+    ggplot2,
+    gridExtra,
+    png,
+    grid
 Depends: 
     R (>= 3.5)
 Roxygen: list(markdown = TRUE)

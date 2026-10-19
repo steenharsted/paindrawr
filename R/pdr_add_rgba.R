@@ -25,9 +25,7 @@
 #'   drawing(s) with a `$.rgba` element appended to each. If `TRUE`, returns
 #'   only the RGBA array (single drawing) or a list of RGBA arrays (multiple
 #'   drawings). Use `TRUE` when assigning into a tibble list-column:
-#'   `mutate(.rgba = pdr_get_rgba_from_spray(pdr_data, rgba_only = TRUE))`.
-#' @param tool_width_override A numeric value specifying pen width
-#' @param tool_override A string of NULL, 'pen', 'spray' or 'polygon'#'
+#'   `mutate(.rgba = pdr_add_rgba(pdr_data, rgba_only = TRUE))`.
 #'
 #' @return
 #'   * `rgba_only = FALSE` (default): the input drawing (named list) with
@@ -41,12 +39,12 @@
 #' @examples
 #' \dontrun{
 #' # Single drawing — returns drawing with $.rgba appended
-#' drawing_with_rgba <- pdr_example_data[[1]] |> pdr_get_rgba_from_spray()
+#' drawing_with_rgba <- pdr_example_data[[1]] |> pdr_add_rgba()
 #' grid::grid.newpage()
 #' grid::grid.raster(drawing_with_rgba$.rgba)
 #'
 #' # Multiple drawings at once
-#' drawings_with_rgba <- pdr_example_data |> pdr_get_rgba_from_spray()
+#' drawings_with_rgba <- pdr_example_data |> pdr_add_rgba()
 #'
 #' # Tibble workflow
 #'
@@ -54,12 +52,12 @@
 #' pd <- tibble(pdr_data = pdr_example_data)
 #'
 #' ## add .rgba to the input list-column
-#' pd |> dplyr::mutate(pdr_data = pdr_get_rgba_from_spray(pdr_data))
+#' pd |> dplyr::mutate(pdr_data = pdr_add_rgba(pdr_data))
 #'
 #' ## add rgba arrays in a separate list-column
 #' pd |>
 #'   dplyr::mutate(
-#'     rgba_arrays = pdr_get_rgba_from_spray(pdr_data, rgba_only = TRUE)
+#'     rgba_arrays = pdr_add_rgba(pdr_data, rgba_only = TRUE)
 #'     )
 #' }
 #'
@@ -75,23 +73,16 @@
 #' @importFrom cli cli_abort
 #'
 #' @export
-pdr_get_rgba_from_spray <- function(
+pdr_add_rgba <- function(
   paindrawr_data,
   method = "memory",
   clean_up = TRUE,
-  #dpi,
-  rgba_only = FALSE,
-  tool_width_override = NULL,
-  tool_override = NULL
+  polygon = "none",
+  rgba_only = FALSE
 ) {
   # Check arguments
-  if (
-    !is.null(tool_override) && !tool_override %in% c("spray", "pen", "polygon")
-  ) {
-    stop("Parameter 'tool_override' has invalid value")
-  }
-
   method <- match.arg(method, choices = c("memory", "file"))
+  polygon <- match.arg(polygon, choices = c("none", "pen", "spray", "both"))
 
   # preserve data before normalisation for re-attaching .rgba
   input_data <- paindrawr_data
@@ -107,11 +98,11 @@ pdr_get_rgba_from_spray <- function(
       purrr::map(
         paindrawr_data,
         \(x) {
-          pdr_get_rgba_from_spray(
+          pdr_add_rgba(
             paindrawr_data = x,
+            polygon = polygon,
             method = method,
             clean_up = clean_up,
-            #dpi = dpi,
             rgba_only = rgba_only
           )
         }
@@ -163,7 +154,7 @@ pdr_get_rgba_from_spray <- function(
       )
   }
 
-  # Base plot (pen strokes)
+  # Base plot
   pdr_base <- pdr_pen |>
     ggplot2::ggplot(ggplot2::aes(
       x = .x,
@@ -180,34 +171,64 @@ pdr_get_rgba_from_spray <- function(
     ggplot2::scale_color_identity() +
     ggplot2::scale_size_identity() +
     ggplot2::scale_alpha_identity() +
-    ggplot2::scale_linewidth_identity() +
-    ggplot2::geom_path(
-      ggplot2::aes(
-        group = paste0(.id, "_", .index),
-        linewidth = size_mm + 1
-      ),
-      linetype = 1
-    )
+    ggplot2::scale_linewidth_identity()
 
-  # Add spray points on top
-  plot_out <- pdr_base +
-    ggplot2::geom_point(
-      data = pdr_spray,
-      ggplot2::aes(size = size_mm),
-      shape = 15
-    )
+  # Draw pen or pen polygon
+  if (polygon %in% c("pen", "both")) {
+    pdr_base <- pdr_base +
+      ggplot2::geom_polygon(
+        ggplot2::aes(
+          group = paste0(.id, "_", .index),
+          linewidth = size_mm + 1
+        ),
+        linetype = 1,
+        color = "black",
+        fill = "black"
+      )
+  } else {
+    pdr_base <- pdr_base +
+      ggplot2::geom_path(
+        ggplot2::aes(
+          group = paste0(.id, "_", .index),
+          linewidth = size_mm + 1
+        ),
+        linetype = 1
+      )
+  }
+
+  # Draw spray or spray polygon
+  if (polygon %in% c("spray", "both")) {
+    plot_out <- pdr_base +
+      ggplot2::geom_polygon(
+        data = pdr_spray,
+        ggplot2::aes(
+          group = paste0(.id, "_", .index),
+          linewidth = size_mm + 1
+        ),
+        linetype = 1,
+        color = "black",
+        fill = "black"
+      )
+  } else {
+    plot_out <- pdr_base +
+      ggplot2::geom_point(
+        data = pdr_spray,
+        ggplot2::aes(size = size_mm),
+        shape = 15
+      )
+  }
 
   # Translate canvas pixels to mm for the rendering device
-  mm_per_inch <- 25.4
-  pixel_to_mm <- mm_per_inch / 96 # physical canvas size is fixed at 96 dpi
-  width_mm <- image_width * pixel_to_mm
-  height_mm <- image_height * pixel_to_mm
+  # mm_per_inch <- 25.4
+  # pixel_to_mm <- mm_per_inch / 96 # physical canvas size is fixed at 96 dpi
+  # width_mm <- image_width * pixel_to_mm
+  # height_mm <- image_height * pixel_to_mm
 
   if (method == "memory") {
     arr <- ragg::agg_capture(
-      width = width_mm,
-      height = height_mm,
-      units = "mm",
+      width = image_width,
+      height = image_height,
+      units = "px",
       #res = dpi,
       bg = "transparent"
     )
@@ -230,9 +251,9 @@ pdr_get_rgba_from_spray <- function(
     ggplot2::ggsave(
       plot = plot_out,
       file = tmp,
-      width = width_mm,
-      height = height_mm,
-      units = "mm",
+      width = image_width,
+      height = image_height,
+      units = "px",
       #dpi = dpi
     )
 
