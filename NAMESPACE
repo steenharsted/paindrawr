@@ -2,6 +2,7 @@
 
 export(pdr_add_polygons)
 export(pdr_add_rgba)
+export(pdr_add_stencil)
 export(pdr_apply_raster_template)
 export(pdr_check_data)
 export(pdr_example_file)

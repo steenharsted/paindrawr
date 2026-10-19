@@ -4,29 +4,17 @@
 \alias{pdr_get_info}
 \title{Extract information from pain drawing objects}
 \usage{
-pdr_get_info(paindrawr_data, id1 = ".id", id2 = NULL)
+pdr_get_info(pdr_list, id1 = ".id", id2 = NULL)
 }
 \arguments{
-\item{data_col}{A valid pain drawing object (typically a list-column) as checked
-by \code{\link[=pdr_check_data]{pdr_check_data()}}.}
+\item{pdr_list}{A valid pain drawing list-column -- see pdr_match for details.}
 
-\item{var}{A character vector of length 1 or 2 specifying what information
-to extract.
+\item{id1}{A string specifying which element of pdr_list to get}
 
-If \code{var} has length 1, the value should be the name of an element in each
-pain drawing (e.g. \code{".id"}).
-
-If \code{var} has length 2, the first element must be either \code{".strokes"} or
-\code{".points"}, and the second element must be the name of a column in the
-corresponding tibble (e.g. \code{c(".strokes", ".alpha")}).}
+\item{id2}{A string specifying which element of id1 to get, assuming id1 is a tibble or list element of pdr_list}
 }
 \value{
-If \code{var[1]} refers to a regular element, a vector of length \code{length(data_col)} is
-returned.
-
-If \code{var[1]} is \code{".strokes"} or \code{".points"}, a list of length \code{length(data_col)}
-is returned, where each element contains the selected column from the
-corresponding tibble.
+If vector of same length as pdr_list consisting of the specified elements
 }
 \description{
 Extracts metadata or variables from a pain drawing (\code{data_col}) list-column.
@@ -36,12 +24,12 @@ returned as a list with one element per pain drawing.
 }
 \examples{
 # Extract ids
-pdr_example_data |> pdr_get_info(pdr_data, ".id")
+pdr_example_data |> mutate(id = pdr_get_info(pdr_data, ".id"))
 
 # Extract x coordinates from the .points tibble
-pdr_example_data |> pdr_get_info(pdr_data, ".strokes", ".alpha")
-#'
+pdr_example_data |> mutate(x_coord = pdr_get_info(pdr_data, ".strokes", ".x"))
+
 }
 \seealso{
-\code{\link[=pdr_check_data]{pdr_check_data()}}
+\code{\link[=pdr_match]{pdr_match()}}
 }

@@ -4,7 +4,7 @@
 \alias{pdr_modify_rgba}
 \title{Modify rgba data stored in the pain drawing list column}
 \usage{
-pdr_modify_rgba(pdr_list, op = "", mx2 = NULL)
+pdr_modify_rgba(pdr_list, op = "", stencil = NULL, threshold = 0.5)
 }
 \description{
 Modify rgba data stored in the pain drawing list column

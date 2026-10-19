@@ -4,14 +4,16 @@
 \alias{pdr_match}
 \title{Argument verification of pain drawing data types}
 \usage{
-pdr_match(arg, check_only = FALSE, mode = "validate")
+pdr_match(input, action = "eval", as = "", mode = "superficial")
 }
 \arguments{
-\item{arg}{a variable to be matched against 'pdr_tibble', 'pdr_list' and 'pdr_drawing' data types.}
+\item{as}{A string of "", "list" or "tibble", specifying whether to coerce a a pdr_drawing or pdr_list to pdr_list or pdr_tibble.}
 
-\item{check_only}{a logical specifying whether to enforce match or return a result string}
+\item{mode}{A string of 'validate' or 'superficial' specifying superficial matching or actual validation}
 
-\item{mode}{a string of 'validate' or 'superficial' specifying superficial matching or actual validation}
+\item{arg}{A variable to be matched against 'pdr_tibble', 'pdr_list' and 'pdr_drawing' data types.}
+
+\item{check_only}{A logical specifying whether to enforce match or return a result string}
 }
 \description{
 \code{pdr_match} matches an input parameter against the three
@@ -36,5 +38,7 @@ pain drawing data types:
 
 If the parameter 'check_only' is TRUE, the function returns a string of 'pdr_tibble', 'pdr_list', 'pdr_drawing' or 'invalid'.
 
-If the para
+If the parameter 'mode' is "superficial" a quick and simple check of the structure of arg is done. If 'mode' is "validate", a more detailed check of data structure and content requirements is performed.
+
+When the parameter 'as' is "list", the function will return a pdr_list if 'arg' is a pdr_drawing. Similarly, if 'as' is "tibble", an 'arg' which is a pdr_drawing or a pdr_list will be returned as a pdr_tibble, with columns 'id' and 'pdr_data'. When 'as' is specified, the function defauls to 'mode' = "validate" and 'check_only' = FALSE.
 }
