@@ -274,6 +274,13 @@ my_data |>
     paindrawr_data = palmar, 
     background_image = bg_palmar
   )
+
+my_data |> 
+  head(1) |> 
+  pdr_plot_drawing(
+    paindrawr_data = palmar,
+    background_image = bg_palmar
+  )
 ```
 
 

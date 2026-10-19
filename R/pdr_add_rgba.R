@@ -3,14 +3,20 @@
 #' Renders the strokes and spray points from one or more pain drawings into
 #' RGBA numeric arrays. By default, the array is attached as a `$.rgba` element
 #' to each drawing and the augmented drawing(s) are returned. Set
-#' `rgba_only = TRUE` to return the bare array(s) instead, which is useful
-#' when assigning into a tibble list-column directly.
+#' `rgba_only = TRUE` to return only the array(s), each wrapped in a named
+#' list with a single `$.rgba` element. This is useful when assigning into a
+#' separate tibble list-column.
+#'
+#' The output always has the same shape as the input: a single drawing returns
+#' a single result, and a list of drawings (of any length, including 1)
+#' returns a list of results of the same length.
 #'
 #' @param paindrawr_data A pain drawing in one of two forms:
-#'   * A single named list as produced by [pdr_import_json()] or extracted
-#'     from a list-column (e.g. `pd$pdr_data[[1]]`).
-#'   * A list-of-named-lists containing multiple drawings (e.g.
-#'     `pdr_example_data`).
+#'   * A single drawing: a named list containing a `.strokes` element, as
+#'     produced by [pdr_import_json()] or extracted from a list-column
+#'     (e.g. `pd$pdr_data[[1]]`).
+#'   * A list of drawings of any length, including 1 (e.g.
+#'     `pdr_example_data` or a list-column such as `pd$pdr_data`).
 #' @param method Character. Controls the rasterization back-end. Either:
 #'   * `"memory"` (default) — renders in-memory via [ragg::agg_capture()],
 #'     no temp file is written to disk.
@@ -19,22 +25,29 @@
 #' @param clean_up Logical. If `TRUE` (default), the temporary PNG file is
 #'   deleted on exit. Only relevant when `method = "file"`. Set to `FALSE` to
 #'   retain the file for debugging.
-#' @param dpi Resolution used during rasterization. Defaults to `96`. Increase for print-quality output (e.g. `300`), noting this
-#'   does not affect the canvas dimensions, only output pixel density.
+#' @param polygon Character. Controls whether strokes are rendered as filled
+#'   polygons (in black) instead of their original appearance. One of:
+#'   * `"none"` (default) — pen strokes as paths, spray strokes as points.
+#'   * `"pen"` — pen strokes as filled polygons.
+#'   * `"spray"` — spray strokes as filled polygons.
+#'   * `"both"` — both pen and spray strokes as filled polygons.
 #' @param rgba_only Logical. If `FALSE` (default), returns the input
 #'   drawing(s) with a `$.rgba` element appended to each. If `TRUE`, returns
-#'   only the RGBA array (single drawing) or a list of RGBA arrays (multiple
-#'   drawings). Use `TRUE` when assigning into a tibble list-column:
-#'   `mutate(.rgba = pdr_add_rgba(pdr_data, rgba_only = TRUE))`.
+#'   a named list with a single `$.rgba` element (single drawing) or a list
+#'   of such named lists (list of drawings). Use `TRUE` when assigning into
+#'   a separate tibble list-column:
+#'   `mutate(rgba = pdr_add_rgba(pdr_data, rgba_only = TRUE))`.
 #'
 #' @return
 #'   * `rgba_only = FALSE` (default): the input drawing (named list) with
-#'     `$.rgba` appended, or a list of such augmented drawings when multiple
-#'     drawings are supplied.
-#'   * `rgba_only = TRUE`: a numeric array of dimensions
-#'     `height × width × 4` (RGBA channels, values in \[0, 1\]), or a list of
-#'     such arrays when multiple drawings are supplied. Transparent pixels are
-#'     set to black (`RGB = 0`).
+#'     `$.rgba` appended, or a list of such augmented drawings when a list of
+#'     drawings is supplied.
+#'   * `rgba_only = TRUE`: a named list with a single element `$.rgba`, or a
+#'     list of such named lists when a list of drawings is supplied.
+#'
+#'   In both cases `$.rgba` is a numeric array of dimensions
+#'   `height × width × 4` (RGBA channels, values in \[0, 1\]). Transparent
+#'   pixels are set to black (`RGB = 0`).
 #'
 #' @examples
 #' \dontrun{
@@ -43,22 +56,32 @@
 #' grid::grid.newpage()
 #' grid::grid.raster(drawing_with_rgba$.rgba)
 #'
+#' # Single drawing — returns list(.rgba = <array>)
+#' rgba <- pdr_example_data[[1]] |> pdr_add_rgba(rgba_only = TRUE)
+#' dim(rgba$.rgba)
+#'
 #' # Multiple drawings at once
 #' drawings_with_rgba <- pdr_example_data |> pdr_add_rgba()
+#'
+#' # Render spray strokes as filled polygons
+#' pdr_example_data[[1]] |> pdr_add_rgba(polygon = "spray")
 #'
 #' # Tibble workflow
 #'
 #' ## Data
-#' pd <- tibble(pdr_data = pdr_example_data)
+#' pd <- tibble::tibble(pdr_data = pdr_example_data)
 #'
 #' ## add .rgba to the input list-column
 #' pd |> dplyr::mutate(pdr_data = pdr_add_rgba(pdr_data))
 #'
 #' ## add rgba arrays in a separate list-column
-#' pd |>
+#' pd_rgba <- pd |>
 #'   dplyr::mutate(
-#'     rgba_arrays = pdr_add_rgba(pdr_data, rgba_only = TRUE)
-#'     )
+#'     rgba = pdr_add_rgba(pdr_data, rgba_only = TRUE)
+#'   )
+#'
+#' ## access the array for the first row
+#' pd_rgba$rgba[[1]]$.rgba
 #' }
 #'
 #' @importFrom dplyr select mutate filter full_join n pull join_by
@@ -68,9 +91,11 @@
 #' @importFrom ragg agg_capture
 #' @importFrom ggplot2 ggplot aes coord_fixed theme_void scale_color_identity
 #' @importFrom ggplot2 scale_size_identity scale_alpha_identity scale_linewidth_identity
-#' @importFrom ggplot2 geom_path geom_point ggsave
+#' @importFrom ggplot2 geom_path geom_point geom_polygon ggsave
 #' @importFrom purrr map
 #' @importFrom cli cli_abort
+#' @importFrom stats runif
+#' @importFrom grDevices col2rgb dev.off
 #'
 #' @export
 pdr_add_rgba <- function(
@@ -84,16 +109,12 @@ pdr_add_rgba <- function(
   method <- match.arg(method, choices = c("memory", "file"))
   polygon <- match.arg(polygon, choices = c("none", "pen", "spray", "both"))
 
-  # preserve data before normalisation for re-attaching .rgba
-  input_data <- paindrawr_data
+  # A single drawing is a named list containing `.strokes`;
+  # anything else is treated as a list of drawings (of any length, incl. 1)
+  is_single_drawing <- is.list(paindrawr_data) &&
+    ".strokes" %in% names(paindrawr_data)
 
-  # Wrap in list() if it's a single drawing (named list), not a list-of-named-lists
-  if (!is.list(paindrawr_data[[1]])) {
-    paindrawr_data <- list(paindrawr_data)
-  }
-
-  # If multiple drawings, return a list
-  if (length(paindrawr_data) > 1) {
+  if (!is_single_drawing) {
     return(
       purrr::map(
         paindrawr_data,
@@ -111,7 +132,7 @@ pdr_add_rgba <- function(
   }
 
   .data <- tibble::tibble(
-    .list_col = paindrawr_data
+    .list_col = list(paindrawr_data)
   ) |>
     tidyr::unnest_wider(col = .list_col)
 
@@ -264,9 +285,9 @@ pdr_add_rgba <- function(
   rgba_arr[,, 1:3][rgba_arr[,, 4] == 0] <- 0
 
   if (rgba_only) {
-    return(rgba_arr)
+    return(list(.rgba = rgba_arr))
   } else {
-    input_data$.rgba <- rgba_arr
-    return(input_data)
+    paindrawr_data$.rgba <- rgba_arr
+    return(paindrawr_data)
   }
 }
