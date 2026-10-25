@@ -77,7 +77,7 @@ pdr_summarize_alpha_intensity <- function(
       
       sapply(summary_stat, \(f) {match.fun(f)(alpha_channel)}) |>
         dplyr::bind_rows() |>
-        dplyr::rename_with(~paste0(col_name,.x, sep="_"), everything())# map return
+        dplyr::rename_with(~paste0(col_name,"_",.x), everything())# map return
     })
   }
 
@@ -126,7 +126,7 @@ pdr_summarize_alpha_intensity <- function(
     if(!is.null(stencils)) {stop("Paramter 'stencils' is not a valid pdr_list with .stencil elements")}
   }
   # summary_stat ok
-  summary_stat <- match.arg(summary_stat)
+  #summary_stat <- match.arg(summary_stat)
   #########################
   ### End sanity cheks ####
   #########################
@@ -147,12 +147,13 @@ pdr_summarize_alpha_intensity <- function(
           summary_stat,
           alpha_range,
           stencils[[j]]$.stencil, # one stencil
-          paste0(i,stencils[[j]]$.id,sep="_") # name
+          paste0(i,"_",stencils[[j]]$.id) # name
         )
       )
     }
   }
 
+  pdr_tibble
 
 }
 
