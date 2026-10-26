@@ -15,6 +15,11 @@ pdr_match(input, action = "eval", as = "", mode = "superficial")
 
 \item{check_only}{A logical specifying whether to enforce match or return a result string}
 }
+\value{
+Depending on input parameters. Will return TRUE/FALSE if action is set to 'eval' and as is specified. Will
+return the input pdr_data type (pdr_tibble, pdr_list og pdr_drawing) as a string if action is set to 'eval' and
+as is not set. Will return an actual pdr_tibble, pdr_list or pdr_drawing, if action is set to 'coerce'.
+}
 \description{
 \code{pdr_match} matches an input parameter against the three
 pain drawing data types:
@@ -41,4 +46,11 @@ If the parameter 'check_only' is TRUE, the function returns a string of 'pdr_tib
 If the parameter 'mode' is "superficial" a quick and simple check of the structure of arg is done. If 'mode' is "validate", a more detailed check of data structure and content requirements is performed.
 
 When the parameter 'as' is "list", the function will return a pdr_list if 'arg' is a pdr_drawing. Similarly, if 'as' is "tibble", an 'arg' which is a pdr_drawing or a pdr_list will be returned as a pdr_tibble, with columns 'id' and 'pdr_data'. When 'as' is specified, the function defauls to 'mode' = "validate" and 'check_only' = FALSE.
+}
+\examples{
+pdr_example_data |> pdr_match() # Returns "pdr_tibble"
+
+pdr_example_data |> pdr_match(as="pdr_list") # Returns FALSE
+
+pdr_eample_data$pdr_data |> pdr_match(action="coerce", as="pdr_tibble", mode="validate") # Returns a validated pdr_tibble with columns 'id' and `pdr_list` where the latter is named as the input.
 }

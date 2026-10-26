@@ -24,10 +24,17 @@
 #' @param mode A string of 'validate' or 'superficial' specifying superficial matching or actual validation
 #' @param as A string of "", "list" or "tibble", specifying whether to coerce a a pdr_drawing or pdr_list to pdr_list or pdr_tibble.
 #'
-#' @returns
+#' @returns Depending on input parameters. Will return TRUE/FALSE if action is set to 'eval' and as is specified. Will
+#'   return the input pdr_data type (pdr_tibble, pdr_list og pdr_drawing) as a string if action is set to 'eval' and
+#'   as is not set. Will return an actual pdr_tibble, pdr_list or pdr_drawing, if action is set to 'coerce'.
 #'
 #' @export
 #' @examples
+#' pdr_example_data |> pdr_match() # Returns "pdr_tibble"
+#' 
+#' pdr_example_data |> pdr_match(as="pdr_list") # Returns FALSE
+#' 
+#' pdr_eample_data$pdr_data |> pdr_match(action="coerce", as="pdr_tibble", mode="validate") # Returns a validated pdr_tibble with columns 'id' and `pdr_list` where the latter is named as the input.
 pdr_match <- function(input, action="eval", as="", mode="superficial") {
   # This function takes as input a variable presumed to be a 
   # valid 'pdr_tibble', 'pdr_list' or 'pdr_drawing'.

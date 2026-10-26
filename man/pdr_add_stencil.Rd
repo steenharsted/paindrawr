@@ -4,7 +4,7 @@
 \alias{pdr_add_stencil}
 \title{Create and add a stencil to pain drawings.}
 \usage{
-pdr_add_stencil(pdr_list, threshold = 1, base = "A", by = "<")
+pdr_add_stencil(pdr_list, threshold = 1, channel = "A", by = "<")
 }
 \arguments{
 \item{pdr_list}{A valid pdr_list -- see \code{pdr_match()}}
@@ -12,14 +12,14 @@ pdr_add_stencil(pdr_list, threshold = 1, base = "A", by = "<")
 \item{threshold}{A threshold value which determines a
 pixel as being 0 or 1}
 
-\item{base}{A string specifying which channels of the
+\item{channel}{A string specifying which channels of the
 RGBA matrix to compare to the threshold.}
 
 \item{by}{Either '<' or '>'}
 }
 \value{
 A pdr_list with added .stencil element which is
-a matrix of dimensions width x height with values 0 or 1
+a matrix of dimensions width x height y with values 0 or 1
 }
 \description{
 Users should only add a stencil to pain drawings that are
@@ -42,8 +42,14 @@ which a pixel's value is dichotomized to 0 or 1 (FALSE or
 TRUE) as per the 'by' parameter. E.g. a pixel with alpha
 value 0.4 will evaluate to 0 by '>' a 'threshold' of 0.5
 
-The 'base' parameter determines which of the R, G, B and
+The 'channel' parameter determines which of the R, G, B and
 A channels should be evaluated in reference to the
-threshold. E.g. 'RGBA' evaluates all of the channels, and
-'A' evaluates only the alpha channel.
+threshold. E.g. 'RGBA' evaluates all of the channels by
+'OR', and 'A' evaluates only the alpha channel.
+}
+\examples{
+pdr_example_data[1:3,] |> 
+  mutate(pdr_data = pdr_add_rgba(pdr_data, polygon = "both")) |>
+  mutate(pdr_data = pdr_add_stencil(pdr_data, threshold = 0.5, channel="A", by="<"))
+
 }
