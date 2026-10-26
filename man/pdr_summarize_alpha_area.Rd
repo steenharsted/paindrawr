@@ -4,10 +4,10 @@
 \alias{pdr_summarize_alpha_area}
 \title{Calculate the proportion of canvas covered in a pain drawing}
 \usage{
-pdr_summarize_alpha_area(rgbas, alpha_range = c(0, 1))
+pdr_summarize_alpha_area(pdr_list, alpha_range = c(0, 1))
 }
 \arguments{
-\item{rgbas}{Either a list of RGBA arrays (each \verb{[height, width, 4]}), or a
+\item{pdr_list}{Either a list of RGBA arrays (each \verb{[height, width, 4]}), or a
 list of paindrawing data objects containing a \code{.rgba} element (as produced
 by \code{\link[=pdr_add_rgba]{pdr_add_rgba()}}). Typically passed as a list-column inside
 \code{dplyr::mutate()}.}
@@ -18,7 +18,7 @@ Defaults to \code{c(0, 1)}, i.e. all drawn pixels. Use e.g. \code{c(0.5, 1)} to
 restrict to heavily drawn pixels only.}
 }
 \value{
-A numeric vector the same length as \code{rgbas}. Each element is the
+A numeric vector the same length as \code{pdr_list}. Each element is the
 proportion of canvas pixels with alpha in \verb{(alpha_range[1], alpha_range[2]]}
 for the corresponding drawing, i.e. a value between 0 and 1.
 }
@@ -31,18 +31,18 @@ and a large light drawing.
 }
 \examples{
 pd <- pdr_import_json("data-raw/two_geoms.json") |>
-  dplyr::mutate(rgba = pdr_add_rgba(pdr_data))
+  dplyr::mutate(rgba = pdr_add_rgba(pdr_list))
 
 # Proportion of all drawn pixels (using rgba list-column)
 pdr_summarize_alpha_area(pd$rgba)
 
-# Passed pdr_data directly
-pdr_summarize_alpha_area(pd$pdr_data)
+# Passed pdr_list directly
+pdr_summarize_alpha_area(pd$pdr_list)
 
 # Use inside mutate()
 pd |> dplyr::mutate(
-  area         = pdr_summarize_alpha_area(pdr_data),
-  area_over_50 = pdr_summarize_alpha_area(pdr_data, alpha_range = c(0.5, 1))
+  area         = pdr_summarize_alpha_area(pdr_list),
+  area_over_50 = pdr_summarize_alpha_area(pdr_list, alpha_range = c(0.5, 1))
 )
 }
 \seealso{

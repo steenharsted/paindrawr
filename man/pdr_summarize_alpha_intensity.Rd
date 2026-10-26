@@ -5,28 +5,37 @@
 \title{Summarise alpha intensity of drawn pixels in a pain drawing}
 \usage{
 pdr_summarize_alpha_intensity(
-  rgbas,
-  summary_stat = c("mean", "max", "min", "median", "sd"),
-  alpha_range = c(0, 1)
+  pdr_tibble,
+  pdr_list_cols = pdr_data,
+  summary_stat = c("mean", "max", "min", "median", "sd", "iqr", "all"),
+  alpha_range = c(0, 1),
+  stencils = NULL
 )
 }
 \arguments{
-\item{rgbas}{Either a list of RGBA arrays (each \verb{[height, width, 4]}), or a
-list of paindrawing data objects containing a \code{.rgba} element (as produced
-by \code{\link[=pdr_add_rgba]{pdr_add_rgba()}}). Typically passed as a list-column inside
-\code{dplyr::mutate()}.}
-
 \item{summary_stat}{A string specifying the summary statistic to compute
 over drawn pixel alpha values. One of \code{"mean"} (default), \code{"max"},
-\code{"min"}, \code{"median"}, or \code{"sd"}.}
+\code{"min"}, \code{"median"}, \code{"sd"}, \code{"raw"} or \code{"seven"}. If \code{"seven"} the function
+returns a list column 5 summary stats. If \code{"raw"} the function returns
+a list column of numeric vectors will all resulting alpha values.}
 
 \item{alpha_range}{A numeric vector of length 2 specifying the lower
 (exclusive) and upper (inclusive) bounds of the alpha range to include.
 Defaults to \code{c(0, 1)}, i.e. all drawn pixels. Use e.g. \code{c(0.5, 1)} to
 restrict to heavily drawn pixels only.}
+
+\item{stencils}{A list (length == 1 or same length as pdr_list) of (2-dimensional)
+matrices of the same x and y dimension as pdr_list Expected values are 0
+and 1 -- if provided, the stencils are applied (multiplied) with the
+rgba arrays before summarising.}
+
+\item{pdr_list}{Either a list of RGBA arrays (each \verb{[height, width, 4]}), or a
+list of paindrawing data objects containing a \code{.rgba} element (as produced
+by \code{\link[=pdr_add_rgba]{pdr_add_rgba()}}). Typically passed as a list-column inside
+\code{dplyr::mutate()}.}
 }
 \value{
-A numeric vector the same length as \code{rgbas}. Each element is the
+A numeric vector the same length as \code{pdr_list}. Each element is the
 requested summary statistic of alpha values for pixels within
 \verb{(alpha_range[1], alpha_range[2]]}, or \code{NA_real_} if no pixels fall in
 that range.
@@ -40,18 +49,18 @@ distinguish between a small intense drawing and a large light drawing.
 }
 \examples{
 pd <- pdr_import_json("data-raw/two_geoms.json") |>
-  dplyr::mutate(rgba = pdr_add_rgba(pdr_data))
+  dplyr::mutate(rgba = pdr_add_rgba(pdr_list))
 
 # Mean intensity across all drawn pixels (using rgba list-column)
 pdr_summarize_alpha_intensity(pd$rgba)
 
-# Max intensity, passed pdr_data directly
-pdr_summarize_alpha_intensity(pd$pdr_data, summary_stat = "max")
+# Max intensity, passed pdr_list directly
+pdr_summarize_alpha_intensity(pd$pdr_list, summary_stat = "max")
 
 # Use inside mutate()
 pd |> dplyr::mutate(
-  intensity_mean = pdr_summarize_alpha_intensity(pdr_data),
-  intensity_max  = pdr_summarize_alpha_intensity(pdr_data, summary_stat = "max")
+  intensity_mean = pdr_summarize_alpha_intensity(pdr_list),
+  intensity_max  = pdr_summarize_alpha_intensity(pdr_list, summary_stat = "max")
 )
 }
 \seealso{

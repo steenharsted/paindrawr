@@ -19,25 +19,29 @@
 #' TRUE) as per the 'by' parameter. E.g. a pixel with alpha 
 #' value 0.4 will evaluate to 0 by '>' a 'threshold' of 0.5
 #' 
-#' The 'base' parameter determines which of the R, G, B and 
+#' The 'channel' parameter determines which of the R, G, B and 
 #' A channels should be evaluated in reference to the 
-#' threshold. E.g. 'RGBA' evaluates all of the channels, and
-#' 'A' evaluates only the alpha channel.
+#' threshold. E.g. 'RGBA' evaluates all of the channels by 
+#' 'OR', and 'A' evaluates only the alpha channel.
 #'
 #' @param pdr_list A valid pdr_list -- see `pdr_match()`
 #' @param threshold A threshold value which determines a 
 #' pixel as being 0 or 1
-#' @param base A string specifying which channels of the 
+#' @param channel A string specifying which channels of the 
 #' RGBA matrix to compare to the threshold. 
 #' @param by Either '<' or '>'
 #'
 #' @returns A pdr_list with added .stencil element which is 
-#' a matrix of dimensions width x height with values 0 or 1
+#' a matrix of dimensions width x height y with values 0 or 1
 #'
 #' @export
 #' @examples
-pdr_add_stencil <- function(pdr_list, threshold=1, base="A", by = "<") {
-  # NOTE. This function is based on any one of the
+#' pdr_example_data[1:3,] |> 
+#'   mutate(pdr_data = pdr_add_rgba(pdr_data, polygon = "both")) |>
+#'   mutate(pdr_data = pdr_add_stencil(pdr_data, threshold = 0.5, channel="A", by="<"))
+#' 
+pdr_add_stencil <- function(pdr_list, threshold=1, channel="A", by = "<") {
+  # NOTE. This function is channeld on any one of the
   # R, G, B or A levels/channels of the .rgba array being 
   # smaller than the threshold value (i.e darker) ... if 
   # that is the case for a given pixel, it is represented as
@@ -52,15 +56,15 @@ pdr_add_stencil <- function(pdr_list, threshold=1, base="A", by = "<") {
     stop("Not all elements of the parameter 'pdr_list' contain a .rgba element")
   }
 
-  R <- stringr::str_detect(base, "R")
-  G <- stringr::str_detect(base, "G")
-  B <- stringr::str_detect(base, "B")
-  A <- stringr::str_detect(base, "A")
-  if(!any(R, G, B, A)) {stop("Invalid parameter 'base'. ")}
+  R <- stringr::str_detect(channel, "R")
+  G <- stringr::str_detect(channel, "G")
+  B <- stringr::str_detect(channel, "B")
+  A <- stringr::str_detect(channel, "A")
+  if(!any(R, G, B, A)) {stop("Invalid parameter 'channel'. ")}
 
   # This code is a little opaque, but
   # (A && get(by)(pdr_drawing$.rgba[,,4] , threshold))
-  # evaluates to TRUE if A is in 'base' parameter AND 
+  # evaluates to TRUE if A is in 'channel' parameter AND 
   # pdr_drawing$.. is > than threshold, or < than threshold
   # where < or > is determined by the 'by' parameter
   pdr_list <- pdr_list |> purrr::map(\(pdr_drawing) {

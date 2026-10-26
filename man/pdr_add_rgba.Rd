@@ -15,10 +15,11 @@ pdr_add_rgba(
 \arguments{
 \item{paindrawr_data}{A pain drawing in one of two forms:
 \itemize{
-\item A single named list as produced by \code{\link[=pdr_import_json]{pdr_import_json()}} or extracted
-from a list-column (e.g. \code{pd$pdr_data[[1]]}).
-\item A list-of-named-lists containing multiple drawings (e.g.
-\code{pdr_example_data}).
+\item A single drawing: a named list containing a \code{.strokes} element, as
+produced by \code{\link[=pdr_import_json]{pdr_import_json()}} or extracted from a list-column
+(e.g. \code{pd$pdr_data[[1]]}).
+\item A list of drawings of any length, including 1 (e.g.
+\code{pdr_example_data} or a list-column such as \code{pd$pdr_data}).
 }}
 
 \item{method}{Character. Controls the rasterization back-end. Either:
@@ -33,32 +34,47 @@ it back with \code{\link[png:readPNG]{png::readPNG()}}. Use this if the \code{"m
 deleted on exit. Only relevant when \code{method = "file"}. Set to \code{FALSE} to
 retain the file for debugging.}
 
+\item{polygon}{Character. Controls whether strokes are rendered as filled
+polygons (in black) instead of their original appearance. One of:
+\itemize{
+\item \code{"none"} (default) — pen strokes as paths, spray strokes as points.
+\item \code{"pen"} — pen strokes as filled polygons.
+\item \code{"spray"} — spray strokes as filled polygons.
+\item \code{"both"} — both pen and spray strokes as filled polygons.
+}}
+
 \item{rgba_only}{Logical. If \code{FALSE} (default), returns the input
 drawing(s) with a \verb{$.rgba} element appended to each. If \code{TRUE}, returns
-only the RGBA array (single drawing) or a list of RGBA arrays (multiple
-drawings). Use \code{TRUE} when assigning into a tibble list-column:
-\code{mutate(.rgba = pdr_add_rgba(pdr_data, rgba_only = TRUE))}.}
-
-\item{dpi}{Resolution used during rasterization. Defaults to \code{96}. Increase for print-quality output (e.g. \code{300}), noting this
-does not affect the canvas dimensions, only output pixel density.}
+a named list with a single \verb{$.rgba} element (single drawing) or a list
+of such named lists (list of drawings). Use \code{TRUE} when assigning into
+a separate tibble list-column:
+\code{mutate(rgba = pdr_add_rgba(pdr_data, rgba_only = TRUE))}.}
 }
 \value{
 \itemize{
 \item \code{rgba_only = FALSE} (default): the input drawing (named list) with
-\verb{$.rgba} appended, or a list of such augmented drawings when multiple
-drawings are supplied.
-\item \code{rgba_only = TRUE}: a numeric array of dimensions
-\verb{height × width × 4} (RGBA channels, values in [0, 1]), or a list of
-such arrays when multiple drawings are supplied. Transparent pixels are
-set to black (\code{RGB = 0}).
+\verb{$.rgba} appended, or a list of such augmented drawings when a list of
+drawings is supplied.
+\item \code{rgba_only = TRUE}: a named list with a single element \verb{$.rgba}, or a
+list of such named lists when a list of drawings is supplied.
 }
+
+In both cases \verb{$.rgba} is a numeric array of dimensions
+\verb{height × width × 4} (RGBA channels, values in [0, 1]). Transparent
+pixels are set to black (\code{RGB = 0}).
 }
 \description{
 Renders the strokes and spray points from one or more pain drawings into
 RGBA numeric arrays. By default, the array is attached as a \verb{$.rgba} element
 to each drawing and the augmented drawing(s) are returned. Set
-\code{rgba_only = TRUE} to return the bare array(s) instead, which is useful
-when assigning into a tibble list-column directly.
+\code{rgba_only = TRUE} to return only the array(s), each wrapped in a named
+list with a single \verb{$.rgba} element. This is useful when assigning into a
+separate tibble list-column.
+}
+\details{
+The output always has the same shape as the input: a single drawing returns
+a single result, and a list of drawings (of any length, including 1)
+returns a list of results of the same length.
 }
 \examples{
 \dontrun{
@@ -67,22 +83,32 @@ drawing_with_rgba <- pdr_example_data[[1]] |> pdr_add_rgba()
 grid::grid.newpage()
 grid::grid.raster(drawing_with_rgba$.rgba)
 
+# Single drawing — returns list(.rgba = <array>)
+rgba <- pdr_example_data[[1]] |> pdr_add_rgba(rgba_only = TRUE)
+dim(rgba$.rgba)
+
 # Multiple drawings at once
 drawings_with_rgba <- pdr_example_data |> pdr_add_rgba()
+
+# Render spray strokes as filled polygons
+pdr_example_data[[1]] |> pdr_add_rgba(polygon = "spray")
 
 # Tibble workflow
 
 ## Data
-pd <- tibble(pdr_data = pdr_example_data)
+pd <- tibble::tibble(pdr_data = pdr_example_data)
 
 ## add .rgba to the input list-column
 pd |> dplyr::mutate(pdr_data = pdr_add_rgba(pdr_data))
 
 ## add rgba arrays in a separate list-column
-pd |>
+pd_rgba <- pd |>
   dplyr::mutate(
-    rgba_arrays = pdr_add_rgba(pdr_data, rgba_only = TRUE)
-    )
+    rgba = pdr_add_rgba(pdr_data, rgba_only = TRUE)
+  )
+
+## access the array for the first row
+pd_rgba$rgba[[1]]$.rgba
 }
 
 }
