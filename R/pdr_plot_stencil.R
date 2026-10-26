@@ -31,6 +31,8 @@
 #' 
 pdr_plot_stencil <- function(.data, pdr_list, background_image=NULL, ncol = NULL, nrow = NULL, invert=FALSE) {
 
+  if(!pdr_match(.data, as="pdr_tibble")) { stop("Invalid '.data' parameter - should be pdr_tibble.")}
+
   # Validate and process background_image
   if (!is.null(background_image)) {
     if (is.character(background_image)) {
@@ -55,6 +57,9 @@ pdr_plot_stencil <- function(.data, pdr_list, background_image=NULL, ncol = NULL
     }
   }
 
+  # Replace the .rgba element with one where all pixels are
+  # full red, but the alpha channel is the stencil matrix
+  # (or the inverted stencil) .. and plot as pdr_plot_rgba
   .data |>
     mutate( {{pdr_list}} := {{pdr_list}} |>
       purrr::map(\(pdr_drawing) {

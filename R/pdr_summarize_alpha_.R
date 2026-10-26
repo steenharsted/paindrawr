@@ -50,7 +50,7 @@
 #' )
 pdr_summarize_alpha_intensity <- function(
   pdr_tibble,
-  pdr_list_cols = pdr_data, 
+  pdr_list = c("pdr_data"), # must be string, as could be multiple
   summary_stat = c("mean", "max", "min", "median", "sd", "iqr", "all"),
   alpha_range = c(0, 1),
   stencils = NULL
@@ -66,12 +66,12 @@ pdr_summarize_alpha_intensity <- function(
     # with columns of col_name as prefix to the statistical summary function.
 
     one_pdr_list |> purrr::map_dfr(\(pdr_drawing) {
-      # apply stencil while alpha_channel dimensions are unchanged
+      # apply stencil while alpha_channel dimensions are unchanged width x height
       alpha_channel <- pdr_drawing$.rgba[,,4]
-      if(all(!is.na(one_stencil) & !is.null(one_stencil))) {
+      if(!is.null(one_stencil)) {
         alpha_channel <- alpha_channel * one_stencil  
       }
-      # apply alpha range -- WARNING alpha_channel is now no longer an array
+      # apply alpha range -- WARNING after this alpha_channel is no longer an array
       alpha_channel <- alpha_channel[!is.na(alpha_channel)]
       alpha_channel <- alpha_channel[alpha_channel > alpha_range[1] & alpha_channel <= alpha_range[2]]
       
@@ -91,15 +91,15 @@ pdr_summarize_alpha_intensity <- function(
   # is pdr_tibble actually a pdr_tibble?
   if(!pdr_match(pdr_tibble, as="pdr_tibble")) {stop("Invalid 'pdr_tibble' parameter")}
   # are all of pdr_list valid col names in the pdr_tibble
-  if(!all(pdr_list_cols %in% names(pdr_tibble))) {stop("Invalid 'pdr_list_cols' parameter - not all valid col name")}
+  if(!all({{pdr_list}} %in% names(pdr_tibble))) {stop("Invalid 'pdr_list' parameter - not all valid col name")}
   # are all specified pdr_list columns actually a pdr_list?
   if(!all(
     pdr_tibble |> 
-      dplyr::select( {{ pdr_list_cols }}) |>
+      dplyr::select( {{ pdr_list }}) |>
       dplyr::summarize_all(~pdr_match(.x, as="pdr_list"))
   )) {stop("Invalid 'pdr_list parameter - not all valid pdr_list.")}
   # Check .rgba exists in all
-  tmp <- pdr_tibble |> dplyr::select({{pdr_list_cols}}) |> 
+  tmp <- pdr_tibble |> dplyr::select({{pdr_list}}) |> 
     dplyr::summarise(
       dplyr::across(
         dplyr::everything(),
@@ -123,7 +123,7 @@ pdr_summarize_alpha_intensity <- function(
   }
   # Check stencils is a pdr_list
   if(!pdr_match(stencils, as="pdr_list")) {
-    if(!is.null(stencils)) {stop("Paramter 'stencils' is not a valid pdr_list with .stencil elements")}
+    if(!is.null(stencils)) {stop("Parameter 'stencils' is not a valid pdr_list with .stencil elements")}
   }
   # summary_stat ok
   #summary_stat <- match.arg(summary_stat)
@@ -135,19 +135,37 @@ pdr_summarize_alpha_intensity <- function(
   ####### Main loops #######
   ##########################
   
-  # Loop pdr_list_cols
-    # loop stencil
+  # If stencils are supplied:
+  if(!is.null(stencils)) {
+    # Loop pdr_list
+      # loop stencil
+        # map prd_list
+    for(i in pdr_list) {
+      for(j in seq_along(stencils)) {
+        pdr_tibble <- dplyr::bind_cols(
+          pdr_tibble,
+          get_summary_as_tibble(
+            pdr_tibble[[{{i}}]], 
+            summary_stat,
+            alpha_range,
+            stencils[[j]]$.stencil, # one stencil
+            paste0(i,"_",stencils[[j]]$.id) # name
+          )
+        )
+      }
+    }
+  } else { # stencils is NULL
+    # Loop pdr_list
       # map prd_list
-  for(i in pdr_list_cols) {
-    for(j in seq_along(stencils)) {
+    for(i in pdr_list) {
       pdr_tibble <- dplyr::bind_cols(
         pdr_tibble,
         get_summary_as_tibble(
-          pdr_tibble[[i]], 
+          pdr_tibble[[{{i}}]], 
           summary_stat,
           alpha_range,
-          stencils[[j]]$.stencil, # one stencil
-          paste0(i,"_",stencils[[j]]$.id) # name
+          NULL, # no stencil
+          i # name
         )
       )
     }

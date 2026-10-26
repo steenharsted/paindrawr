@@ -32,8 +32,14 @@ pdr_get_info <- function(pdr_list, id1=".id", id2=NULL) {
     stop("Parameter 'id1' is NULL.")
   }
 
+  # This is probably not the best way to solve this task.
+  # A better solution is to check the class of element 'id1'
+  # in pdr_list and determine the result on that basis:
+  # a vector, if id1 class is int, num, chr, lgl, etc
+  # a list, if id1 class list, tibble, matrix, array, etc
+
   if(is.null(id2)) {
-    if(id1 %in% c(".points", ".strokes", ".polygons", ".rgba")) {
+    if(id1 %in% c(".points", ".strokes", ".polygons", ".rgba", ".stencil")) {
       pdr_list |> 
         purrr::map(id1)
     } else {

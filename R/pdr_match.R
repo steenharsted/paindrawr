@@ -39,7 +39,11 @@ pdr_match <- function(input, action="eval", as="", mode="superficial") {
   # This function takes as input a variable presumed to be a 
   # valid 'pdr_tibble', 'pdr_list' or 'pdr_drawing'.
 
-  # Sanity checks
+  ######### SANITY CHECKS ########
+  if(identical(NA,input) || is.null(input)) {
+    if(action=="eval") {return(FALSE)}
+    if(action=="coerce") {stop("Invalid 'input' parameter.")}
+  }
   if(!as %in% c("","pdr_list","pdr_tibble", "pdr_drawing")) {stop("Invalid 'as' parameter.")}
   if(!action %in% c("coerce","eval")) {stop("Invalid 'action' parameter.")}
   if(!mode %in% c("superficial","validate")) {stop("Invalid 'mode' parameter.")}
@@ -62,6 +66,8 @@ pdr_match <- function(input, action="eval", as="", mode="superficial") {
     if(!is_valid) {warning("Invalid .rgba element")}
     return(is_valid)
   }
+
+  
 
   ########## ATTEMPT COERCION ##########
   if(action == "coerce") {
