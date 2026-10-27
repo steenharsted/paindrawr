@@ -11,10 +11,10 @@
 #'   by [pdr_add_rgba()]). Typically passed as a list-column inside
 #'   `dplyr::mutate()`.
 #' @param summary_stat A string specifying the summary statistic to compute
-#'   over drawn pixel alpha values. One or more of `"area"`, `"area_prop"`, `"mean"`, 
-#'   `"sd"`, `"max"`,`"min"`, `"median"`, `"q1"`, `"q5"`, `"q10"`, `"q25"`, 
+#'   over drawn pixel alpha values. One or more of `"area"`, `"area_prop"`, `"mean"`,
+#'   `"sd"`, `"max"`,`"min"`, `"median"`, `"q1"`, `"q5"`, `"q10"`, `"q25"`,
 #'   `"q75"`, `"q90"`, `"q95"`, `"q99"`. Alternatively: `"all"`, or `seven"` (default),
-#'   to return all the above, or the first seven of the above. 
+#'   to return all the above, or the first seven of the above.
 #' @param alpha_range A numeric vector of length 2 specifying the lower
 #'   (exclusive) and upper (inclusive) bounds of the alpha range to include.
 #'   Defaults to `c(0, 1)`, i.e. all drawn pixels. Use e.g. `c(0.5, 1)` to
@@ -24,7 +24,7 @@
 #'   and 1 -- if provided, the stencils are applied (multiplied) with the
 #'   rgba arrays before summarising.
 #'
-#' @returns The input pdr_tibble with a variable number of added columns. 
+#' @returns The input pdr_tibble with a variable number of added columns.
 #'   A column is added for each input pdr_list by summary stat by stencils,
 #'   appropriately named. Each column is the
 #'   requested summary statistic of alpha values for pixels within
@@ -60,120 +60,160 @@ pdr_summarize_rgba <- function(
   ############################
   ##### Helper functions #####
   ############################
-  
+
   # We must handle both string input, unquaoted col names, and 1 or more at the same time
   pdr_list <- names(
     tidyselect::eval_select(
       rlang::enquo(pdr_list),
-      pdr_tibble)
+      pdr_tibble
+    )
   )
 
-  summarize_drawing_as_tibble <- function(one_pdr_list, summary_stat, alpha_range, one_stencil, col_name) {
+  summarize_drawing_as_tibble <- function(
+    one_pdr_list,
+    summary_stat,
+    alpha_range,
+    one_stencil,
+    col_name
+  ) {
     # This function is intended to take a single pdr_list as input and iterate over each drawing
     # Apply a single stencil (a matrix) and apply an alpha range, before calculating a number
     # of summary statistics and retuning the result as a tibble of same number of rows as pdr_list
     # with columns of col_name as prefix to the statistical summary function.
-  
+
     # It is worth noting: The calculations are performed on the alpha channel only. Initially, we
     # apply the stencil to the full (width x height) alpha channel (.rgba[,,4]) which will retain
     # the alpha value of all pixels inside the stencil and set every the alpha value to 0 for all
     # pixels outside the stencil. We then simply filter out all pixels with alpha values not within
     # the specificed alpha_range and in the process, convert the alpha_channel from a width x height
-    # matrix to a variable length vector. 
-    
-    one_pdr_list |> purrr::map_dfr(\(pdr_drawing) {
-      # apply stencil while alpha_channel dimensions are unchanged width x height
-      alpha_channel <- pdr_drawing$.rgba[,,4]
-      if(!is.null(one_stencil)) {
-        alpha_channel <- alpha_channel * one_stencil  
-      }
-      # apply alpha range -- Note after this alpha_channel is no longer an array
-      alpha_channel <- alpha_channel[!is.na(alpha_channel)]
-      alpha_channel <- alpha_channel[alpha_channel > alpha_range[1] & alpha_channel <= alpha_range[2]]
-    
-      result_tib <- tibble::tibble(.rows=1) 
-      if("area" %in% summary_stat) {
-        result_tib <- dplyr::bind_cols(result_tib, area = length(alpha_channel))
-      }
-      if("area_prop" %in% summary_stat) {
-        result_tib <- dplyr::bind_cols(result_tib, area_prop = length(alpha_channel)/(pdr_drawing$.width * pdr_drawing$.height))
-      }
-      if("mean" %in% summary_stat) {
-        result_tib <- dplyr::bind_cols(result_tib, mean = mean(alpha_channel))
-      }
-      if("sd" %in% summary_stat) {
-        result_tib <- dplyr::bind_cols(result_tib, sd = sd(alpha_channel))
-      }
-      if("median" %in% summary_stat) {
-        result_tib <- dplyr::bind_cols(result_tib, median = median(alpha_channel))
-      }
-      if("iqr" %in% summary_stat) {
-        result_tib <- dplyr::bind_cols(result_tib, iqr = IQR(alpha_channel))
-      }
-      if("min" %in% summary_stat) {
-        result_tib <- dplyr::bind_cols(result_tib, min = min(alpha_channel))
-      }
-      if("max" %in% summary_stat) {
-        result_tib <- dplyr::bind_cols(result_tib, max = max(alpha_channel))
-      }
-      if("q1" %in% summary_stat) {
-        result_tib <- dplyr::bind_cols(result_tib, q1 = quantile(alpha_channel, probs=0.01))
-      }
-      if("q5" %in% summary_stat) {
-        result_tib <- dplyr::bind_cols(result_tib, q5 = quantile(alpha_channel, probs=0.05))
-      }
-      if("q10" %in% summary_stat) {
-        result_tib <- dplyr::bind_cols(result_tib, q10 = quantile(alpha_channel, probs=0.1))
-      }
-      if("q25" %in% summary_stat) {
-        result_tib <- dplyr::bind_cols(result_tib, q25 = quantile(alpha_channel, probs=0.25))
-      }
-      if("q75" %in% summary_stat) {
-        result_tib <- dplyr::bind_cols(result_tib, q75 = quantile(alpha_channel, probs=0.75))
-      }
-      if("q90" %in% summary_stat) {
-        result_tib <- dplyr::bind_cols(result_tib, q90 = quantile(alpha_channel, probs=0.90))
-      }
-      if("q95" %in% summary_stat) {
-        result_tib <- dplyr::bind_cols(result_tib, q95 = quantile(alpha_channel, probs=0.95))
-      }
-      if("q99" %in% summary_stat) {
-        result_tib <- dplyr::bind_cols(result_tib, q99 = quantile(alpha_channel, probs=0.99))
-      }
-      names(result_tib) <- paste0(col_name,"_",names(result_tib))
-      return(result_tib)
-    })
-  }
+    # matrix to a variable length vector.
 
+    one_pdr_list |>
+      purrr::map_dfr(\(pdr_drawing) {
+        # apply stencil while alpha_channel dimensions are unchanged width x height
+        alpha_channel <- pdr_drawing$.rgba[,, 4]
+        if (!is.null(one_stencil)) {
+          alpha_channel <- alpha_channel * one_stencil
+        }
+        # apply alpha range -- Note after this alpha_channel is no longer an array
+        alpha_channel <- alpha_channel[!is.na(alpha_channel)]
+        alpha_channel <- alpha_channel[
+          alpha_channel > alpha_range[1] & alpha_channel <= alpha_range[2]
+        ]
+
+        result_tib <- tibble::tibble(.rows = 1)
+        if ("area" %in% summary_stat) {
+          result_tib <- dplyr::bind_cols(
+            result_tib,
+            area = length(alpha_channel)
+          )
+        }
+        if ("area_prop" %in% summary_stat) {
+          result_tib <- dplyr::bind_cols(
+            result_tib,
+            area_prop = length(alpha_channel) /
+              (pdr_drawing$.width * pdr_drawing$.height)
+          )
+        }
+        if ("mean" %in% summary_stat) {
+          result_tib <- dplyr::bind_cols(result_tib, mean = mean(alpha_channel))
+        }
+        if ("sd" %in% summary_stat) {
+          result_tib <- dplyr::bind_cols(result_tib, sd = sd(alpha_channel))
+        }
+        if ("median" %in% summary_stat) {
+          result_tib <- dplyr::bind_cols(
+            result_tib,
+            median = median(alpha_channel)
+          )
+        }
+        if ("iqr" %in% summary_stat) {
+          result_tib <- dplyr::bind_cols(result_tib, iqr = IQR(alpha_channel))
+        }
+        if ("min" %in% summary_stat) {
+          result_tib <- dplyr::bind_cols(result_tib, min = min(alpha_channel))
+        }
+        if ("max" %in% summary_stat) {
+          result_tib <- dplyr::bind_cols(result_tib, max = max(alpha_channel))
+        }
+        if ("q1" %in% summary_stat) {
+          result_tib <- dplyr::bind_cols(
+            result_tib,
+            q1 = quantile(alpha_channel, probs = 0.01)
+          )
+        }
+        if ("q5" %in% summary_stat) {
+          result_tib <- dplyr::bind_cols(
+            result_tib,
+            q5 = quantile(alpha_channel, probs = 0.05)
+          )
+        }
+        if ("q10" %in% summary_stat) {
+          result_tib <- dplyr::bind_cols(
+            result_tib,
+            q10 = quantile(alpha_channel, probs = 0.1)
+          )
+        }
+        if ("q25" %in% summary_stat) {
+          result_tib <- dplyr::bind_cols(
+            result_tib,
+            q25 = quantile(alpha_channel, probs = 0.25)
+          )
+        }
+        if ("q75" %in% summary_stat) {
+          result_tib <- dplyr::bind_cols(
+            result_tib,
+            q75 = quantile(alpha_channel, probs = 0.75)
+          )
+        }
+        if ("q90" %in% summary_stat) {
+          result_tib <- dplyr::bind_cols(
+            result_tib,
+            q90 = quantile(alpha_channel, probs = 0.90)
+          )
+        }
+        if ("q95" %in% summary_stat) {
+          result_tib <- dplyr::bind_cols(
+            result_tib,
+            q95 = quantile(alpha_channel, probs = 0.95)
+          )
+        }
+        if ("q99" %in% summary_stat) {
+          result_tib <- dplyr::bind_cols(
+            result_tib,
+            q99 = quantile(alpha_channel, probs = 0.99)
+          )
+        }
+        names(result_tib) <- paste0(col_name, "_", names(result_tib))
+        return(result_tib)
+      })
+  }
 
   #########################
   ##### Sanity checks #####
   #########################
-  if(identical(summary_stat,"seven")) {
+  if (identical(summary_stat, "seven")) {
     summary_stat <- c("area", "mean", "max", "min", "median", "sd", "iqr")
-  } else if(identical(summary_stat,"all")) {
-    summary_stat <- c("area", "area_prop", "mean", "max", "min", "median", "sd", "iqr", "q1", "q5", "q25", "q75", "q90", "q95", "q99")
-  }
-  # is pdr_tibble actually a pdr_tibble?
-  if(!pdr_match(pdr_tibble, as="pdr_tibble")) {stop("Invalid 'pdr_tibble' parameter")}
-  # are all of pdr_list valid col names in the pdr_tibble
-  if(!all(pdr_list %in% names(pdr_tibble))) {stop("Invalid 'pdr_list' parameter - not all valid col names")}
-  # are all specified pdr_list columns actually a pdr_list?
-  if(!all(
-    pdr_tibble |> 
-      dplyr::select(pdr_list) |>
-      dplyr::summarize_all(~pdr_match(.x, as="pdr_list"))
-  )) {stop("Invalid 'pdr_list parameter - not all valid pdr_list.")}
-  # Check .rgba exists in all
-  tmp <- pdr_tibble |> dplyr::select(pdr_list) |> 
-    dplyr::summarise(
-      dplyr::across(
-        dplyr::everything(),
-        \(col) purrr::map_lgl(col, \(x) ".rgba" %in% names(x)) |> all()
-      )
+  } else if (identical(summary_stat, "all")) {
+    summary_stat <- c(
+      "area",
+      "area_prop",
+      "mean",
+      "max",
+      "min",
+      "median",
+      "sd",
+      "iqr",
+      "q1",
+      "q5",
+      "q25",
+      "q75",
+      "q90",
+      "q95",
+      "q99"
     )
-  if(!all(tmp)) {stop("Parameter 'pdr_list' is invalid as not all elements contain .rgba data")}
-  
+  }
+
   # alpha_range is valid
   if (
     !is.numeric(alpha_range) ||
@@ -188,46 +228,51 @@ pdr_summarize_rgba <- function(
     )
   }
   # Check stencils is a pdr_list
-  if(!pdr_match(stencils, as="pdr_list")) {
-    if(!is.null(stencils)) {stop("Parameter 'stencils' is not a valid pdr_list with .stencil elements")}
+  if (!pdr_match(stencils, as = "pdr_list")) {
+    if (!is.null(stencils)) {
+      stop(
+        "Parameter 'stencils' is not a valid pdr_list with .stencil elements"
+      )
+    }
   }
   # summary_stat ok
   #summary_stat <- match.arg(summary_stat)
   #########################
   ### End sanity cheks ####
   #########################
-  
+
   ##########################
   ####### Main loops #######
   ##########################
-  
+
   # If stencils are supplied:
-  if(!is.null(stencils)) {
+  if (!is.null(stencils)) {
     # Loop pdr_list
-      # loop stencil
-        # map prd_list
-    for(i in pdr_list) {
-      for(j in seq_along(stencils)) {
+    # loop stencil
+    # map prd_list
+    for (i in pdr_list) {
+      for (j in seq_along(stencils)) {
         pdr_tibble <- dplyr::bind_cols(
           pdr_tibble,
           summarize_drawing_as_tibble(
-            pdr_tibble[[i]], 
+            pdr_tibble[[i]],
             summary_stat,
             alpha_range,
             stencils[[j]]$.stencil, # one stencil
-            paste0(i,"_",stencils[[j]]$.id) # name
+            paste0(i, "_", stencils[[j]]$.id) # name
           )
         )
       }
     }
-  } else { # stencils is NULL
+  } else {
+    # stencils is NULL
     # Loop pdr_list
-      # map prd_list
-    for(i in pdr_list) {
+    # map prd_list
+    for (i in pdr_list) {
       pdr_tibble <- dplyr::bind_cols(
         pdr_tibble,
         summarize_drawing_as_tibble(
-          pdr_tibble[[i]], 
+          pdr_tibble[[i]],
           summary_stat,
           alpha_range,
           NULL, # no stencil
@@ -238,5 +283,4 @@ pdr_summarize_rgba <- function(
   }
 
   pdr_tibble
-
 }

@@ -245,15 +245,23 @@ my_data
 ## Get summary statistics {.smaller}
 
 ```{r}
-my_data <- my_data |> 
-  mutate(
-    palmar_area = pdr_summarize_alpha_area(palmar), 
-    palmar_area_poly = pdr_summarize_alpha_area(palmar_polygon),
-    palmar_intensity = pdr_summarize_alpha_intensity(palmar), 
-    palmar_intensity_poly = pdr_summarize_alpha_intensity(palmar_polygon), 
-  )
 
-my_data
+my_data |> 
+  rename(id = record_id) |> 
+  mutate(id = as.character(id)) |> 
+  pdr_summarize_rgba(pdr_list = palmar)
+
+
+my_data |> pdr_summarize_rgba()
+
+
+# my_data <- my_data |> 
+#   mutate(
+#     palmar_area = pdr_summarize_rgba(palmar, summary_stat = c("mean", "area_prop")), 
+#     palmar_area_poly = pdr_summarize_rgba(palmar_polygon, summary_stat = c("mean", "area_prop"))
+#   )
+
+# my_data
 
 ```
 
