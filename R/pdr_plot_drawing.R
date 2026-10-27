@@ -300,16 +300,15 @@ pdr_plot_drawing <- function(
   n_col <- ceiling(sqrt(id_n))
   n_row <- ceiling(id_n / n_col)
 
-  pixel_to_mm <- mm_per_inch / 96 # physical canvas size is fixed at 96 dpi
-  width_mm <- image_width * pixel_to_mm * n_col
-  height_mm <- image_height * pixel_to_mm * n_row
+  # Adjust image width and height based on row and column height
+  image_width <- image_width * n_col
+  image_height <- image_height * n_row
 
   if (method == "memory") {
     arr <- ragg::agg_capture(
-      width = width_mm,
-      height = height_mm,
-      units = "mm",
-      res = dpi,
+      width = image_width,
+      height = image_height,
+      units = "px",
       bg = "transparent"
     )
     print(plot_out) # must explicitly print to render to the device
@@ -336,10 +335,9 @@ pdr_plot_drawing <- function(
     ggplot2::ggsave(
       plot = plot_out,
       file = tmp,
-      width = width_mm,
-      height = height_mm,
-      units = "mm",
-      dpi = dpi
+      width = image_width,
+      height = image_height,
+      units = "px"
     )
 
     raster_img <- as.raster(png::readPNG(tmp))
@@ -347,7 +345,7 @@ pdr_plot_drawing <- function(
 
   raster_plot <- ggplot2::ggplot() +
     ggplot2::theme_void(base_size = 12) +
-    ggplot2::coord_fixed(ratio = height_mm / width_mm) +
+    ggplot2::coord_fixed(ratio = image_height / image_width) +
     ggplot2::annotation_raster(
       raster_img,
       -Inf,

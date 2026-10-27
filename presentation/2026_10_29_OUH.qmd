@@ -235,8 +235,7 @@ my_data |>
 ```{r}
 my_data <- my_data |> 
   mutate(
-    palmar = pdr_add_rgba(palmar), 
-    palmar_polygon = pdr_add_rgba(palmar, polygon = "both")
+    palmar = pdr_add_rgba(palmar)
   )
 
 my_data
@@ -246,22 +245,24 @@ my_data
 
 ```{r}
 
+my_data <- my_data |> 
+  pdr_summarize_rgba(pdr_list = palmar, summary_stat = c("area", "mean"))
+
+my_data
+```
+
+
+## Examples
+
+```{r}
 my_data |> 
-  rename(id = record_id) |> 
-  mutate(id = as.character(id)) |> 
-  pdr_summarize_rgba(pdr_list = palmar)
+  filter(palmar_area == max(palmar_area)) |> 
+  pdr_plot_drawing(palmar, background_image = bg_palmar) 
 
 
-my_data |> pdr_summarize_rgba()
-
-
-# my_data <- my_data |> 
-#   mutate(
-#     palmar_area = pdr_summarize_rgba(palmar, summary_stat = c("mean", "area_prop")), 
-#     palmar_area_poly = pdr_summarize_rgba(palmar_polygon, summary_stat = c("mean", "area_prop"))
-#   )
-
-# my_data
+my_data |> 
+  filter(palmar_area == max(palmar_area)) |> 
+  pdr_plot_rgba(palmar, background_image = bg_palmar) 
 
 ```
 
@@ -281,7 +282,7 @@ my_data |>
   )
 
 my_data |> 
-  head(1) |> 
+  head(4) |> 
   pdr_plot_drawing(
     paindrawr_data = palmar,
     background_image = bg_palmar
