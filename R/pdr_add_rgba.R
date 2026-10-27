@@ -239,18 +239,11 @@ pdr_add_rgba <- function(
       )
   }
 
-  # Translate canvas pixels to mm for the rendering device
-  # mm_per_inch <- 25.4
-  # pixel_to_mm <- mm_per_inch / 96 # physical canvas size is fixed at 96 dpi
-  # width_mm <- image_width * pixel_to_mm
-  # height_mm <- image_height * pixel_to_mm
-
   if (method == "memory") {
     arr <- ragg::agg_capture(
       width = image_width,
       height = image_height,
       units = "px",
-      #res = dpi,
       bg = "transparent"
     )
     print(plot_out) # must explicitly print to render to the device
@@ -274,8 +267,7 @@ pdr_add_rgba <- function(
       file = tmp,
       width = image_width,
       height = image_height,
-      units = "px",
-      #dpi = dpi
+      units = "px"
     )
 
     rgba_arr <- png::readPNG(tmp)
