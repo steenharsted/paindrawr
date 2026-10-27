@@ -165,98 +165,10 @@ pdr_example_data <- pdr_example_data |>
     pain = ifelse(pain > 10, 10, pain),
     pain = ifelse(pain < 0, 0, pain)
   ) |>
-  #mutate(pdr_data = pdr_modify_points(pdr_data, ops = "flipy")) |>
+  mutate(pdr_data = pdr_modify_points(pdr_data, ops = "flipy")) |>
   tibble::as_tibble()
 
 save(
   pdr_example_data,
   file = "data/pdr_example_data.rda"
 )
-
-# pdr_example_data <- dplyr::bind_rows(
-#   special_cases,
-#   read.csv("data-raw/demo_data.csv", ) |> dplyr::select(-X)) |>
-#   dplyr::mutate(paindrawing_LBP = stringr::str_replace_all(paindrawing_LBP, ",\\),\\(,", ";")) |>
-#   dplyr::mutate(paindrawing_LBP = stringr::str_replace_all(paindrawing_LBP, "\\(,", "")) |>
-#   dplyr::mutate(paindrawing_LBP = stringr::str_replace_all(paindrawing_LBP, ",\\)", "")) |>
-#   dplyr::mutate(paindrawing_LBP = stringr::str_split(paindrawing_LBP, ";")) |>
-#   dplyr::mutate(paindrawing_LBP = paindrawing_LBP |> purrr::map(\(x) {
-#     stringr::str_split(x,",") |> purrr::imap_dfr(\(xy,i) {
-#       as.integer(xy) |> matrix(ncol=2, byrow=TRUE) |> as.data.frame() |> purrr::set_names(c("x","y")) |> dplyr::mutate(i=i)
-#     })
-#   })) |>
-#   tidyr::unnest(paindrawing_LBP) |>
-#   dplyr::rename(.id=id, .x=x, .y=y, .index=i) |>
-#   dplyr::relocate(.index, .after=.id) |>
-#   dplyr::group_by(.id) |>
-#   dplyr::group_modify(\(d, indx) {
-#     d <- tibble::tibble(
-#       .strokes = list(tibble::tibble(.index=unique(d$.index))),
-#       .points = list(tibble::tibble(.index=d$.index, .x=d$.x, .y=d$.y))
-#     )
-#   }) |>
-#   dplyr::ungroup()
-
-# pdr_example_data <- pdr_example_data |>
-#   dplyr::mutate(.file="data/pdr_example_data.csv") |>
-#   dplyr::mutate(.version="2") |>
-#   dplyr::mutate(.width=as.integer(450)) |>
-#   dplyr::mutate(.height=as.integer(500)) |>
-#   dplyr::mutate(.units="px") |>
-#   dplyr::mutate(.timestamp = as.character(Sys.time())) |>
-#   dplyr::mutate(.app = "paindrawr package")
-
-# pdr_example_data$.strokes <- pdr_example_data$.strokes |> purrr::map(\(tb) {
-#   if(tibble::is_tibble(tb)) {
-#     tb |> dplyr::mutate(
-#       .tool="pen",
-#       .draw_input_type = "mouse",
-#       .tool_width=as.integer(1),
-#       .color="#FF0000",
-#       .point_density = as.integer(1),
-#       .spray_radius = as.integer(0),
-#       .alpha=as.integer(255)
-#     )
-#   } else {
-#     tb
-#   }
-# })
-
-# pdr_example_data <- pdr_example_data |>
-#   dplyr::relocate(.strokes, .after=last_col()) |>
-#   dplyr::relocate(.points, .after=last_col()) |>
-#   purrr::transpose()
-
-# We merged geometric example data and actual patient data into one
-# lets split them up again (as it is probably easier that way)
-
-# pdr_example_geometry <- pdr_example_data |>
-#   purrr::keep(\(e) {e$.id %in% c("no_area", "duplicates", "convex_hull", "closed_polygon", "merge_overlaps", "no_area_line", "intersection", "selfintersection")})
-# save(
-#   pdr_example_geometry,
-#   file="data/pdr_example_geometry.rda"
-# )
-
-# pdr_example_data <- pdr_example_data |>
-#   purrr::keep(\(e) {!e$.id %in% c("no_area", "duplicates", "convex_hull", "closed_polygon", "merge_overlaps", "no_area_line", "intersection", "selfintersection")})
-# save(
-#   pdr_example_data,
-#   file="data/pdr_example_data.rda"
-# )
-
-# pdr_example_tibble <- tibble::tibble(
-#   pdr_data = pdr_example_data,
-#   sex = factor(sample(0:1, length(pdr_example_data), replace=TRUE)),
-#   age = round(rnorm(length(pdr_example_data), 45, 20),1),
-#   duration = factor(sample(c("Acute", "Subacute", "Chronic"), length(pdr_example_data), replace=TRUE)),
-#   pain = as.integer(round(rnorm(length(pdr_example_data), 5, 4)))
-# ) |> dplyr::mutate(
-#   age = ifelse(age > 98, 98, age),
-#   age = ifelse(age < 18, 18, age),
-#   pain = ifelse(pain > 10, 10, pain),
-#   pain = ifelse(pain <0 , 0, pain)
-# )
-# save(
-#   pdr_example_tibble,
-#   file="data/pdr_example_tibble.rda"
-# )

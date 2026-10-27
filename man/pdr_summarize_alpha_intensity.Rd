@@ -6,18 +6,23 @@
 \usage{
 pdr_summarize_alpha_intensity(
   pdr_tibble,
-  pdr_list_cols = pdr_data,
-  summary_stat = c("mean", "max", "min", "median", "sd", "iqr", "all"),
+  pdr_list = pdr_data,
+  summary_stat = "seven",
   alpha_range = c(0, 1),
   stencils = NULL
 )
 }
 \arguments{
+\item{pdr_list}{Either a list of RGBA arrays (each \verb{[height, width, 4]}), or a
+list of paindrawing data objects containing a \code{.rgba} element (as produced
+by \code{\link[=pdr_add_rgba]{pdr_add_rgba()}}). Typically passed as a list-column inside
+\code{dplyr::mutate()}.}
+
 \item{summary_stat}{A string specifying the summary statistic to compute
-over drawn pixel alpha values. One of \code{"mean"} (default), \code{"max"},
-\code{"min"}, \code{"median"}, \code{"sd"}, \code{"raw"} or \code{"seven"}. If \code{"seven"} the function
-returns a list column 5 summary stats. If \code{"raw"} the function returns
-a list column of numeric vectors will all resulting alpha values.}
+over drawn pixel alpha values. One or more of \code{"area"}, \code{"area_prop"}, \code{"mean"},
+\code{"sd"}, \code{"max"},\code{"min"}, \code{"median"}, \code{"q1"}, \code{"q5"}, \code{"q10"}, \code{"q25"},
+\code{"q75"}, \code{"q90"}, \code{"q95"}, \code{"q99"}. Alternatively: \code{"all"}, or \verb{seven"} (default),
+to return all the above, or the first seven of the above.}
 
 \item{alpha_range}{A numeric vector of length 2 specifying the lower
 (exclusive) and upper (inclusive) bounds of the alpha range to include.
@@ -28,14 +33,11 @@ restrict to heavily drawn pixels only.}
 matrices of the same x and y dimension as pdr_list Expected values are 0
 and 1 -- if provided, the stencils are applied (multiplied) with the
 rgba arrays before summarising.}
-
-\item{pdr_list}{Either a list of RGBA arrays (each \verb{[height, width, 4]}), or a
-list of paindrawing data objects containing a \code{.rgba} element (as produced
-by \code{\link[=pdr_add_rgba]{pdr_add_rgba()}}). Typically passed as a list-column inside
-\code{dplyr::mutate()}.}
 }
 \value{
-A numeric vector the same length as \code{pdr_list}. Each element is the
+The input pdr_tibble with a variable number of added columns.
+A column is added for each input pdr_list by summary stat by stencils,
+appropriately named. Each column is the
 requested summary statistic of alpha values for pixels within
 \verb{(alpha_range[1], alpha_range[2]]}, or \code{NA_real_} if no pixels fall in
 that range.
