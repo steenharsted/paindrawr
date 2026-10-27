@@ -1,0 +1,338 @@
+---
+title: "paindraw and paindrawr"
+subtitle: "Software for capturing, vizualising and analyzing pain drawings"
+author: "Steen Flammild Harsted and Søren O'Neill"
+date: today
+format:
+  revealjs:
+    theme: simple
+    slide-number: true
+    toc: false
+    transition: slide
+    incremental: false
+    preview-links: auto
+    css: custom.css
+    code-fold: false
+    embed-resources: true
+    scrollable: true
+    fig-width: 6
+    fig-height: 6
+execute: 
+  warning: false
+  message: false
+  echo: true
+editor: 
+  markdown: 
+    wrap: 72
+---
+
+```{r}
+#| label: "Libraries and setup"
+#| include: false
+#| echo: false
+#| code-fold: false
+
+library(tidyverse)
+library(here)
+library(patchwork)
+library(colorspace)
+library(glue)
+library(gt)
+library(gtsummary)
+library(devtools)
+#library(paindrawr)
+load_all()
+
+theme_set(theme_classic(base_size = 14))
+theme_gtsummary_compact()
+
+# Load background images
+bg_palmar <- here("inst/extdata/lower_arm_palmar.png")
+bg_mird <- here("inst/extdata/mird_body_background.png")
+bg_zealand <- here("inst/extdata/zealand.png")
+```
+
+
+```{r}
+#| label: "load data"
+#| include: false
+#| echo: false
+#| code-fold: false
+
+# Get the Data 
+# Get standard data
+base_data <- read_csv(here("presentation", "2026_09_15_data.csv")) 
+
+# Keep only relevant columns
+base_data <- base_data |>
+  select(
+    record_id = "Record ID", 
+    tool = "Please choose one of the two items", 
+    distance = "Please choose a distance" , 
+    geography = "How well do you know the geography of east Denmark?" 
+  )
+
+
+json_files <- list.files(
+  here("presentation/2026_09_15_drawings/"),
+  pattern = "json$",
+  recursive = TRUE
+)
+
+paindraw_data <- pdr_import_json(here(
+    "presentation/2026_09_15_drawings/",
+    json_files
+  ))
+
+## Id is nested in the drawing id string
+paindraw_data <- paindraw_data |>
+  mutate(
+    record_id = str_extract(id, "R[0-9]+F") |>
+      str_remove("^R") |>
+      str_remove("F$") |>
+      as.double()
+  )
+
+# Because we have multible drawings pr id we go wide before joining
+### First extract image type
+paindraw_data_wide <- paindraw_data |>
+  mutate(
+    view = str_extract(id, "F-.+-") |>
+      str_remove("^F-") |>
+      str_remove("-E.+$") |>
+      str_remove("^background_image_")
+  ) |>
+  select(-id) |>
+  pivot_wider(
+    names_from = view,
+    values_from = pdr_data
+  )
+
+my_data <- base_data |>
+  left_join(paindraw_data_wide)
+
+```
+
+
+## The data {.smaller}
+
+```{r}
+#| label: "Show data"
+#| echo: false
+my_data 
+```
+
+
+
+# Imaginary hand pain
+
+## Single drawing
+
+```{r}
+#| output-location: slide
+my_data |> 
+  filter(record_id == 6) |> 
+  pdr_plot_drawing(
+    paindrawr_data = palmar
+    )
+```
+
+
+## Single drawing
+
+```{r}
+#| output-location: slide
+my_data |> 
+  filter(record_id == 6) |> 
+  pdr_plot_drawing(
+    paindrawr_data = palmar, 
+    background_image = bg_palmar
+    )
+```
+
+## 4x random drawings
+```{r}
+#| output-location: slide
+my_data |> 
+  slice_sample(n = 4) |> 
+  pdr_plot_drawing(
+    paindrawr_data = palmar, 
+    background_image = bg_palmar
+    )
+```
+
+
+# Visual analysis of imaginary handpain
+
+## Heatmpap
+
+```{r}
+my_data |> 
+  pdr_plot_heatmap(
+    paindrawr_data = "palmar", 
+    background_image = bg_palmar)
+```
+
+
+## Heatmpap
+
+### Hammer vs Apple
+```{r}
+#| output-location: slide
+my_data |> 
+  pdr_plot_heatmap(
+    paindrawr_data = "palmar", 
+    variables = "tool",
+    background_image = bg_palmar)
+```
+
+## Heatmpap
+
+### 1m vs 1cm
+```{r}
+#| output-location: slide
+my_data |> 
+  pdr_plot_heatmap(
+    paindrawr_data = "palmar", 
+    variables = "distance",
+    background_image = bg_palmar)
+```
+
+
+## Heatmpap
+
+### tool vs distance
+```{r}
+#| output-location: slide
+my_data |> 
+  pdr_plot_heatmap(
+    paindrawr_data = "palmar", 
+    variables = c("tool", "distance"),
+    equal_n = FALSE, 
+    show_n = TRUE,
+    background_image = bg_palmar)
+```
+
+
+# Quantitative analysis of imaginary handpain
+
+## What to quantify?
+
+### Area and Intensity
+
+```{r}
+#| echo: false
+my_data |> 
+  slice_sample(n = 2) |> 
+  pdr_plot_drawing(
+    paindrawr_data = palmar, 
+    background_image = bg_palmar
+    )
+```
+
+
+## Add an rgba render {.smaller}
+```{r}
+my_data <- my_data |> 
+  mutate(
+    palmar = pdr_add_rgba(palmar), 
+    palmar_polygon = pdr_add_rgba(palmar, polygon = "both")
+  )
+
+my_data
+```
+
+## Get summary statistics {.smaller}
+
+```{r}
+my_data <- my_data |> 
+  mutate(
+    palmar_area = pdr_summarize_alpha_area(palmar), 
+    palmar_area_poly = pdr_summarize_alpha_area(palmar_polygon),
+    palmar_intensity = pdr_summarize_alpha_intensity(palmar), 
+    palmar_intensity_poly = pdr_summarize_alpha_intensity(palmar_polygon), 
+  )
+
+my_data
+
+```
+
+
+```{r}
+my_data |> 
+  head(1) |> 
+  pdr_plot_rgba(
+    paindrawr_data = palmar
+  )
+
+my_data |> 
+  head(1) |> 
+  pdr_plot_rgba(
+    paindrawr_data = palmar, 
+    background_image = bg_palmar
+  )
+
+my_data |> 
+  head(1) |> 
+  pdr_plot_drawing(
+    paindrawr_data = palmar,
+    background_image = bg_palmar
+  )
+```
+
+
+```{r}
+my_data |> 
+  head(1) |> 
+  pdr_plot_rgba(
+    paindrawr_data = palmar_polygon
+  )
+
+my_data |> 
+  head(1) |> 
+  pdr_plot_rgba(
+    paindrawr_data = palmar_polygon, 
+    background_image = bg_palmar
+  )
+```
+
+
+```{r}
+my_data |> 
+  head(5) |> 
+  pdr_plot_rgba(
+    paindrawr_data = palmar_polygon
+  )
+
+my_data |> 
+  head(5) |> 
+  pdr_plot_rgba(
+    paindrawr_data = palmar_polygon, 
+    background_image = bg_palmar
+  )
+```
+
+
+
+## Summarize across groups
+
+```{r}
+my_data |> 
+  group_by(tool, distance) |> 
+  summarise(
+    palmar_area_mean = mean(palmar_area, na.rm = TRUE), 
+    palmar_area_sd  = sd(palmar_area, na.rm = TRUE)
+  )
+```
+
+
+## Summarize across groups
+
+```{r}
+my_data |> 
+  ggplot(aes(x = tool, y = palmar_area, fill = distance))+
+  geom_boxplot(alpha = 0.5)
+```
+
+
+
