@@ -269,7 +269,7 @@ create_heatmap_plot <- function(
       )
 
     p <- p +
-      ggplot2::geom_text(
+      ggplot2::geom_label(
         data = n_data,
         ggplot2::aes(x = x, y = y, label = label),
         inherit.aes = FALSE,

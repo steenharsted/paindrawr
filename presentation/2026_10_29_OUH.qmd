@@ -3,6 +3,8 @@ title: "paindraw and paindrawr"
 subtitle: "Software for capturing, vizualising and analyzing pain drawings"
 author: "Steen Flammild Harsted and Søren O'Neill"
 date: today
+bibliography: references.bib
+csl-hanging-indent: true
 format:
   revealjs:
     theme: simple
@@ -42,6 +44,10 @@ library(gtsummary)
 library(devtools)
 #library(paindrawr)
 load_all()
+
+# USE THIS CODE in TERMINAL TO RENDER
+# quarto preview /home/steen/projects/paindrawr/presentation/2026_10_29_OUH.qmd --no-browser --no-watch-inputs
+
 
 theme_set(theme_classic(base_size = 14))
 theme_gtsummary_compact()
@@ -230,6 +236,21 @@ my_data |>
     )
 ```
 
+## Workflow to get pr. drawing summary stats 
+
+```{mermaid}
+%%| echo: false
+flowchart LR
+  A["JSON file<br/>strokes, x/y points"]
+  B["Tibble<br/>pdr list column"]
+  C["Tibble<br/>pdr list column<br/>+ .rgba matrix"]
+  D["Summary data<br/>area: pixels, proportion<br/>intensity: mean, min, max"]
+
+  A -->|"pdr_import_json()"| B
+  B -->|"pdr_add_rgba()"| C
+  C -->|"pdr_summarize_rgba()"| D
+```
+
 
 ## Add an rgba render {.smaller}
 ```{r}
@@ -252,95 +273,113 @@ my_data
 ```
 
 
-## Examples
-
-```{r}
-my_data |> 
-  filter(palmar_area == max(palmar_area)) |> 
-  pdr_plot_drawing(palmar, background_image = bg_palmar) 
-
-
-my_data |> 
-  filter(palmar_area == max(palmar_area)) |> 
-  pdr_plot_rgba(palmar, background_image = bg_palmar) 
-
-```
-
-
-```{r}
-my_data |> 
-  head(1) |> 
-  pdr_plot_rgba(
-    paindrawr_data = palmar
-  )
-
-my_data |> 
-  head(1) |> 
-  pdr_plot_rgba(
-    paindrawr_data = palmar, 
-    background_image = bg_palmar
-  )
-
-my_data |> 
-  head(4) |> 
-  pdr_plot_drawing(
-    paindrawr_data = palmar,
-    background_image = bg_palmar
-  )
-```
-
-
-```{r}
-my_data |> 
-  head(1) |> 
-  pdr_plot_rgba(
-    paindrawr_data = palmar_polygon
-  )
-
-my_data |> 
-  head(1) |> 
-  pdr_plot_rgba(
-    paindrawr_data = palmar_polygon, 
-    background_image = bg_palmar
-  )
-```
-
-
-```{r}
-my_data |> 
-  head(5) |> 
-  pdr_plot_rgba(
-    paindrawr_data = palmar_polygon
-  )
-
-my_data |> 
-  head(5) |> 
-  pdr_plot_rgba(
-    paindrawr_data = palmar_polygon, 
-    background_image = bg_palmar
-  )
-```
-
-
-
 ## Summarize across groups
 
 ```{r}
 my_data |> 
   group_by(tool, distance) |> 
   summarise(
-    palmar_area_mean = mean(palmar_area, na.rm = TRUE), 
-    palmar_area_sd  = sd(palmar_area, na.rm = TRUE)
+    area_mean = mean(palmar_area, na.rm = TRUE), 
+    area_sd  = sd(palmar_area, na.rm = TRUE),
+    intensity_mean = mean(palmar_mean, na.rm = TRUE), 
+    intensity_sd = sd(palmar_mean, na.rm = TRUE)
   )
 ```
 
 
-## Summarize across groups
+
+## Examples
+
+```{r}
+#| echo: false
+my_data |> 
+  filter(palmar_area == max(palmar_area)) |> 
+  pdr_plot_drawing(palmar, background_image = bg_palmar) +
+  labs(title = "Largest area") +
+
+
+my_data |> 
+  filter(palmar_area == min(palmar_area)) |> 
+  pdr_plot_drawing(palmar, background_image = bg_palmar) +
+  labs(title = "Smallest area") +
+  
+my_data |> 
+  filter(palmar_mean == max(palmar_mean)) |> 
+  pdr_plot_drawing(palmar, background_image = bg_palmar) +
+  labs(title = "Highest mean intensity")   & 
+  
+  theme_minimal(base_size = 16)+
+    theme(plot.title = element_text(hjust = 0.5))
+
+```
+
+
+
+
+## Simple boxplot of summary data
 
 ```{r}
 my_data |> 
   ggplot(aes(x = tool, y = palmar_area, fill = distance))+
   geom_boxplot(alpha = 0.5)
+```
+
+
+
+
+
+
+
+# Polygons
+
+```{r}
+#| include: false
+
+my_data <- my_data |> 
+  select(record_id, tool, distance, geography, draw_zealand, palmar)
+```
+
+```{r}
+my_data <- my_data |> 
+  mutate(
+    palmar_polygon = pdr_add_rgba(palmar, polygon = "both")
+  )
+
+my_data
+```
+
+
+## Polygon plots
+
+```{r}
+my_data |> 
+  head(1) |> 
+  pdr_plot_rgba(
+    paindrawr_data = palmar_polygon
+  )
+
+my_data |> 
+  head(1) |> 
+  pdr_plot_rgba(
+    paindrawr_data = palmar_polygon, 
+    background_image = bg_palmar
+  )
+```
+
+
+```{r}
+my_data |> 
+  head(5) |> 
+  pdr_plot_rgba(
+    paindrawr_data = palmar_polygon
+  )
+
+my_data |> 
+  head(5) |> 
+  pdr_plot_rgba(
+    paindrawr_data = palmar_polygon, 
+    background_image = bg_palmar
+  )
 ```
 
 

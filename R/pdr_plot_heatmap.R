@@ -44,7 +44,7 @@
 #'   [ggplot2::scale_alpha_continuous()]. Point opacity is mapped linearly from
 #'   density onto this `c(min, max)` range: cells with the lowest density take
 #'   `alpha_scale[1]` and the highest take `alpha_scale[2]`. Pass two equal values
-#'   (e.g. `c(0.5, 0.5)`) to give every point the same opacity. Defaults to `c(0.1, 0.5)`.
+#'   (e.g. `c(0.5, 0.5)`) to give every point the same opacity. Defaults to `c(0, 0.3)`.
 #' @param color_scale Character or numeric. How to scale colours across facets:
 #'   * `"max"` (default) — scales all facets to the global maximum density.
 #'   * `"facet"` — each facet is scaled independently.
@@ -155,7 +155,7 @@ pdr_plot_heatmap <- function(
   background_image = NULL,
   grid_size = 10,
   point_size = 0.25,
-  alpha_scale = c(0, 0.05),
+  alpha_scale = c(0, 0.3),
   color_scale = "max",
   label_format = "pct",
   show_n = FALSE,
