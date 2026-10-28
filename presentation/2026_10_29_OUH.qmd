@@ -120,6 +120,20 @@ paindraw_data_wide <- paindraw_data |>
 my_data <- base_data |>
   left_join(paindraw_data_wide)
 
+## REmove drawing 22
+## Keep it for later bug fixing
+my_data <- my_data |> filter_out(record_id == 22)
+
+## ADD RGBA
+my_data <- my_data |> 
+  rename(
+    zealand = draw_zealand
+  ) |> 
+  mutate(
+    palmar = pdr_add_rgba(palmar), 
+    zealand = pdr_add_rgba(zealand, polygon = "both")
+    )
+
 ```
 
 
@@ -137,6 +151,7 @@ my_data
 ## The background image
 
 ```{r}
+#| echo: false
 knitr::include_graphics(here("inst/extdata/lower_arm_palmar.png"))
 ```
 
@@ -181,32 +196,33 @@ my_data |>
 ## Heatmpap
 
 ```{r}
+#| output-location: column-fragment
 my_data |> 
-  pdr_plot_heatmap(
+  pdr_plot_rgba_heatmap(
     paindrawr_data = "palmar", 
     background_image = bg_palmar)
 ```
 
 
-## Heatmpap
+## Area Heatmpap
 
 ### Hammer vs Apple
 ```{r}
-#| output-location: slide
+#| output-location: column-fragment
 my_data |> 
-  pdr_plot_heatmap(
+  pdr_plot_rgba_heatmap(
     paindrawr_data = "palmar", 
     variables = "tool",
     background_image = bg_palmar)
 ```
 
-## Heatmpap
+## Area Heatmpap
 
 ### 1m vs 1cm
 ```{r}
-#| output-location: slide
+#| output-location: column-fragment
 my_data |> 
-  pdr_plot_heatmap(
+  pdr_plot_rgba_heatmap(
     paindrawr_data = "palmar", 
     variables = "distance",
     background_image = bg_palmar)
@@ -217,13 +233,12 @@ my_data |>
 
 ### tool vs distance
 ```{r}
-#| output-location: slide
+#| output-location: column-fragment
 my_data |> 
-  pdr_plot_heatmap(
+  pdr_plot_rgba_heatmap(
     paindrawr_data = "palmar", 
     variables = c("tool", "distance"),
-    equal_n = FALSE, 
-    show_n = TRUE,
+     show_n = TRUE,
     background_image = bg_palmar) 
 ```
 
@@ -291,20 +306,10 @@ flowchart LR
 ```
 
 
-## Add an rgba render {.smaller}
-```{r}
-my_data <- my_data |> 
-  mutate(
-    palmar = pdr_add_rgba(palmar)
-  )
-
-my_data
-```
-
-## Get summary statistics {.smaller}
+## Get summary statistics 
 
 ```{r}
-
+#| output-location: fragment
 my_data <- my_data |> 
   pdr_summarize_rgba(pdr_list = palmar, summary_stat = c("area", "mean"))
 
@@ -315,6 +320,7 @@ my_data
 ## Summarize across groups
 
 ```{r}
+#| output-location: fragment
 my_data |> 
   group_by(tool, distance) |> 
   summarise(
@@ -331,23 +337,24 @@ my_data |>
 
 ```{r}
 #| echo: false
+#| width: 10
 my_data |> 
-  filter(palmar_area == max(palmar_area)) |> 
+  filter(palmar_area == max(palmar_area, na.rm = TRUE)) |> 
   pdr_plot_drawing(palmar, background_image = bg_palmar) +
   labs(title = "Largest area") +
 
 
 my_data |> 
-  filter(palmar_area == min(palmar_area)) |> 
+  filter(palmar_area == min(palmar_area, na.rm = TRUE)) |> 
   pdr_plot_drawing(palmar, background_image = bg_palmar) +
   labs(title = "Smallest area") +
   
 my_data |> 
-  filter(palmar_mean == max(palmar_mean)) |> 
+  filter(palmar_mean == max(palmar_mean, na.rm = TRUE)) |> 
   pdr_plot_drawing(palmar, background_image = bg_palmar) +
   labs(title = "Highest mean intensity")   & 
   
-  theme_minimal(base_size = 16)+
+  theme_minimal(base_size = 12)+
     theme(plot.title = element_text(hjust = 0.5))
 
 ```
@@ -358,15 +365,24 @@ my_data |>
 ## Simple boxplot of summary data
 
 ```{r}
+#| output-location: column-fragment
 my_data |> 
-  ggplot(aes(x = tool, y = palmar_area, fill = distance))+
+  ggplot(aes(
+    x = tool, 
+    y = palmar_area, 
+    fill = distance))+
   geom_boxplot(alpha = 0.5)
 ```
 
 
 
 
+## Zealand and Polygons
 
+```{r}
+#| echo: false
+knitr::include_graphics(here("inst/extdata/zealand.png"))
+```
 
 
 # Polygons
@@ -374,102 +390,133 @@ my_data |>
 ```{r}
 #| include: false
 
-my_data <- my_data |> 
-  select(record_id, tool, distance, geography, draw_zealand, palmar)
+zealand <- my_data |> 
+  select(record_id, geography, zealand)
 ```
 
 ```{r}
-my_data <- my_data |> 
-  mutate(
-    palmar_polygon = pdr_add_rgba(palmar, polygon = "both")
-  )
+zealand
+```
 
-my_data
+
+
+## This is better rendered as Polygons
+
+```{r}
+#| echo: false
+zealand |> 
+  slice_sample(n = 6) |> 
+  pdr_plot_drawing(
+    zealand, 
+    background_image = bg_zealand
+  )
 ```
 
 
 ## Polygon plots
 
 ```{r}
-my_data |> 
-  head(1) |> 
+#| echo: false
+zealand |> 
+  slice_sample(n = 6) |> 
   pdr_plot_rgba(
-    paindrawr_data = palmar_polygon
-  )
-
-my_data |> 
-  head(1) |> 
-  pdr_plot_rgba(
-    paindrawr_data = palmar_polygon, 
-    background_image = bg_palmar
+    zealand, 
+    background_image = bg_zealand, 
+    ncol = 3
   )
 ```
 
 
-```{r}
-my_data |> 
-  head(5) |> 
-  pdr_plot_rgba(
-    paindrawr_data = palmar_polygon
-  )
+## Polygon based heatmaps
 
-my_data |> 
-  head(5) |> 
-  pdr_plot_rgba(
-    paindrawr_data = palmar_polygon, 
-    background_image = bg_palmar
+```{r}
+#| output-location: column-fragment
+zealand |> 
+  pdr_plot_rgba_heatmap(
+    zealand, 
+    background_image = bg_zealand
   )
 ```
 
 
-
+## Polygon based heatmaps
 
 ```{r}
-my_data |> 
+#| output-location: column-fragment
+zealand |> 
   pdr_plot_rgba_heatmap(
-    paindrawr_data = "palmar", 
-    variables = c("tool", "distance"), 
-    show_n = TRUE,
-      alpha_curve = c(3, 0.25),
-    background_image = bg_palmar)   
-
-my_data |> 
-  pdr_plot_rgba_heatmap(
-    paindrawr_data = "palmar", 
-    variables = c("tool", "distance"), 
-    show_n = TRUE,
-    alpha_curve = c(3, 0.25),
-    method = "intensity",
-    background_image = bg_palmar)      
-
-my_data |> 
-  pdr_plot_rgba_heatmap(
-    paindrawr_data = "palmar", 
-    variables = c("tool", "distance"), 
-    show_n = TRUE,
-    color_scale = "facet",
-    background_image = bg_palmar)  
+    zealand, 
+    variables = "geography",
+    n_groups = 2,
+    label_format = "both",
+    background_image = bg_zealand, 
+    show_n = TRUE
+  )
+```
 
 
- example_back_pain <- pdr_example_data  |> 
+## Backpain examples
+
+```{r}
+
+example_back_pain <- pdr_example_data  |> 
   mutate(
     pdr_data = pdr_add_rgba(pdr_data),
     pdr_data_poly = pdr_add_rgba(pdr_data, polygon = "both"))
-  
+
+example_back_pain
+```
+
+## Backpain
+
+```{r}
+#| output-location: column-fragment
 example_back_pain |> 
   pdr_plot_rgba_heatmap(
     paindrawr_data = pdr_data,
     background_image = pdr_example_file("mird_body_background.png")
   )
+```
 
+## Backpain
 
+```{r}
+#| output-location: column-fragment
 example_back_pain |> 
   pdr_plot_rgba_heatmap(
     paindrawr_data = pdr_data_poly,
-    background_image = pdr_example_file("mird_body_background.png"), 
-    #variables = c("age", "duration"),
-    alpha_curve = c(3, 0.25),
-    alpha_scale = c(0, 1),
-    method = "intensity"
+    background_image = pdr_example_file("mird_body_background.png")
     )   
+```
+
+## Stencils
+
+```{r}
+pdr_example_anatomy 
+```
+
+
+## Stencils
+```{r}
+my_stencil <- pdr_example_anatomy |> 
+  filter(id == "Back_left_lowerback")
+
+my_stencil |> 
+  pdr_plot_stencil(
+    pdr_data,
+    background_image = pdr_example_file("mird_body_background.png") 
+    )
+```
+
+
+## Stencils
+
+
+```{r}
+example_back_pain |> 
+  pdr_summarize_rgba(
+      pdr_list = pdr_data_poly, 
+      stencils = my_stencil$pdr_data, 
+      summary_stat = "area"
+    )
 ```
