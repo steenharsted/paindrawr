@@ -9,6 +9,9 @@
 #' Multiple drawings are arranged with [ggplot2::facet_wrap()]. A warning is
 #' issued when more than 9 drawings are passed, as rendering may be slow.
 #'
+#' Missing drawings (`NA` or `NULL` entries in the list-column) are dropped
+#' with a warning; an error is raised only if no drawings remain.
+#'
 #' @param .data A tibble with a single list-column of pain drawing data, as
 #'   produced by [pdr_import_json()]. Each row holds a named list containing
 #'   the drawing data for one recording. The name of that list-column is
@@ -99,6 +102,22 @@ pdr_plot_drawing <- function(
   dpi = 96,
   type = "path"
 ) {
+  # Drop missing drawings (NA or NULL entries) before unnesting
+  drawings <- dplyr::pull(.data, {{ paindrawr_data }})
+  is_valid <- vapply(
+    drawings,
+    function(x) is.list(x) && length(x) > 0,
+    logical(1)
+  )
+  n_missing <- sum(!is_valid)
+  if (n_missing > 0) {
+    cli::cli_warn("Dropping {n_missing} missing drawing{?s}.")
+    .data <- .data[is_valid, , drop = FALSE]
+  }
+  if (nrow(.data) == 0) {
+    cli::cli_abort("No non-missing drawings to plot.")
+  }
+
   # Unnest list
   .data <- .data |> tidyr::unnest_wider({{ paindrawr_data }})
 

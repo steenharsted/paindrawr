@@ -2,7 +2,7 @@
 % Please edit documentation in R/pdr_plot_heatmap.R
 \name{pdr_plot_heatmap}
 \alias{pdr_plot_heatmap}
-\title{across one or two stratification variables.}
+\title{Plot a pain heatmap from stroke and spray coordinates}
 \usage{
 pdr_plot_heatmap(
   .data,
@@ -14,7 +14,8 @@ pdr_plot_heatmap(
   background_image = NULL,
   grid_size = 10,
   point_size = 0.25,
-  alpha_scale = c(0, 0.05),
+  alpha_scale = c(0, 0.3),
+  alpha_curve = c(3, 0.25),
   color_scale = "max",
   label_format = "pct",
   show_n = FALSE,
@@ -24,46 +25,37 @@ pdr_plot_heatmap(
 \arguments{
 \item{.data}{A tibble with a single list-column of pain drawing data, as
 produced by \code{\link[=pdr_import_json]{pdr_import_json()}}. Each row holds a named list containing
-the drawing data for one recording. The name of that list-column is
-specified via \code{paindrawr_data}. All drawings must share the same canvas
-dimensions (\code{.width} and \code{.height}). Any additional columns (e.g.
+the drawing data for one recording. All drawings must share the same
+canvas dimensions (\code{.width} and \code{.height}). Any additional columns (e.g.
 grouping variables) are preserved and available via \code{variables}.}
 
 \item{paindrawr_data}{The name of the list-column in \code{.data} that contains
 the pain drawing data. Defaults to \code{pdr_data}. The column is unpacked with
-\code{\link[tidyr:unnest_wider]{tidyr::unnest_wider()}} before processing; the resulting columns are
-expected to include \code{.id}, \code{.width}, \code{.height}, \code{.strokes}, \code{.points},
-\code{.tool}, \code{.tool_width}, \code{.color}, \code{.alpha}, \code{.spray_radius}, and
-\code{.point_density}.}
+\code{\link[tidyr:unnest_wider]{tidyr::unnest_wider()}}; the resulting columns are expected to include
+\code{.id}, \code{.width}, \code{.height}, \code{.strokes} and \code{.points}.}
 
 \item{variables}{Character vector of length 1 or 2 specifying the grouping
 variable names present in \code{.data}. Numeric variables are binned into
 quantile groups; categorical variables use their existing levels. Use \code{NA}
-in either position to leave that faceting dimension empty (a hidden dummy
-variable will be inserted). Defaults to \code{c(NA, NA)}, producing a single
-unfaceted heatmap.}
+in either position to leave that faceting dimension empty. Defaults to
+\code{c(NA, NA)}, producing a single unfaceted heatmap.}
 
-\item{n_groups}{Integer. For numeric variables, specifies the number of
-quantile bins to create. A single value is recycled across all variables
-in \code{variables}. If both variables are numeric and different bin counts are
-desired, supply a vector of length 2 (e.g. \code{c(2, 3)}). Ignored for factor
-or character variables, which always use their existing levels. Default
-is \code{2}.}
+\item{n_groups}{Integer. For numeric variables, the number of quantile bins
+to create. A single value is recycled across \code{variables}; supply a vector
+of length 2 for different bin counts. Ignored for factor or character
+variables. Default is \code{2}.}
 
-\item{equal_n}{Logical. If \code{TRUE}, balances sample sizes across groups by
-sampling down to the size of the smallest group (capped at \code{max_n}).
-Default is \code{TRUE}.}
+\item{equal_n}{Logical. If \code{TRUE} (default), balances sample sizes across
+groups by sampling down to the size of the smallest group (capped at
+\code{max_n}). Because every point is plotted, larger groups would otherwise
+look denser.}
 
-\item{max_n}{Integer. Maximum number of observations per group when
+\item{max_n}{Integer. Maximum number of drawings per group when
 \code{equal_n = TRUE}. Default is \code{1000}.}
 
 \item{background_image}{Optional background image displayed behind the
-heatmap. Accepts either:
-\itemize{
-\item A file path to a PNG file (character string), or
-\item A numeric array as returned by \code{\link[png:readPNG]{png::readPNG()}}.
-Defaults to \code{NULL} (no background).
-}}
+heatmap. Either a file path to a PNG file or a numeric array as returned
+by \code{\link[png:readPNG]{png::readPNG()}}. Defaults to \code{NULL} (no background).}
 
 \item{grid_size}{Integer. Coordinate binning resolution in pixels. Smaller
 values create finer grids but increase computation time. Default is \code{10}.
@@ -72,78 +64,105 @@ Recommended range is 5–50 pixels.}
 \item{point_size}{Numeric. Controls both the \code{size} and jitter \code{width}/
 \code{height} of points passed to \code{\link[ggplot2:geom_jitter]{ggplot2::geom_jitter()}}. Default is \code{0.25}.}
 
-\item{alpha_scale}{Numeric vector of length 2 giving the \code{range} passed to
-\code{\link[ggplot2:scale_alpha_continuous]{ggplot2::scale_alpha_continuous()}}. Point opacity is mapped linearly from
-density onto this \code{c(min, max)} range: cells with the lowest density take
-\code{alpha_scale[1]} and the highest take \code{alpha_scale[2]}. Pass two equal values
-(e.g. \code{c(0.5, 0.5)}) to give every point the same opacity. Defaults to \code{c(0.1, 0.5)}.}
+\item{alpha_scale}{Numeric vector of length 2 giving the opacity range
+\code{c(min, max)} of each point. Points with value 0 get \code{min} and points at
+the scale maximum get \code{max}; \code{alpha_curve} controls the shape in between.
+Pass two equal values for constant opacity. Because overlapping points
+add up, the default \code{c(0, 0.3)} is lower than in \code{\link[=pdr_plot_rgba_heatmap]{pdr_plot_rgba_heatmap()}}.
+A \code{min} above 0 gives every marked cell, including those marked by a
+single participant, a visible floor and works against the S-curve.}
+
+\item{alpha_curve}{Numeric of length 1 or 2, \code{c(steepness, midpoint)},
+controlling how heatmap values are mapped to opacity within
+\code{alpha_scale}.
+\itemize{
+\item Steepness controls how S-shaped the mapping is. Higher values fade low
+values more and make high values more opaque.
+\item The midpoint is the fraction of the scale maximum at which opacity
+reaches half of \code{alpha_scale}. Lower values let moderate areas show
+more; higher values show only the hotspots. Moving the midpoint away
+from \code{0.5} bends the curve at any steepness, including \code{1}.
+}
+
+Defaults to \code{c(3, 0.25)}. If only a steepness is given, the midpoint is
+\code{0.25}, except for \code{alpha_curve = 1}, which uses \code{0.5} and gives a linear
+scale (equivalent to \code{c(1, 0.5)}).
+
+The colour and its legend are not affected. See Details for the formula.}
 
 \item{color_scale}{Character or numeric. How to scale colours across facets:
 \itemize{
-\item \code{"max"} (default) — scales all facets to the global maximum density.
-\item \code{"facet"} — each facet is scaled independently.
-\item A numeric value — sets a specific upper limit for the colour scale.
+\item \code{"max"} (default) — one common scale from 0 to the global maximum.
+Facets are directly comparable.
+\item \code{"facet"} — each facet is divided by its own maximum, so the colour
+shows values relative to the hottest cell in that facet. Facets are
+not comparable in absolute terms.
+\item A single numeric value — sets a fixed upper limit for the scale, e.g.
+to give identical scales across plots.
 }}
 
 \item{label_format}{Character. Format for quantile group labels:
 \itemize{
 \item \code{"pct"} (default) — percentage ranges (e.g. \code{"< 50\%"}).
-\item \code{"num"} — numeric ranges (e.g. \code{"(1.0–5.5)"}).
+\item \code{"num"} — numeric ranges (e.g. \code{"(1.0-5.5)"}).
 \item \code{"both"} — combined markdown labels showing both formats, rendered via
 \verb{<br>} line breaks.
 }}
 
-\item{show_n}{Logical. If \code{TRUE}, displays sample sizes as text labels
-inside each facet panel. Default is \code{FALSE}.}
+\item{show_n}{Logical. If \code{TRUE}, displays the number of drawings in each
+facet. Default is \code{FALSE}.}
 
-\item{strips_in_markdown}{Logical. If \code{TRUE}, renders strip text using
-\code{\link[ggtext:element_markdown]{ggtext::element_markdown()}}, enabling markdown and HTML formatting in
-facet labels. Also affects the plot subtitle and y-axis title. Default is
-\code{TRUE}.}
+\item{strips_in_markdown}{Logical. If \code{TRUE} (default), renders strip text
+using \code{\link[ggtext:element_markdown]{ggtext::element_markdown()}}, enabling markdown and HTML formatting
+in facet labels.}
 }
 \value{
 A \code{\link[ggplot2:ggplot]{ggplot2::ggplot()}} object with the faceted heatmap. The first
-variable in \code{variables} maps to the column facet (subtitle); the second
-maps to the row facet (y-axis label). Point colour encodes pain density
-(percentage of participants with a mark at each grid cell) using the
-\code{"plasma"} viridis palette.
+variable in \code{variables} maps to the column facet; the second to the row
+facet. Point colour encodes the share of participants with a mark in each
+grid cell, using the \code{"plasma"} viridis palette.
 }
 \description{
-across one or two stratification variables.
+Creates faceted density heatmaps showing how pain location patterns vary
+across one or two stratification variables. The raw stroke and spray
+coordinates are binned into grid cells, and each point is coloured by the
+share of participants in its group who marked that cell. For large datasets,
+\code{\link[=pdr_plot_rgba_heatmap]{pdr_plot_rgba_heatmap()}} is faster and avoids overplotting.
 }
 \details{
 The function processes data in the following steps:
 \enumerate{
-\item Validates inputs and unpacks the \code{paindrawr_data} list-column with
-\code{\link[tidyr:unnest_wider]{tidyr::unnest_wider()}}.
-\item Extracts canvas dimensions from \code{.width} and \code{.height}; all drawings
-must share identical dimensions.
-\item Inserts hidden dummy factor columns for any \code{NA} positions in
-\code{variables}, preserving the row/column slot assignment.
-\item Creates stratification groups for numeric
-variables (quantile binning) or \code{\link[base:factor]{base::factor()}} for categorical
-variables.
+\item Validates inputs and unpacks the \code{paindrawr_data} list-column.
+\item Drops drawings whose \code{.strokes} is \code{NULL} or \code{NA}. Drawings with no
+strokes (nothing drawn) are kept and count towards the group size.
+\item Checks that all drawings share identical canvas dimensions.
+\item Creates stratification groups (quantile bins or factor levels).
 \item Optionally balances sample sizes by sampling down to the smallest
-group size (up to \code{max_n}) using \code{\link[dplyr:slice_sample]{dplyr::slice_sample()}}.
+group size (up to \code{max_n}).
 \item Unnests \code{.strokes} and \code{.points} and joins them on \code{.id} and
 \code{.index}.
-\item Recreates spray effects for any rows where \code{.tool == "spray"} by
-expanding each point \code{point_density} times with a random offset within
-\code{spray_radius}.
-\item Bins coordinates into grid cells of size \code{grid_size} and calculates
-pain density as the percentage of participants with a mark at each
-location, per group.
-\item Renders a faceted heatmap using the \code{"plasma"} viridis colour scale.
-Point alpha is mapped from \code{pct} onto \code{alpha_scale} via
-\code{\link[ggplot2:scale_alpha_continuous]{ggplot2::scale_alpha_continuous()}}.
+\item Recreates spray effects for strokes where \code{.tool == "spray"} by
+expanding each point \code{.point_density} times with a random offset within
+\code{.spray_radius}.
+\item Bins coordinates into grid cells of size \code{grid_size} and calculates,
+per group, the share of participants with a mark in each cell. Every
+point is kept, so densely drawn areas get many overlapping points.
+\item Renders the heatmap with \code{\link[ggplot2:geom_jitter]{ggplot2::geom_jitter()}}.
 }
+
+Opacity is mapped from each point's value \code{v} via \code{u = v / scale_max}
+(capped at 1) and
+\deqn{f(u) = \frac{u^k}{u^k + \left(\frac{m}{1-m}\right)^k (1-u)^k}}{f(u) = u^k / (u^k + (m / (1 - m))^k * (1 - u)^k)}
+where \code{k} and \code{m} are the steepness and midpoint from \code{alpha_curve}. The
+result is rescaled onto \code{alpha_scale}. The curve always passes through
+0 at \code{u = 0}, half opacity at \code{u = m}, and full opacity at \code{u = 1}. It is
+linear only with \code{k = 1} and \code{m = 0.5}; with \code{k = 1} and \code{m < 0.5} it is
+concave (low values boosted), with \code{m > 0.5} convex.
 }
 \section{Warnings}{
 
 The function will warn when:
 \itemize{
-\item More than 16 facets are created (may be slow).
-\item NA values are removed from grouping variables.
 \item A numeric variable has insufficient variation to create distinct
 quantile groups.
 \item Both pen and spray tools are detected in the same dataset.
@@ -162,11 +181,12 @@ pd |>
   )
 
 # Single variable with custom settings
-result <- pd |>
+pd |>
   pdr_plot_heatmap(
     variables = "pain_intensity",
     n_groups = 4,
     grid_size = 5,
+    alpha_curve = 1,
     background_image = "inst/background.png"
   )
 

@@ -67,7 +67,7 @@ bg_zealand <- here("inst/extdata/zealand.png")
 
 # Get the Data 
 # Get standard data
-base_data <- read_csv(here("presentation", "2026_09_15_data.csv")) 
+base_data <- read_csv(here("presentation", "2026_10_29_data.csv")) 
 
 # Keep only relevant columns
 base_data <- base_data |>
@@ -76,17 +76,20 @@ base_data <- base_data |>
     tool = "Please choose one of the two items", 
     distance = "Please choose a distance" , 
     geography = "How well do you know the geography of east Denmark?" 
-  )
+    ) |> 
+    mutate(
+      distance = factor(distance, levels = c("10 centimeters", "1 meter"))
+      )
 
 
 json_files <- list.files(
-  here("presentation/2026_09_15_drawings/"),
+  here("presentation/2026_10_29_drawings/"),
   pattern = "json$",
   recursive = TRUE
 )
 
 paindraw_data <- pdr_import_json(here(
-    "presentation/2026_09_15_drawings/",
+    "presentation/2026_10_29_drawings/",
     json_files
   ))
 
@@ -129,8 +132,13 @@ my_data
 ```
 
 
-
 # Imaginary hand pain
+
+## The background image
+
+```{r}
+knitr::include_graphics(here("inst/extdata/lower_arm_palmar.png"))
+```
 
 ## Single drawing
 
@@ -216,56 +224,7 @@ my_data |>
     variables = c("tool", "distance"),
     equal_n = FALSE, 
     show_n = TRUE,
-    color_scale = 1,
-    background_image = bg_palmar)
-
- my_data |> 
-  pdr_plot_rgba_heatmap(
-    paindrawr_data = "palmar", 
-    variables = c("tool", "distance"), 
-    show_n = TRUE,
-      alpha_curve = c(3, 0.25),
-    background_image = bg_palmar)   
-
-my_data |> 
-  pdr_plot_rgba_heatmap(
-    paindrawr_data = "palmar", 
-    variables = c("tool", "distance"), 
-    show_n = TRUE,
-    alpha_curve = c(3, 0.25),
-    method = "intensity",
-    background_image = bg_palmar)      
-
-my_data |> 
-  pdr_plot_rgba_heatmap(
-    paindrawr_data = "palmar", 
-    variables = c("tool", "distance"), 
-    show_n = TRUE,
-    color_scale = "facet",
-    background_image = bg_palmar)  
-
-
- example_back_pain <- pdr_example_data  |> 
-  mutate(
-    pdr_data = pdr_add_rgba(pdr_data),
-    pdr_data_poly = pdr_add_rgba(pdr_data, polygon = "both"))
-  
-example_back_pain |> 
-  pdr_plot_rgba_heatmap(
-    paindrawr_data = pdr_data,
-    background_image = pdr_example_file("mird_body_background.png")
-  )
-
-
-example_back_pain |> 
-  pdr_plot_rgba_heatmap(
-    paindrawr_data = pdr_data_poly,
-    background_image = pdr_example_file("mird_body_background.png"), 
-    #variables = c("age", "duration"),
-    alpha_curve = c(3, 0.25),
-    alpha_scale = c(0, 1),
-    method = "intensity"
-    )   
+    background_image = bg_palmar) 
 ```
 
 
@@ -289,15 +248,46 @@ my_data |>
 
 ```{mermaid}
 %%| echo: false
+%%| fig-width: 10
 flowchart LR
-  A["JSON file<br/>strokes, x/y points"]
-  B["Tibble<br/>pdr list column"]
-  C["Tibble<br/>pdr list column<br/>+ .rgba matrix"]
-  D["Summary data<br/>area: pixels, proportion<br/>intensity: mean, min, max"]
+  A["<div style='text-align:left;white-space:nowrap'><b>JSON file</b><br/>• strokes<br/>• x/y points</div>"]
+  B["<div style='text-align:left;white-space:nowrap;width:190px'><b>Tibble</b><br/>• pdr list column</div>"]
+  C["<div style='text-align:left;white-space:nowrap;width:190px'><b>Tibble</b><br/>• pdr list column<br/>• .rgba matrix</div>"]
+  D["<div style='text-align:left;white-space:nowrap'><b>Tibble with pr drawing summary data</b><br/>• pdr list column<br/>• area: pixels, proportion<br/>• intensity: mean, min, max</div>"]
+  V1["<div style='text-align:left;white-space:nowrap;width:190px'><b>Visual analysis</b><br/>• pdr_plot_drawing()<br/>• pdr_plot_heatmap()</div>"]
+  V2["<div style='text-align:left;white-space:nowrap;width:190px'><b>Visual analysis</b><br/>• pdr_plot_rgba()<br/>• pdr_plot_rgba_heatmap()</div>"]
+  %% Invisible spacers, same size as V1/V2, so B and C sit at column centre
+  P1["<div style='width:190px'><b>.</b><br/>.<br/>.</div>"]
+  P2["<div style='width:190px'><b>.</b><br/>.<br/>.</div>"]
 
-  A -->|"pdr_import_json()"| B
-  B -->|"pdr_add_rgba()"| C
-  C -->|"pdr_summarize_rgba()"| D
+  %% Column subgraphs: direction TB is only honoured when no node
+  %% inside links outside, so the main arrows connect the subgraphs.
+  %% Fixed widths keep the arrow ends flush with the Tibble boxes.
+  subgraph S1[" "]
+    A
+  end
+  subgraph S2[" "]
+    direction TB
+    P1 ~~~ B -.-> V1
+  end
+  subgraph S3[" "]
+    direction TB
+    P2 ~~~ C -.-> V2
+  end
+  subgraph S4[" "]
+    D
+  end
+
+  S1 -->|"pdr_import_json()"| S2
+  S2 -->|"pdr_add_rgba()"| S3
+  S3 -->|"pdr_summarize_rgba()"| S4
+
+  classDef col fill:none,stroke:none
+  class S1,S2,S3,S4 col
+  classDef vis stroke-dasharray: 5 5
+  class V1,V2 vis
+  classDef ghost fill:none,stroke:none,color:transparent
+  class P1,P2 ghost
 ```
 
 
@@ -433,3 +423,53 @@ my_data |>
 
 
 
+
+```{r}
+my_data |> 
+  pdr_plot_rgba_heatmap(
+    paindrawr_data = "palmar", 
+    variables = c("tool", "distance"), 
+    show_n = TRUE,
+      alpha_curve = c(3, 0.25),
+    background_image = bg_palmar)   
+
+my_data |> 
+  pdr_plot_rgba_heatmap(
+    paindrawr_data = "palmar", 
+    variables = c("tool", "distance"), 
+    show_n = TRUE,
+    alpha_curve = c(3, 0.25),
+    method = "intensity",
+    background_image = bg_palmar)      
+
+my_data |> 
+  pdr_plot_rgba_heatmap(
+    paindrawr_data = "palmar", 
+    variables = c("tool", "distance"), 
+    show_n = TRUE,
+    color_scale = "facet",
+    background_image = bg_palmar)  
+
+
+ example_back_pain <- pdr_example_data  |> 
+  mutate(
+    pdr_data = pdr_add_rgba(pdr_data),
+    pdr_data_poly = pdr_add_rgba(pdr_data, polygon = "both"))
+  
+example_back_pain |> 
+  pdr_plot_rgba_heatmap(
+    paindrawr_data = pdr_data,
+    background_image = pdr_example_file("mird_body_background.png")
+  )
+
+
+example_back_pain |> 
+  pdr_plot_rgba_heatmap(
+    paindrawr_data = pdr_data_poly,
+    background_image = pdr_example_file("mird_body_background.png"), 
+    #variables = c("age", "duration"),
+    alpha_curve = c(3, 0.25),
+    alpha_scale = c(0, 1),
+    method = "intensity"
+    )   
+```

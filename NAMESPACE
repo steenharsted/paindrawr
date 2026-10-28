@@ -17,16 +17,17 @@ export(pdr_modify_rgba)
 export(pdr_plot_drawing)
 export(pdr_plot_heatmap)
 export(pdr_plot_rgba)
+export(pdr_plot_rgba_heatmap)
 export(pdr_plot_stencil)
 export(pdr_spray_trim)
 export(pdr_summarize_rgba)
 importFrom(cli,
   cli_abort,
+  cli_inform,
   cli_warn
 )
 importFrom(dplyr,
   all_of,
-  count,
   distinct,
   filter,
   full_join,
@@ -50,20 +51,21 @@ importFrom(ggplot2,
   facet_grid,
   facet_wrap,
   geom_jitter,
+  geom_label,
   geom_path,
   geom_point,
   geom_polygon,
-  geom_text,
+  geom_raster,
   ggplot,
   ggsave,
   guide_colorbar,
   guides,
   label_wrap_gen,
   labs,
-  scale_alpha_continuous,
   scale_alpha_identity,
   scale_color_identity,
   scale_colour_viridis_c,
+  scale_fill_viridis_c,
   scale_linewidth_identity,
   scale_size_identity,
   theme,
@@ -77,10 +79,17 @@ importFrom(grDevices,
   dev.off
 )
 importFrom(png,readPNG)
-importFrom(purrr,map)
+importFrom(purrr,
+  map,
+  map2,
+  map_lgl
+)
 importFrom(ragg,agg_capture)
-importFrom(rlang,sym)
-importFrom(scales,percent)
+importFrom(rlang,arg_match)
+importFrom(scales,
+  percent,
+  squish
+)
 importFrom(stats,
   quantile,
   runif

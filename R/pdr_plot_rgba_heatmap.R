@@ -46,7 +46,7 @@
 #' @param alpha_scale Numeric vector of length 2 giving the opacity range
 #'   `c(min, max)`. Cells with value 0 get `min` and cells at the scale
 #'   maximum get `max`; `alpha_curve` controls the shape in between. Pass two
-#'   equal values for constant opacity. Defaults to `c(0, 0.9)`. A `min` above
+#'   equal values for constant opacity. Defaults to `c(0, 1)`. A `min` above
 #'   0 gives every marked pixel, including those marked by a single
 #'   participant, a visible floor and works against the S-curve.
 #' @param alpha_curve Numeric of length 1 or 2, `c(steepness, midpoint)`,
