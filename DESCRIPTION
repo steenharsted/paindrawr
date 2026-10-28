@@ -39,7 +39,9 @@ Imports:
     ggplot2,
     gridExtra,
     png,
-    grid
+    grid,
+    cli,
+    rlang
 Depends: 
     R (>= 3.5)
 Roxygen: list(markdown = TRUE)

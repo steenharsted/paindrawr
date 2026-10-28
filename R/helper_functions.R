@@ -154,6 +154,128 @@ pdr_scale_bw <- function(bw) {
 }
 
 
+#' Read and validate a background image
+#'
+#' Shared by the plotting functions that accept a `background_image` argument.
+#'
+#' @param background_image `NULL`, a file path to a PNG image, or a numeric
+#'   raster array as returned by [png::readPNG()].
+#' @param call The environment reported in error messages. Defaults to the
+#'   calling function, so errors point at e.g. `pdr_plot_heatmap()` rather
+#'   than this helper.
+#' @return `NULL` if no background was given, otherwise a numeric raster array.
+#' @noRd
+read_background_image <- function(
+  background_image,
+  call = rlang::caller_env()
+) {
+  if (is.null(background_image)) {
+    return(NULL)
+  }
+  if (is.character(background_image)) {
+    if (!file.exists(background_image)) {
+      cli::cli_abort(
+        "Background image file does not exist: {.path {background_image}}",
+        call = call
+      )
+    }
+    if (!grepl("\\.png$", background_image, ignore.case = TRUE)) {
+      cli::cli_abort(
+        "{.arg background_image} must be a PNG file (ending in {.val .png}).",
+        call = call
+      )
+    }
+    return(png::readPNG(background_image))
+  }
+  if (!is.numeric(background_image) || !is.array(background_image)) {
+    cli::cli_abort(
+      c(
+        "{.arg background_image} must be a PNG file path or a raster array.",
+        "x" = "You supplied {.obj_type_friendly {background_image}}.",
+        "i" = "Read images with {.fn png::readPNG}."
+      ),
+      call = call
+    )
+  }
+  background_image
+}
+
+
+#' Validate and complete an alpha_curve argument
+#'
+#' @param alpha_curve Numeric of length 1 or 2: `c(steepness, midpoint)`.
+#' @param call The environment reported in error messages.
+#' @return Numeric of length 2, `c(steepness, midpoint)`. If only a steepness
+#'   is given, the midpoint defaults to 0.25, or 0.5 when steepness is 1 so
+#'   that `alpha_curve = 1` gives a linear scale.
+#' @noRd
+check_alpha_curve <- function(alpha_curve, call = rlang::caller_env()) {
+  if (
+    !is.numeric(alpha_curve) ||
+      !length(alpha_curve) %in% 1:2 ||
+      anyNA(alpha_curve)
+  ) {
+    cli::cli_abort(
+      "{.arg alpha_curve} must be a numeric vector of length 1 or 2: {.code c(steepness, midpoint)}.",
+      call = call
+    )
+  }
+  if (alpha_curve[[1]] <= 0) {
+    cli::cli_abort(
+      c(
+        "The steepness in {.arg alpha_curve} must be greater than 0.",
+        "i" = "Use {.code alpha_curve = 1} for a linear opacity scale."
+      ),
+      call = call
+    )
+  }
+  # Only steepness given: fill in the midpoint. A curve can only be linear
+  # with midpoint 0.5, so steepness 1 gets 0.5 to keep `alpha_curve = 1`
+  # meaning "linear"; otherwise use the S-curve default of 0.25.
+  if (length(alpha_curve) == 1) {
+    default_midpoint <- if (alpha_curve == 1) 0.5 else 0.25
+    alpha_curve <- c(alpha_curve, default_midpoint)
+  }
+  if (alpha_curve[[2]] <= 0 || alpha_curve[[2]] >= 1) {
+    cli::cli_abort(
+      "The midpoint in {.arg alpha_curve} must be between 0 and 1 (exclusive).",
+      call = call
+    )
+  }
+  alpha_curve
+}
+
+
+#' Map heatmap values to opacity along an S-curve
+#'
+#' Values are first expressed relative to `max_value` (u in [0, 1], values
+#' above the maximum are capped at 1), then passed through
+#'
+#'   f(u) = u^k / (u^k + (m / (1 - m))^k * (1 - u)^k)
+#'
+#' where k is the steepness and m the midpoint. f runs from 0 to 1 and passes
+#' 0.5 at u = m. k = 1 with m = 0.5 is linear; higher k gives a steeper S, so
+#' low values fade out and high values become more opaque. Finally f is
+#' rescaled onto `alpha_scale`.
+#'
+#' @param values Numeric vector of heatmap values (NA allowed).
+#' @param max_value The value that maps to the top of `alpha_scale`.
+#' @param alpha_scale Numeric of length 2, opacity range `c(min, max)`.
+#' @param alpha_curve Numeric of length 2, `c(steepness, midpoint)`, as
+#'   returned by `check_alpha_curve()`.
+#' @return Numeric vector of opacities, same length as `values`.
+#' @noRd
+map_alpha_curve <- function(values, max_value, alpha_scale, alpha_curve) {
+  k <- alpha_curve[[1]]
+  m <- alpha_curve[[2]]
+
+  u <- pmin(pmax(values / max_value, 0), 1)
+  f <- u^k / (u^k + (m / (1 - m))^k * (1 - u)^k)
+
+  alpha_scale[[1]] + (alpha_scale[[2]] - alpha_scale[[1]]) * f
+}
+
+
 #' Create Heatmap Plot
 #' @noRd
 create_heatmap_plot <- function(
@@ -242,7 +364,8 @@ create_heatmap_plot <- function(
   p <- p +
     ggplot2::guides(
       color = ggplot2::guide_colorbar(
-        title = NULL,
+        title = "Share of participants",
+        title.position = "top",
         barheight = 0.5,
         barwidth = 20,
         nbin = 50

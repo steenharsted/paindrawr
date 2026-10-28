@@ -220,32 +220,8 @@ pdr_plot_heatmap <- function(
     )
   }
 
-  # Validate and process background_image (same logic as pdr_recreate_drawing)
-  if (!is.null(background_image)) {
-    if (is.character(background_image)) {
-      if (!file.exists(background_image)) {
-        stop(
-          "background_image file does not exist: ",
-          background_image,
-          call. = FALSE
-        )
-      }
-      if (!grepl("\\.png$", background_image, ignore.case = TRUE)) {
-        stop(
-          "background_image must be a PNG file (ending in .png)",
-          call. = FALSE
-        )
-      }
-      background_image <- png::readPNG(background_image)
-    } else if (!is.numeric(background_image) || !is.array(background_image)) {
-      stop(
-        "background_image must be either:\n",
-        "  - A file path to a PNG image (character string)\n",
-        "  - A raster array from png::readPNG() (numeric array)",
-        call. = FALSE
-      )
-    }
-  }
+  # Validate and read background_image (NULL, PNG path, or raster array)
+  background_image <- read_background_image(background_image)
 
   # ============================================================================
   # STEP 3: Create stratification groups BEFORE unnesting

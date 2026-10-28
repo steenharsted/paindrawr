@@ -40,29 +40,8 @@ pdr_plot_rgba <- function(
   ncol = NULL,
   nrow = NULL
 ) {
-  # Validate and process background_image
-  if (!is.null(background_image)) {
-    if (is.character(background_image)) {
-      # It's a file path
-      if (!file.exists(background_image)) {
-        cli::cli_abort(
-          "Background image file does not exist: {.path {background_image}}"
-        )
-      }
-      if (!grepl("\\.png$", background_image, ignore.case = TRUE)) {
-        cli::cli_abort(
-          "Background image must be a PNG file (ending in {.val .png})."
-        )
-      }
-      background_image <- png::readPNG(background_image)
-    } else if (!is.numeric(background_image) || !is.array(background_image)) {
-      # Not a numeric array (expected output from png::readPNG)
-      cli::cli_abort(
-        "{.arg background_image} must be either a file path to a PNG image
-        (character string) or a raster array from {.fn png::readPNG}."
-      )
-    }
-  }
+  # Validate and read background_image (NULL, PNG path, or raster array)
+  background_image <- read_background_image(background_image)
 
   # pdr_list
   .data <- .data |>

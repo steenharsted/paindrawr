@@ -216,7 +216,56 @@ my_data |>
     variables = c("tool", "distance"),
     equal_n = FALSE, 
     show_n = TRUE,
+    color_scale = 1,
     background_image = bg_palmar)
+
+ my_data |> 
+  pdr_plot_rgba_heatmap(
+    paindrawr_data = "palmar", 
+    variables = c("tool", "distance"), 
+    show_n = TRUE,
+      alpha_curve = c(3, 0.25),
+    background_image = bg_palmar)   
+
+my_data |> 
+  pdr_plot_rgba_heatmap(
+    paindrawr_data = "palmar", 
+    variables = c("tool", "distance"), 
+    show_n = TRUE,
+    alpha_curve = c(3, 0.25),
+    method = "intensity",
+    background_image = bg_palmar)      
+
+my_data |> 
+  pdr_plot_rgba_heatmap(
+    paindrawr_data = "palmar", 
+    variables = c("tool", "distance"), 
+    show_n = TRUE,
+    color_scale = "facet",
+    background_image = bg_palmar)  
+
+
+ example_back_pain <- pdr_example_data  |> 
+  mutate(
+    pdr_data = pdr_add_rgba(pdr_data),
+    pdr_data_poly = pdr_add_rgba(pdr_data, polygon = "both"))
+  
+example_back_pain |> 
+  pdr_plot_rgba_heatmap(
+    paindrawr_data = pdr_data,
+    background_image = pdr_example_file("mird_body_background.png")
+  )
+
+
+example_back_pain |> 
+  pdr_plot_rgba_heatmap(
+    paindrawr_data = pdr_data_poly,
+    background_image = pdr_example_file("mird_body_background.png"), 
+    #variables = c("age", "duration"),
+    alpha_curve = c(3, 0.25),
+    alpha_scale = c(0, 1),
+    method = "intensity"
+    )   
 ```
 
 
