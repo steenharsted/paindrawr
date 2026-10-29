@@ -88,6 +88,9 @@ layer — preserving exact canvas proportions. When
 \details{
 Multiple drawings are arranged with \code{\link[ggplot2:facet_wrap]{ggplot2::facet_wrap()}}. A warning is
 issued when more than 9 drawings are passed, as rendering may be slow.
+
+Missing drawings (\code{NA} or \code{NULL} entries in the list-column) are dropped
+with a warning; an error is raised only if no drawings remain.
 }
 \examples{
 \dontrun{

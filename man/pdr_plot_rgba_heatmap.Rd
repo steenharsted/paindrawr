@@ -47,10 +47,14 @@ the heatmap:
 \item \code{"binary"} (default) — every pixel with alpha above \code{alpha_threshold}
 counts as 1. The heatmap shows the share of participants who marked
 each pixel.
-\item \code{"intensity"} — pixels above \code{alpha_threshold} keep their alpha value.
-The heatmap shows the mean drawing intensity per pixel, so densely
-drawn areas weigh more.
-}}
+\item \code{"mean"} — pixels above \code{alpha_threshold} keep their alpha value. The
+heatmap shows the mean alpha per pixel across all drawings in the
+group. Drawings that did not mark a pixel count as 0, so the value
+reflects both how many participants marked the pixel and how densely
+they drew there.
+}
+
+\code{"intensity"} is a deprecated alias for \code{"mean"}.}
 
 \item{alpha_threshold}{Numeric in \verb{[0, 1)}. Pixels with alpha less than or
 equal to this value are set to 0 before summing. The default \code{0.05}
@@ -134,9 +138,10 @@ The function processes data in the following steps:
 kept and count towards the group size.
 \item Creates stratification groups (quantile bins or factor levels).
 \item Reduces each \code{.rgba} to its alpha channel, applies
-\code{alpha_threshold}, and binarises it (\code{method = "binary"}).
+\code{alpha_threshold}, and binarises it if \code{method = "binary"}.
 \item Sums the alpha matrices within each group and divides by the
-number of drawings in the group.
+number of drawings in the group, giving the share of participants
+(\code{"binary"}) or the mean alpha (\code{"mean"}) per pixel.
 \item Converts each group matrix to a long tibble of pixel cells
 (zero cells become \code{NA} and are drawn transparent).
 \item Renders the heatmap with \code{\link[ggplot2:geom_raster]{ggplot2::geom_raster()}}.
@@ -153,6 +158,11 @@ concave (low values boosted), with \code{m > 0.5} convex.
 
 The heatmap inherits the rendering choices made in \code{\link[=pdr_add_rgba]{pdr_add_rgba()}}
 (e.g. \code{polygon} mode and stroke widths).
+
+With \code{method = "mean"}, note that alpha is not additive: where strokes
+overlap, alpha builds up roughly as \code{1 - (1 - a)^k} for \code{k} strokes of
+alpha \code{a}. The mean alpha is therefore a measure of drawing density, not
+a count of strokes.
 }
 \examples{
 \dontrun{
@@ -160,11 +170,11 @@ pd |>
   dplyr::mutate(pdr_data = pdr_add_rgba(pdr_data)) |>
   pdr_plot_rgba_heatmap(variables = c("age_group", "sex"))
 
-# Weight pixels by drawing intensity
+# Weight pixels by drawing density
 pd |>
   pdr_plot_rgba_heatmap(
     variables = "pain_intensity",
-    method = "intensity",
+    method = "mean",
     background_image = "inst/background.png"
   )
 }

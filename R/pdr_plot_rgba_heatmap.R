@@ -30,9 +30,13 @@
 #'   * `"binary"` (default) — every pixel with alpha above `alpha_threshold`
 #'     counts as 1. The heatmap shows the share of participants who marked
 #'     each pixel.
-#'   * `"intensity"` — pixels above `alpha_threshold` keep their alpha value.
-#'     The heatmap shows the mean drawing intensity per pixel, so densely
-#'     drawn areas weigh more.
+#'   * `"mean"` — pixels above `alpha_threshold` keep their alpha value. The
+#'     heatmap shows the mean alpha per pixel across all drawings in the
+#'     group. Drawings that did not mark a pixel count as 0, so the value
+#'     reflects both how many participants marked the pixel and how densely
+#'     they drew there.
+#'
+#'   `"intensity"` is a deprecated alias for `"mean"`.
 #' @param alpha_threshold Numeric in `[0, 1)`. Pixels with alpha less than or
 #'   equal to this value are set to 0 before summing. The default `0.05`
 #'   removes most of the anti-aliased fringe around strokes (pixels only
@@ -93,9 +97,10 @@
 #'     kept and count towards the group size.
 #'   \item Creates stratification groups (quantile bins or factor levels).
 #'   \item Reduces each `.rgba` to its alpha channel, applies
-#'     `alpha_threshold`, and binarises it (`method = "binary"`).
+#'     `alpha_threshold`, and binarises it if `method = "binary"`.
 #'   \item Sums the alpha matrices within each group and divides by the
-#'     number of drawings in the group.
+#'     number of drawings in the group, giving the share of participants
+#'     (`"binary"`) or the mean alpha (`"mean"`) per pixel.
 #'   \item Converts each group matrix to a long tibble of pixel cells
 #'     (zero cells become `NA` and are drawn transparent).
 #'   \item Renders the heatmap with [ggplot2::geom_raster()].
@@ -113,17 +118,22 @@
 #' The heatmap inherits the rendering choices made in [pdr_add_rgba()]
 #' (e.g. `polygon` mode and stroke widths).
 #'
+#' With `method = "mean"`, note that alpha is not additive: where strokes
+#' overlap, alpha builds up roughly as `1 - (1 - a)^k` for `k` strokes of
+#' alpha `a`. The mean alpha is therefore a measure of drawing density, not
+#' a count of strokes.
+#'
 #' @examples
 #' \dontrun{
 #' pd |>
 #'   dplyr::mutate(pdr_data = pdr_add_rgba(pdr_data)) |>
 #'   pdr_plot_rgba_heatmap(variables = c("age_group", "sex"))
 #'
-#' # Weight pixels by drawing intensity
+#' # Weight pixels by drawing density
 #' pd |>
 #'   pdr_plot_rgba_heatmap(
 #'     variables = "pain_intensity",
-#'     method = "intensity",
+#'     method = "mean",
 #'     background_image = "inst/background.png"
 #'   )
 #' }
@@ -133,7 +143,7 @@
 #' @importFrom purrr map map_lgl map2
 #' @importFrom tibble tibble
 #' @importFrom png readPNG
-#' @importFrom scales percent squish
+#' @importFrom scales percent squish label_number
 #' @importFrom stringr str_replace fixed
 #' @importFrom ggplot2 ggplot aes geom_raster annotation_raster scale_fill_viridis_c scale_alpha_identity guides guide_colorbar facet_grid vars label_wrap_gen geom_label labs coord_fixed theme_minimal theme element_rect element_blank element_text
 #' @importFrom ggtext element_markdown
@@ -161,7 +171,7 @@ pdr_plot_rgba_heatmap <- function(
   # ============================================================================
   cli::cli_inform("Validating inputs...")
 
-  method <- rlang::arg_match(method, c("binary", "intensity"))
+  method <- rlang::arg_match(method, c("binary", "mean"))
   label_format <- rlang::arg_match(label_format, c("pct", "num", "both"))
 
   # Test alpha_threshold
@@ -344,7 +354,7 @@ pdr_plot_rgba_heatmap <- function(
     )
 
   # Divide by group size: "binary" gives the share of participants who marked
-  # each pixel, "intensity" gives the mean alpha per pixel
+  # each pixel, "mean" gives the mean alpha per pixel (unmarked drawings = 0)
   group_sums <- group_sums |>
     dplyr::mutate(
       alpha_matrix = purrr::map2(alpha_sum, n_group, \(m, n) m / n)
@@ -390,6 +400,13 @@ pdr_plot_rgba_heatmap <- function(
     "Mean intensity"
   }
 
+  # Percent only makes sense for shares; mean alpha is shown as a number
+  fill_labels <- if (method == "binary" || identical(color_scale, "facet")) {
+    scales::percent
+  } else {
+    scales::label_number(accuracy = 0.01)
+  }
+
   plot_out <- create_rgba_heatmap_plot(
     density_data = density_data,
     variables = variables,
@@ -400,6 +417,7 @@ pdr_plot_rgba_heatmap <- function(
     alpha_curve = alpha_curve,
     color_scale = color_scale,
     legend_title = legend_title,
+    fill_labels = fill_labels,
     show_n = show_n,
     label_format = label_format,
     strips_in_markdown = strips_in_markdown
@@ -420,7 +438,7 @@ pdr_plot_rgba_heatmap <- function(
 #' Reduce an RGBA array to a thresholded alpha matrix
 #'
 #' @param rgba Numeric array, height x width x 4.
-#' @param method "binary" (pixels above threshold become 1) or "intensity"
+#' @param method "binary" (pixels above threshold become 1) or "mean"
 #'   (pixels above threshold keep their alpha).
 #' @param alpha_threshold Pixels with alpha <= this value become 0.
 #' @return Numeric matrix, height x width.
@@ -468,6 +486,7 @@ create_rgba_heatmap_plot <- function(
   alpha_curve,
   color_scale,
   legend_title,
+  fill_labels,
   show_n,
   label_format,
   strips_in_markdown
@@ -521,7 +540,7 @@ create_rgba_heatmap_plot <- function(
       limits = scale_limits,
       oob = scales::squish,
       na.value = NA,
-      labels = scales::percent
+      labels = fill_labels
     ) +
     ggplot2::guides(
       fill = ggplot2::guide_colorbar(
