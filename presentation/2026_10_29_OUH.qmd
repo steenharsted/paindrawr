@@ -447,7 +447,7 @@ zealand |>
   pdr_plot_rgba_heatmap(
     zealand, 
     variables = "geography",
-    n_groups = 2,
+    n_groups = 3,
     label_format = "both",
     background_image = bg_zealand, 
     show_n = TRUE

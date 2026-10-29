@@ -299,8 +299,25 @@ pdr_quantile <- function(x, n_groups, txt = "pct") {
     return(factor(rep("All values", length(x))))
   }
 
-  # Create bins
-  bins <- cut(x, breaks = breaks, include.lowest = TRUE)
+  # Create bins: [a, b), with the last bin [a, max] (include.lowest)
+  # Consistent with the "\u2265" in the percentage labels
+  bins <- cut(x, breaks = breaks, include.lowest = TRUE, right = FALSE)
+
+  # Observed min-max per group (not the breakpoints)
+  # Use " to " as separator when negative values would make "-5\u20132" unclear
+  sep <- if (any(x < 0, na.rm = TRUE)) " to " else "\u2013"
+  num_part <- character(n_groups)
+  for (i in seq_len(n_groups)) {
+    x_grp <- x[which(as.integer(bins) == i)]
+    if (length(x_grp) == 0) {
+      num_part[i] <- "empty"
+    } else {
+      lo <- round(min(x_grp), 1)
+      hi <- round(max(x_grp), 1)
+      # Single value in group: show just that value
+      num_part[i] <- if (lo == hi) as.character(lo) else paste0(lo, sep, hi)
+    }
+  }
 
   # Create labels based on format
   if (txt == "pct") {
@@ -324,19 +341,8 @@ pdr_quantile <- function(x, n_groups, txt = "pct") {
       }
     }
   } else if (txt == "num") {
-    # Numeric range labels
-    labels <- character(n_groups)
-    for (i in seq_len(n_groups)) {
-      labels[i] <- paste0(
-        "(",
-        round(breaks[i], 1),
-        "-",
-        round(breaks[i + 1], 1),
-        ")"
-      )
-    }
-    # Fix last bracket to be inclusive
-    labels[n_groups] <- sub("\\)$", ")", labels[n_groups])
+    # Numeric range labels: observed range in each group
+    labels <- num_part
   } else if (txt == "both") {
     # Combined markdown labels
     pct_lower <- probs[-length(probs)] * 100
@@ -352,15 +358,7 @@ pdr_quantile <- function(x, n_groups, txt = "pct") {
         paste0(pct_lower[i] |> round(1), "-", pct_upper[i] |> round(1), "%")
       }
 
-      num_part <- paste0(
-        "(",
-        round(breaks[i], 1),
-        "-",
-        round(breaks[i + 1], 1),
-        ")"
-      )
-
-      labels[i] <- paste0("", pct_part, "<br>", num_part) # Markdown code here? e.g "**", pct_part, "**<br>"
+      labels[i] <- paste0(pct_part, "<br>(", num_part[i], ")") # Markdown code here? e.g "**", pct_part, "**<br>"
     }
   } else {
     cli::cli_abort(
