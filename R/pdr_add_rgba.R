@@ -109,6 +109,11 @@ pdr_add_rgba <- function(
   method <- match.arg(method, choices = c("memory", "file"))
   polygon <- match.arg(polygon, choices = c("none", "pen", "spray", "both"))
 
+  # NULL returns NULL
+  if (is.null(paindrawr_data)) {
+    return(NULL)
+  }
+
   # A single drawing is a named list containing `.strokes`;
   # anything else is treated as a list of drawings (of any length, incl. 1)
   is_single_drawing <- is.list(paindrawr_data) &&
