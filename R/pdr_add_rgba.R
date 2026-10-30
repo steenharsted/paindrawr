@@ -99,7 +99,7 @@
 #'
 #' @export
 pdr_add_rgba <- function(
-  paindrawr_data = pdr_data,
+  paindrawr_data,
   method = "memory",
   clean_up = TRUE,
   polygon = "none",
@@ -144,22 +144,20 @@ pdr_add_rgba <- function(
   # To do this, they should pass an valid but empty tibble structure
   # Non empty drawings will be unnested
 
-  if (nrow(.data$.points) == 0 & nrow(.data$.strokes) == 0) {
-    pd <- .data |>
-      mutate(
-        .x = as.integer(),
-        .y = as.integer(),
-        .index = as.integer(),
-        .draw_input_type = as.character(),
-        .tool = as.character(),
-        .color = as.character(),
-        .tool_width = as.integer(),
-        .point_density = as.integer(),
-        .spray_radius = as.integer(),
-        .alpha = as.double(),
-        scaleFactor = as.double(),
-        dpr = as.integer()
-      )
+  if (NROW(paindrawr_data$.points) == 0 && NROW(paindrawr_data$.strokes) == 0) {
+    pd <- tibble::tibble(
+      .id = paindrawr_data$.id,
+      .index = integer(),
+      .x = double(),
+      .y = double(),
+      .draw_input_type = character(),
+      .tool = character(),
+      .color = character(),
+      .tool_width = double(),
+      .point_density = integer(),
+      .spray_radius = double(),
+      .alpha = double()
+    )
   } else {
     # Unnest and join the s (strokes) and p (points) list-columns
     pdr_s <- .data |>
