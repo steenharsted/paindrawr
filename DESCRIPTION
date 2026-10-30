@@ -1,30 +1,30 @@
 Package: paindrawr
 Type: Package
-Title: Quatification of pain drawings
+Title: Quantification of pain drawings
 Version: 0.1.0
 Authors@R: c(
-    person(
-      "Søren", "O'Neill",
-      email = "soren@oneill.dk",
-      role = c("aut", "cre")
-    ),
     person(
       "Steen", "Harsted",
       email = "sharsted@mmmi.sdu.dk",
       role = c("aut")
+    ),
+    person(
+      "Søren", "O'Neill",
+      email = "soren@oneill.dk",
+      role = c("aut", "cre")
     )
   )
-Description: This package aims to aid in the quatification of pain drawings.
+Description: This package aims to aid in the quantification of pain drawings.
     Pain drawings are typically used in a clinical context, e.g. low back pain, 
     where patients are invited to illustrate the pain distribution on a schematic
     outline of the human body. Historically, these pain drawings were completed
-    using pen and paper with a body silhuette pre-printed. Today, they are 
+    using pen and paper with a body silhouette pre-printed. Today, they are 
     typically collected using digital interfaces like a webpage or an app on 
     a tablet. There are basically two methods of collecting such data. Either as
     simple categorical data (did the patient draw a pain area including the 'left
     lower back'? yes or no, and similarly for other anatomical regions). This
-    approache was (among others) published by Margolis several decades ago and
-    lends it self well to pen-and-paper pain drawings. 
+    approach was (among others) published by Margolis several decades ago and
+    lends itself well to pen-and-paper pain drawings. 
     Another approach which is more easily recorded using digital interfaces, is
     to capture the actual pen strokes as series of x and y coordinate data. This
     is also more difficult to manage and in some cases interpret.
