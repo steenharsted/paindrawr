@@ -391,7 +391,10 @@ knitr::include_graphics(here("inst/extdata/zealand.png"))
 #| include: false
 
 zealand <- my_data |> 
-  select(record_id, geography, zealand)
+  select(record_id, geography, zealand) |> 
+  mutate(
+    zealand_no_poly = pdr_add_rgba(zealand)
+  )
 ```
 
 ```{r}
