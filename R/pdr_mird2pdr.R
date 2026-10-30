@@ -81,8 +81,8 @@ pdr_mird2pdr <- function(
     # The ms mird string looks like: 
     # e.g. "(,293,201,300,202,303,202,)"
     if (is.na(ms) || !is.character(ms) || stringr::str_length(ms) < 7) { # "(,x,y,)" is length 7
-      return(NA)
-      #return(tibble::tibble(.index = as.integer(), .x=as.integer(), .y=as.integer()))
+      #return(NA)
+      return(tibble::tibble(.index = as.integer(), .x=as.integer(), .y=as.integer()))
     } else {
       # Simplify notation
       # Go from (,1,2,5,4,),(,8,8,7,7,)
@@ -118,8 +118,19 @@ pdr_mird2pdr <- function(
   ) {
     # This function creates a new .strokes tibble from a 
     # .points tibble
-    if (identical(NA, p)) {
-      NA
+    if (nrow(p)==0) {
+      return(
+        tibble::tibble(
+        .index = as.character(),
+        .tool = as.character(),
+        .draw_input_type = as.character(),
+        .tool_width = as.integer(),
+        .point_density = as.integer(),
+        .spray_radius = as.integer(),
+        .alpha = as.integer(),
+        .color = as.character()
+      )
+      )
     } else {
       tibble::tibble(
         .index = unique(p$.index),
