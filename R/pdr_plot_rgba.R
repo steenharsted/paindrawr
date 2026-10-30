@@ -1,8 +1,9 @@
 #' Plot RGBA rasters in a grid
 #'
-#' Plots the `.rgba` raster arrays stored in a paindrawr list-column, one
-#' panel per row of `.data`. Optionally draws a background image beneath each
-#' raster.
+#' Plots the `.rgba` raster arrays stored in a paindrawr list-column as a
+#' ggplot, one facet per row of `.data`, using
+#' [ggplot2::annotation_raster()]. Optionally draws a background image beneath
+#' each raster.
 #'
 #' @param .data A data frame with a paindrawr list-column (see
 #'   `paindrawr_data`) whose elements contain an `.rgba` entry. Add it first
@@ -13,21 +14,25 @@
 #'   a path to a PNG file (character string ending in `.png`) or a numeric
 #'   raster array as returned by [png::readPNG()]. If `NULL` (default), no
 #'   background is drawn.
-#' @param ncol,nrow Number of columns and rows in the plot grid. If both are
-#'   `NULL` (default), [gridExtra::grid.arrange()] chooses the layout.
+#' @param include_id Logical. If `TRUE`, the `.id` value is shown as a facet
+#'   strip label above each panel. Default is `FALSE`.
+#' @param ncol,nrow Number of columns and rows, passed to
+#'   [ggplot2::facet_wrap()]. If both are `NULL` (default), `facet_wrap()`
+#'   chooses the layout.
 #'
-#' @return Called for its side effect of drawing the plot. Invisibly returns
-#'   the arranged gtable from [gridExtra::grid.arrange()].
+#' @return A [ggplot2::ggplot()] object with one facet per drawing.
 #'
 #' @examples
 #' \dontrun{
-#' my_data |>
-#'   pdr_plot_rgba(palmar)
+#' pdr_example_data[1,] |>
+#'   mutate(pdr_data = pdr_add_rgba(pdr_data)) |>
+#'   pdr_plot_rgba()
 #'
-#' my_data |>
+#' pdr_example_data[1:10,] |>
+#'   mutate(pdr_data = pdr_add_rgba(pdr_data)) |>
 #'   pdr_plot_rgba(
-#'     palmar,
-#'     background_image = "inst/extdata/lower_arm_palmar.png",
+#'     background_image = pdr_example_file("mird_body_background.png"),
+#'     include_id = TRUE,
 #'     ncol = 2
 #'   )
 #' }
@@ -37,46 +42,85 @@ pdr_plot_rgba <- function(
   .data,
   paindrawr_data = pdr_data,
   background_image = NULL,
+  include_id = FALSE,
   ncol = NULL,
   nrow = NULL
 ) {
   # Validate and read background_image (NULL, PNG path, or raster array)
   background_image <- read_background_image(background_image)
 
-  # pdr_list
   .data <- .data |>
     dplyr::select({{ paindrawr_data }}) |>
     tidyr::unnest_wider({{ paindrawr_data }})
 
-  # check .rgba exists
   if (!".rgba" %in% names(.data)) {
     stop("No .rgba in data, run pdr_add_rgba() first")
   }
 
-  # Make into a list of rgbas
-  .data <- .data |> dplyr::pull(.rgba)
+  ids <- if (".id" %in% names(.data)) {
+    as.character(.data$.id)
+  } else {
+    as.character(seq_len(nrow(.data)))
+  }
+  rgbas <- .data$.rgba
+  keep <- !vapply(rgbas, function(x) is.null(x) || length(x) == 0, logical(1))
+  if (!any(keep)) {
+    stop("No non-missing .rgba to plot")
+  }
+  ids <- ids[keep]
+  rgbas <- rgbas[keep]
 
-  # One grob per element: background underneath, rgba on top
-  plots <- lapply(.data, function(rgba) {
-    if (is.null(rgba) || length(rgba) == 0) {
-      return(grid::nullGrob())
-    }
-    fg <- grid::rasterGrob(
-      rgba
+  # Canvas size in pixels from the first raster
+  first_dim <- dim(rgbas[[1]])
+  width <- first_dim[2]
+  height <- first_dim[1]
+
+  # annotation_raster() has no per-facet data, so add one layer per panel,
+  # restricted to its facet via a data frame holding that panel's .id
+  raster_layer <- function(img, id) {
+    ggplot2::layer(
+      geom = ggplot2::GeomRasterAnn,
+      stat = ggplot2::StatIdentity,
+      data = data.frame(.id = id),
+      mapping = ggplot2::aes(),
+      position = ggplot2::PositionIdentity,
+      inherit.aes = FALSE,
+      show.legend = FALSE,
+      params = list(
+        raster = as.raster(img),
+        xmin = -Inf,
+        xmax = Inf,
+        ymin = -Inf,
+        ymax = Inf,
+        interpolate = TRUE
+      )
     )
+  }
 
-    if (is.null(background_image)) {
-      return(fg)
+  plot_out <- ggplot2::ggplot(data.frame(.id = ids))
+
+  if (!is.null(background_image)) {
+    for (id in ids) {
+      plot_out <- plot_out + raster_layer(background_image, id)
     }
-    bg_grob <- grid::rasterGrob(
-      background_image
-    )
-    grid::gTree(children = grid::gList(bg_grob, fg))
-  })
+  }
+  for (i in seq_along(ids)) {
+    plot_out <- plot_out + raster_layer(rgbas[[i]], ids[i])
+  }
 
-  gridExtra::grid.arrange(
-    grobs = plots,
-    ncol = ncol,
-    nrow = nrow
-  )
+  plot_out <- plot_out +
+    ggplot2::coord_fixed(
+      xlim = c(0, width),
+      ylim = c(0, height),
+      expand = FALSE
+    ) +
+    ggplot2::theme_void(base_size = 12) +
+    ggplot2::facet_wrap(facets = ~.id, nrow = nrow, ncol = ncol)
+
+  if (!include_id) {
+    plot_out <- plot_out +
+      ggplot2::theme(strip.text = ggplot2::element_blank())
+  }
+
+  plot_out
 }

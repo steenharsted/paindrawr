@@ -8,6 +8,7 @@ pdr_plot_rgba(
   .data,
   paindrawr_data = pdr_data,
   background_image = NULL,
+  include_id = FALSE,
   ncol = NULL,
   nrow = NULL
 )
@@ -25,27 +26,33 @@ a path to a PNG file (character string ending in \code{.png}) or a numeric
 raster array as returned by \code{\link[png:readPNG]{png::readPNG()}}. If \code{NULL} (default), no
 background is drawn.}
 
-\item{ncol, nrow}{Number of columns and rows in the plot grid. If both are
-\code{NULL} (default), \code{\link[gridExtra:grid.arrange]{gridExtra::grid.arrange()}} chooses the layout.}
+\item{include_id}{Logical. If \code{TRUE}, the \code{.id} value is shown as a facet
+strip label above each panel. Default is \code{FALSE}.}
+
+\item{ncol, nrow}{Number of columns and rows, passed to
+\code{\link[ggplot2:facet_wrap]{ggplot2::facet_wrap()}}. If both are \code{NULL} (default), \code{facet_wrap()}
+chooses the layout.}
 }
 \value{
-Called for its side effect of drawing the plot. Invisibly returns
-the arranged gtable from \code{\link[gridExtra:grid.arrange]{gridExtra::grid.arrange()}}.
+A \code{\link[ggplot2:ggplot]{ggplot2::ggplot()}} object with one facet per drawing.
 }
 \description{
-Plots the \code{.rgba} raster arrays stored in a paindrawr list-column, one
-panel per row of \code{.data}. Optionally draws a background image beneath each
-raster.
+Plots the \code{.rgba} raster arrays stored in a paindrawr list-column as a
+ggplot, one facet per row of \code{.data}, using
+\code{\link[ggplot2:annotation_raster]{ggplot2::annotation_raster()}}. Optionally draws a background image beneath
+each raster.
 }
 \examples{
 \dontrun{
-my_data |>
-  pdr_plot_rgba(palmar)
+pdr_example_data[1,] |>
+  mutate(pdr_data = pdr_add_rgba(pdr_data)) |>
+  pdr_plot_rgba()
 
-my_data |>
+pdr_example_data[1:10,] |>
+  mutate(pdr_data = pdr_add_rgba(pdr_data)) |>
   pdr_plot_rgba(
-    palmar,
-    background_image = "inst/extdata/lower_arm_palmar.png",
+    background_image = pdr_example_file("mird_body_background.png"),
+    include_id = TRUE,
     ncol = 2
   )
 }
