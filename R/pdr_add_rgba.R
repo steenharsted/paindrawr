@@ -99,7 +99,7 @@
 #'
 #' @export
 pdr_add_rgba <- function(
-  paindrawr_data,
+  paindrawr_data = pdr_data,
   method = "memory",
   clean_up = TRUE,
   polygon = "none",
@@ -140,16 +140,38 @@ pdr_add_rgba <- function(
   image_width <- .data |> dplyr::pull(.width) |> unique()
   image_height <- .data |> dplyr::pull(.height) |> unique()
 
-  # Unnest and join the s (strokes) and p (points) list-columns
-  pdr_s <- .data |>
-    dplyr::select(.id, .strokes) |>
-    tidyr::unnest(cols = .strokes)
+  # Empty, but valid drawings should return an empty .rgba file
+  # To do this, they should pass an valid but empty tibble structure
+  # Non empty drawings will be unnested
 
-  pdr_p <- .data |>
-    dplyr::select(.id, .points) |>
-    tidyr::unnest(cols = .points)
+  if (nrow(.data$.points) == 0 & nrow(.data$.strokes) == 0) {
+    pd <- .data |>
+      mutate(
+        .x = as.integer(),
+        .y = as.integer(),
+        .index = as.integer(),
+        .draw_input_type = as.character(),
+        .tool = as.character(),
+        .color = as.character(),
+        .tool_width = as.integer(),
+        .point_density = as.integer(),
+        .spray_radius = as.integer(),
+        .alpha = as.double(),
+        scaleFactor = as.double(),
+        dpr = as.integer()
+      )
+  } else {
+    # Unnest and join the s (strokes) and p (points) list-columns
+    pdr_s <- .data |>
+      dplyr::select(.id, .strokes) |>
+      tidyr::unnest(cols = .strokes)
 
-  pd <- dplyr::full_join(pdr_s, pdr_p, by = dplyr::join_by(.id, .index)) # ".index" is the stroke-index-column that comes from unnesting .strokes and .points
+    pdr_p <- .data |>
+      dplyr::select(.id, .points) |>
+      tidyr::unnest(cols = .points)
+
+    pd <- dplyr::full_join(pdr_s, pdr_p, by = dplyr::join_by(.id, .index)) # ".index" is the stroke-index-column that comes from unnesting .strokes and .points
+  }
 
   # Scale brush width (pixels) to mm for ggplot rendering
   pd <- pd |>
