@@ -4,13 +4,30 @@
 \alias{pdr_import_png}
 \title{Import PNG files as pdr drawings}
 \usage{
-pdr_import_png(png, id_from_filename = TRUE)
+pdr_import_png(
+  png,
+  id_from_filename = TRUE,
+  background = NULL,
+  background_tolerance = 0
+)
 }
 \arguments{
 \item{png}{Character vector of paths to PNG files.}
 
 \item{id_from_filename}{Logical. If \code{TRUE} (default), \code{.id} is the file name
 without directory and \code{.png} extension. If \code{FALSE}, \code{.id} is \code{NA_character_}.}
+
+\item{background}{Optional colour (anything \code{\link[grDevices:col2rgb]{grDevices::col2rgb()}}
+accepts, e.g. \code{"white"} or \code{"#000000"}) that marks the background of PNGs
+\emph{without} an alpha channel (1 or 3 channels). Matching pixels get alpha 0;
+all others get alpha 1. Ignored for PNGs that already have alpha. If
+\code{NULL} (default), such PNGs are fully opaque. Note that drawn pixels of
+exactly the background colour cannot be distinguished from background.}
+
+\item{background_tolerance}{Maximum absolute difference (0-1 scale, per
+channel) from \code{background} for a pixel to count as background. Default 0
+(exact match). Increase to remove anti-aliasing halos, at the cost of also
+removing faint strokes.}
 }
 \value{
 A tibble (as from \code{\link[=pdr_import_json]{pdr_import_json()}}) with one row per file and
@@ -26,7 +43,11 @@ stroke information, \code{.points} and \code{.strokes} are empty tibbles with th
 expected column types.
 }
 \details{
-PNGs are currently assumed to have four channels (RGBA). Pixels that are
+PNGs with fewer than four channels are converted to RGBA without loss of
+information: grayscale (1 channel) is replicated to R, G and B with alpha
+set to 1; grayscale + alpha (2 channels) is replicated to R, G and B; RGB
+(3 channels) gets alpha set to 1. Indexed (palette) PNGs are expanded to
+RGB(A) by \code{\link[png:readPNG]{png::readPNG()}}. Pixels that are
 fully transparent are set to black (rather than transparent white). The
 row order of \code{.rgba} is as returned by \code{\link[png:readPNG]{png::readPNG()}} (row 1 is the top
 of the image).

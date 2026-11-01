@@ -6,12 +6,26 @@
 #' stroke information, `.points` and `.strokes` are empty tibbles with the
 #' expected column types.
 #'
-#' PNGs are currently assumed to have four channels (RGBA). Pixels that are
+#' PNGs with fewer than four channels are converted to RGBA without loss of
+#' information: grayscale (1 channel) is replicated to R, G and B with alpha
+#' set to 1; grayscale + alpha (2 channels) is replicated to R, G and B; RGB
+#' (3 channels) gets alpha set to 1. Indexed (palette) PNGs are expanded to
+#' RGB(A) by [png::readPNG()]. Pixels that are
 #' fully transparent are set to black (rather than transparent white). The
 #' row order of `.rgba` is as returned by [png::readPNG()] (row 1 is the top
 #' of the image).
 #'
 #' @param png Character vector of paths to PNG files.
+#' @param background Optional colour (anything [grDevices::col2rgb()]
+#'   accepts, e.g. `"white"` or `"#000000"`) that marks the background of PNGs
+#'   *without* an alpha channel (1 or 3 channels). Matching pixels get alpha 0;
+#'   all others get alpha 1. Ignored for PNGs that already have alpha. If
+#'   `NULL` (default), such PNGs are fully opaque. Note that drawn pixels of
+#'   exactly the background colour cannot be distinguished from background.
+#' @param background_tolerance Maximum absolute difference (0-1 scale, per
+#'   channel) from `background` for a pixel to count as background. Default 0
+#'   (exact match). Increase to remove anti-aliasing halos, at the cost of also
+#'   removing faint strokes.
 #' @param id_from_filename Logical. If `TRUE` (default), `.id` is the file name
 #'   without directory and `.png` extension. If `FALSE`, `.id` is `NA_character_`.
 #'
@@ -26,9 +40,28 @@
 #' \dontrun{
 #' pdr_list <- pdr_import_png(c("drawing_a.png", "drawing_b.png"))
 #' }
-pdr_import_png <- function(png, id_from_filename = TRUE) {
+pdr_import_png <- function(
+  png,
+  id_from_filename = TRUE,
+  background = NULL,
+  background_tolerance = 0
+) {
   if (!is.character(png) || length(png) == 0) {
     stop("`png` must be a character vector of file paths.")
+  }
+  if (
+    !is.numeric(background_tolerance) ||
+      length(background_tolerance) != 1 ||
+      background_tolerance < 0 ||
+      background_tolerance > 1
+  ) {
+    stop("`background_tolerance` must be a single number between 0 and 1.")
+  }
+  if (!is.null(background)) {
+    if (length(background) != 1) {
+      stop("`background` must be a single colour or NULL.")
+    }
+    bg_rgb <- as.vector(grDevices::col2rgb(background)) / 255
   }
   missing_files <- png[!file.exists(png)]
   if (length(missing_files) > 0) {
@@ -37,11 +70,16 @@ pdr_import_png <- function(png, id_from_filename = TRUE) {
 
   pdr_data <- png |>
     purrr::map(\(file) {
-      rgba <- png::readPNG(file)
+      img <- png::readPNG(file)
+      has_alpha <- length(dim(img)) == 3 && dim(img)[3] %in% c(2, 4)
+      rgba <- to_rgba(img, file)
 
-      # Only 4-channel (RGBA) images are supported for now
-      if (length(dim(rgba)) != 3 || dim(rgba)[3] != 4) {
-        stop("Expected a 4-channel (RGBA) PNG: ", file)
+      # Without an alpha channel, background pixels become fully transparent
+      if (!is.null(background) && !has_alpha) {
+        is_bg <- abs(rgba[,, 1] - bg_rgb[1]) <= background_tolerance + 1e-9 &
+          abs(rgba[,, 2] - bg_rgb[2]) <= background_tolerance + 1e-9 &
+          abs(rgba[,, 3] - bg_rgb[3]) <= background_tolerance + 1e-9
+        rgba[,, 4][is_bg] <- 0
       }
 
       # Make transparent pixels black (rather than transparent white)
@@ -73,5 +111,44 @@ pdr_import_png <- function(png, id_from_filename = TRUE) {
   tibble::tibble(
     pdr_data = pdr_data,
     id = purrr::map_chr(pdr_data, ".id")
+  )
+}
+
+# Convert the array returned by png::readPNG() to a height x width x 4 array.
+#
+# Arrays are stored column-major, so the layers (channels) lie one after
+# another in memory. Building a new layer therefore means concatenating
+# vectors with c() and reshaping with array(). Alpha is never "extracted"
+# from images that lack it: a PNG without alpha is fully opaque, so we add an
+# alpha layer of 1s, which represents exactly the same image.
+to_rgba <- function(img, file) {
+  d <- dim(img)
+  if (length(d) == 2) {
+    # Grayscale: readPNG() returns a plain matrix. Copy the gray values into
+    # R, G and B and add an opaque alpha layer.
+    return(array(c(img, img, img, rep(1, length(img))), dim = c(d, 4)))
+  }
+  if (length(d) != 3 || !d[3] %in% 1:4) {
+    stop("Unsupported PNG channel layout: ", file)
+  }
+  switch(
+    as.character(d[3]),
+    # 1 channel (gray as a height x width x 1 array): as for a matrix
+    "1" = array(
+      c(img, img, img, rep(1, prod(d[1:2]))),
+      dim = c(d[1:2], 4)
+    ),
+    # 2 channels (gray + alpha): alpha exists as layer 2 and becomes layer 4;
+    # gray (layer 1) is copied to R, G and B
+    "2" = array(
+      c(img[,, 1], img[,, 1], img[,, 1], img[,, 2]),
+      dim = c(d[1:2], 4)
+    ),
+    # 3 channels (RGB): the R, G and B layers are already in memory in
+    # sequence; appending height * width ones adds a fourth, fully opaque
+    # layer, and reshaping to 4 layers reads it as alpha. No pixel values change.
+    "3" = array(c(img, rep(1, prod(d[1:2]))), dim = c(d[1:2], 4)),
+    # 4 channels (RGBA): already in the target format
+    img
   )
 }
