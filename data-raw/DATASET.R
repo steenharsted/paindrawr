@@ -148,16 +148,16 @@ pdr_example_data <- pdr_example_data |>
   dplyr::select(-paindrawing_LBP) |>
   dplyr::mutate(
     sex = factor(
-      sample(0:1, n(), replace = TRUE),
+      sample(0:1, dplyr::n(), replace = TRUE),
       levels = c(0, 1),
       labels = c("Female", "Male")
     ),
-    age = round(rnorm(n(), 45, 20), 1),
+    age = round(rnorm(dplyr::n(), 45, 20), 1),
     duration = factor(
-      sample(c("Acute", "Subacute", "Chronic"), n(), replace = TRUE),
+      sample(c("Acute", "Subacute", "Chronic"), dplyr::n(), replace = TRUE),
       levels = c("Acute", "Subacute", "Chronic")
     ),
-    pain = as.integer(round(rnorm(n(), 5, 4)))
+    pain = as.integer(round(rnorm(dplyr::n(), 5, 4)))
   ) |>
   dplyr::mutate(
     age = ifelse(age > 98, 98, age),
@@ -165,7 +165,7 @@ pdr_example_data <- pdr_example_data |>
     pain = ifelse(pain > 10, 10, pain),
     pain = ifelse(pain < 0, 0, pain)
   ) |>
-  mutate(pdr_data = pdr_modify_points(pdr_data, ops = "flipy")) |>
+  #mutate(pdr_data = pdr_modify_points(pdr_data, ops = "flipy")) |>
   tibble::as_tibble()
 
 save(
