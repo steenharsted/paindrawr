@@ -39,6 +39,7 @@ Imports:
     ggplot2,
     gridExtra,
     png,
+    tibble,
     grid,
     cli,
     rlang
