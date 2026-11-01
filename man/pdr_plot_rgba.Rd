@@ -9,6 +9,7 @@ pdr_plot_rgba(
   paindrawr_data = pdr_data,
   background_image = NULL,
   include_id = FALSE,
+  only_alpha = FALSE,
   ncol = NULL,
   nrow = NULL
 )
@@ -28,6 +29,10 @@ background is drawn.}
 
 \item{include_id}{Logical. If \code{TRUE}, the \code{.id} value is shown as a facet
 strip label above each panel. Default is \code{FALSE}.}
+
+\item{only_alpha}{Logical. If \code{TRUE}, pixels with alpha > 0 are drawn
+opaque black and pixels with alpha == 0 are white (still transparent), to
+show which pixels have been drawn on. Default is \code{FALSE}.}
 
 \item{ncol, nrow}{Number of columns and rows, passed to
 \code{\link[ggplot2:facet_wrap]{ggplot2::facet_wrap()}}. If both are \code{NULL} (default), \code{facet_wrap()}

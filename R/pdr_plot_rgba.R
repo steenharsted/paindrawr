@@ -16,6 +16,9 @@
 #'   background is drawn.
 #' @param include_id Logical. If `TRUE`, the `.id` value is shown as a facet
 #'   strip label above each panel. Default is `FALSE`.
+#' @param only_alpha Logical. If `TRUE`, pixels with alpha > 0 are drawn
+#'   opaque black and pixels with alpha == 0 are white (still transparent), to
+#'   show which pixels have been drawn on. Default is `FALSE`.
 #' @param ncol,nrow Number of columns and rows, passed to
 #'   [ggplot2::facet_wrap()]. If both are `NULL` (default), `facet_wrap()`
 #'   chooses the layout.
@@ -43,6 +46,7 @@ pdr_plot_rgba <- function(
   paindrawr_data = pdr_data,
   background_image = NULL,
   include_id = FALSE,
+  only_alpha = FALSE,
   ncol = NULL,
   nrow = NULL
 ) {
@@ -74,6 +78,20 @@ pdr_plot_rgba <- function(
   first_dim <- dim(rgbas[[1]])
   width <- first_dim[2]
   height <- first_dim[1]
+
+  if (only_alpha) {
+    rgbas <- lapply(rgbas, function(rgba_arr) {
+      has_alpha <- rgba_arr[,, 4] > 0
+
+      # Pixels with alpha > 0: black, fully opaque
+      for (ch in 1:3) {
+        rgba_arr[,, ch][has_alpha] <- 0
+        rgba_arr[,, ch][!has_alpha] <- 1
+      }
+      rgba_arr[,, 4][has_alpha] <- 1
+      rgba_arr
+    })
+  }
 
   # annotation_raster() has no per-facet data, so add one layer per panel,
   # restricted to its facet via a data frame holding that panel's .id
