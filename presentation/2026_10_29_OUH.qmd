@@ -477,7 +477,7 @@ example_back_pain
 example_back_pain |> 
   pdr_plot_rgba_heatmap(
     pdr_col = pdr_data,
-    background_image = pdr_example_file("mird_body_background.png")
+    background_image = pdr_example_file("bg_full_body.png")
   )
 ```
 
@@ -488,26 +488,26 @@ example_back_pain |>
 example_back_pain |> 
   pdr_plot_rgba_heatmap(
     pdr_col = pdr_data_poly,
-    background_image = pdr_example_file("mird_body_background.png")
+    background_image = pdr_example_file("bg_full_body.png")
     )   
 ```
 
 ## Stencils
 
 ```{r}
-pdr_example_anatomy 
+pdr_stencil_full_body
 ```
 
 
 ## Stencils
 ```{r}
-my_stencil <- pdr_example_anatomy |> 
-  filter(id == "Back_left_lowerback")
+my_stencil <- pdr_stencil_full_body |> 
+  filter(id == "Back_left_lowerback" | id == "Back_left_buttock")
 
 my_stencil |> 
   pdr_plot_stencil(
     pdr_data,
-    background_image = pdr_example_file("mird_body_background.png") 
+    background_image = pdr_example_file("bg_full_body.png") 
     )
 ```
 
@@ -518,8 +518,8 @@ my_stencil |>
 ```{r}
 example_back_pain |> 
   pdr_summarize_rgba(
-      pdr_list = pdr_data_poly, 
+      pdr_col = pdr_data_poly, 
       stencils = my_stencil$pdr_data, 
-      summary_stat = "area"
+      summary_stat = c("px", "mean")
     )
 ```
