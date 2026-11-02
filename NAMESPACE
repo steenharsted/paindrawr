@@ -66,6 +66,7 @@ importFrom(ggplot2,
 )
 importFrom(ggtext,element_markdown)
 importFrom(grDevices,
+  as.raster,
   col2rgb,
   dev.off
 )
@@ -76,7 +77,10 @@ importFrom(purrr,
   map_lgl
 )
 importFrom(ragg,agg_capture)
-importFrom(rlang,arg_match)
+importFrom(rlang,
+  ":=",
+  arg_match
+)
 importFrom(scales,
   label_number,
   percent,

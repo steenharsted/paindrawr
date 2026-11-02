@@ -26,7 +26,10 @@
 #'   `min`, `median`, `sd` and `iqr`; `"all"` is `seven` plus `area_prop`,
 #'   `q1`, `q5`, `q25`, `q75`, `q90`, `q95` and `q99` (note: `q10` is *not*
 #'   included in `"all"`, but can be requested explicitly). Columns are
-#'   returned in a fixed order, not in the order requested.
+#'   returned in a fixed order, not in the order requested: `px`, `area_prop`,
+#'   `mean`, `sd`, `median`, `iqr`, `min`, `max`, `q1`, `q5`, `q10`, `q25`,
+#'   `q75`, `q90`, `q95`, `q99` (restricted to those requested). Note this
+#'   differs from the order in which `"seven"` is listed above.
 #' @param alpha_range Numeric vector of length 2 giving the lower (exclusive)
 #'   and upper (inclusive) alpha bounds of pixels to include, with
 #'   `0 <= alpha_range[1] < alpha_range[2] <= 1`. Defaults to `c(0, 1)`, i.e.
@@ -45,7 +48,9 @@
 #'   `<pdr_col>_<stencil id>_<stat>` with stencils, e.g. `pdr_data_mean` or
 #'   `pdr_data_Back_head_mean`. If no pixels fall in `alpha_range`, `px` is 0,
 #'   `mean`, `sd`, `median`, `iqr` and quantiles are `NA`, and `min`/`max` are
-#'   `Inf`/`-Inf` (with a warning).
+#'   `Inf`/`-Inf` (with a warning). If a drawing is missing (`NA`), its `.rgba`
+#'   is `NA`, or its alpha channel is entirely `NA`, all statistics for that
+#'   drawing, including `px`, are `NA`. Individual `NA` pixels are ignored.
 #'
 #' @seealso [pdr_add_rgba()] to add `.rgba`, [pdr_add_stencil()] and
 #'   [pdr_modify_rgba()] for stencils, [pdr_plot_rgba()] to plot the arrays.
@@ -112,16 +117,26 @@ pdr_summarize_rgba <- function(
 
     one_pdr_list |>
       purrr::map_dfr(\(pdr_drawing) {
-        # apply stencil while alpha_channel dimensions are unchanged width x height
-        alpha_channel <- pdr_drawing$.rgba[,, 4]
-        if (!is.null(one_stencil)) {
-          alpha_channel <- alpha_channel * one_stencil
+        # A missing drawing (NA), missing .rgba, or an alpha channel that is
+        # entirely NA cannot be summarised: all statistics are NA (not px = 0)
+        is_missing <- !is.list(pdr_drawing) ||
+          !is.array(pdr_drawing$.rgba) ||
+          all(is.na(pdr_drawing$.rgba[,, 4]))
+
+        if (is_missing) {
+          alpha_channel <- numeric(0)
+        } else {
+          # apply stencil while alpha_channel dimensions are unchanged width x height
+          alpha_channel <- pdr_drawing$.rgba[,, 4]
+          if (!is.null(one_stencil)) {
+            alpha_channel <- alpha_channel * one_stencil
+          }
+          # apply alpha range -- Note after this alpha_channel is no longer an array
+          alpha_channel <- alpha_channel[!is.na(alpha_channel)]
+          alpha_channel <- alpha_channel[
+            alpha_channel > alpha_range[1] & alpha_channel <= alpha_range[2]
+          ]
         }
-        # apply alpha range -- Note after this alpha_channel is no longer an array
-        alpha_channel <- alpha_channel[!is.na(alpha_channel)]
-        alpha_channel <- alpha_channel[
-          alpha_channel > alpha_range[1] & alpha_channel <= alpha_range[2]
-        ]
 
         result_tib <- tibble::tibble(.rows = 1)
         if ("px" %in% summary_stat) {
@@ -133,8 +148,11 @@ pdr_summarize_rgba <- function(
         if ("area_prop" %in% summary_stat) {
           result_tib <- dplyr::bind_cols(
             result_tib,
-            area_prop = length(alpha_channel) /
-              (pdr_drawing$.width * pdr_drawing$.height)
+            area_prop = if (is_missing) {
+              NA_real_
+            } else {
+              length(alpha_channel) / (pdr_drawing$.width * pdr_drawing$.height)
+            }
           )
         }
         if ("mean" %in% summary_stat) {
@@ -153,10 +171,16 @@ pdr_summarize_rgba <- function(
           result_tib <- dplyr::bind_cols(result_tib, iqr = IQR(alpha_channel))
         }
         if ("min" %in% summary_stat) {
-          result_tib <- dplyr::bind_cols(result_tib, min = min(alpha_channel))
+          result_tib <- dplyr::bind_cols(
+            result_tib,
+            min = if (is_missing) NA_real_ else min(alpha_channel)
+          )
         }
         if ("max" %in% summary_stat) {
-          result_tib <- dplyr::bind_cols(result_tib, max = max(alpha_channel))
+          result_tib <- dplyr::bind_cols(
+            result_tib,
+            max = if (is_missing) NA_real_ else max(alpha_channel)
+          )
         }
         if ("q1" %in% summary_stat) {
           result_tib <- dplyr::bind_cols(
@@ -206,6 +230,9 @@ pdr_summarize_rgba <- function(
             q99 = quantile(alpha_channel, probs = 0.99)
           )
         }
+        if (is_missing) {
+          result_tib[] <- NA_real_
+        }
         names(result_tib) <- paste0(col_name, "_", names(result_tib))
         return(result_tib)
       })
@@ -248,6 +275,21 @@ pdr_summarize_rgba <- function(
     stop(
       "`alpha_range` must be a numeric vector of length 2 with 0 <= alpha_range[1] < alpha_range[2] <= 1."
     )
+  }
+  # Every non-missing drawing in each selected column has .rgba
+  for (i in pdr_col) {
+    if (
+      !all(purrr::map_lgl(
+        .data[[i]],
+        \(d) !is.list(d) || ".rgba" %in% names(d)
+      ))
+    ) {
+      stop(
+        "Not all drawings in column '",
+        i,
+        "' contain a .rgba element; see pdr_add_rgba()"
+      )
+    }
   }
   # Check stencils is a pdr_list
   if (!pdr_match(stencils, as = "pdr_list")) {

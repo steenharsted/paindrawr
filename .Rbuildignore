@@ -3,3 +3,12 @@
 ^data-raw$
 ^LICENSE\.md$
 ^README\.Rmd$
+^\.Rhistory$
+^R_sandbox$
+^R_trash$
+^articles$
+^presentation$
+^roadmap\.md$
+^todo_paindrawr$
+^wip$
+^data/pdr_example_zealand\.rds$

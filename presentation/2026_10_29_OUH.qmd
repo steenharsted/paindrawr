@@ -324,8 +324,8 @@ my_data
 my_data |> 
   group_by(tool, distance) |> 
   summarise(
-    area_mean = mean(palmar_area, na.rm = TRUE), 
-    area_sd  = sd(palmar_area, na.rm = TRUE),
+    px_mean = mean(palmar_px, na.rm = TRUE), 
+    px_sd  = sd(palmar_px, na.rm = TRUE),
     intensity_mean = mean(palmar_mean, na.rm = TRUE), 
     intensity_sd = sd(palmar_mean, na.rm = TRUE)
   )
@@ -339,13 +339,13 @@ my_data |>
 #| echo: false
 #| width: 10
 my_data |> 
-  filter(palmar_area == max(palmar_area, na.rm = TRUE)) |> 
+  filter(palmar_px == max(palmar_px, na.rm = TRUE)) |> 
   pdr_plot_xy(palmar, background_image = bg_palmar) +
   labs(title = "Largest area") +
 
 
 my_data |> 
-  filter(palmar_area == min(palmar_area, na.rm = TRUE)) |> 
+  filter(palmar_px == min(palmar_px, na.rm = TRUE)) |> 
   pdr_plot_xy(palmar, background_image = bg_palmar) +
   labs(title = "Smallest area") +
   
@@ -369,7 +369,7 @@ my_data |>
 my_data |> 
   ggplot(aes(
     x = tool, 
-    y = palmar_area, 
+    y = palmar_px, 
     fill = distance))+
   geom_boxplot(alpha = 0.5)
 ```
@@ -515,9 +515,12 @@ my_stencil |>
 ## Stencils
 
 ```{r}
+example_back_pain[2,] $pdr_data <- NA
+example_back_pain
+
 example_back_pain |> 
   pdr_summarize_rgba(
-      pdr_col = pdr_data_poly, 
+      pdr_col = pdr_data, 
       stencils = my_stencil$pdr_data, 
       summary_stat = c("px", "mean")
     )

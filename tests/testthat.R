@@ -7,6 +7,6 @@
 # * https://testthat.r-lib.org/articles/special-files.html
 
 library(testthat)
-library(paindrawings)
+library(paindrawr)
 
-test_check("paindrawings")
+test_check("paindrawr")

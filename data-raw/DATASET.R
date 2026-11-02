@@ -45,7 +45,10 @@ pdr_xa <- pdr_xa |>
 # This is a bit quirky ... but necessary to ensure the variable is named correctly in rda:
 var_name <- "pdr_stencil_full_body"
 assign(var_name, pdr_xa)
-do.call(save, list(var_name, file = "data/pdr_stencil_full_body.rda"))
+do.call(
+  save,
+  list(var_name, file = "data/pdr_stencil_full_body.rda", compress = "bzip2")
+)
 
 
 # ---- GENERATE SOME GEOMTRIC EXAMPLE CASES ----
@@ -122,7 +125,8 @@ pdr_example_geometry <- pdr_example_geometry |>
 
 save(
   pdr_example_geometry,
-  file = "data/pdr_example_geometry.rda"
+  file = "data/pdr_example_geometry.rda",
+  compress = "bzip2"
 )
 
 
@@ -176,5 +180,6 @@ pdr_example_data <- pdr_example_data |>
 
 save(
   pdr_example_data,
-  file = "data/pdr_example_data.rda"
+  file = "data/pdr_example_data.rda",
+  compress = "bzip2"
 )

@@ -31,7 +31,10 @@ given as a single string: \code{"seven"} (default) is \code{px}, \code{mean}, \c
 \code{min}, \code{median}, \code{sd} and \code{iqr}; \code{"all"} is \code{seven} plus \code{area_prop},
 \code{q1}, \code{q5}, \code{q25}, \code{q75}, \code{q90}, \code{q95} and \code{q99} (note: \code{q10} is \emph{not}
 included in \code{"all"}, but can be requested explicitly). Columns are
-returned in a fixed order, not in the order requested.}
+returned in a fixed order, not in the order requested: \code{px}, \code{area_prop},
+\code{mean}, \code{sd}, \code{median}, \code{iqr}, \code{min}, \code{max}, \code{q1}, \code{q5}, \code{q10}, \code{q25},
+\code{q75}, \code{q90}, \code{q95}, \code{q99} (restricted to those requested). Note this
+differs from the order in which \code{"seven"} is listed above.}
 
 \item{alpha_range}{Numeric vector of length 2 giving the lower (exclusive)
 and upper (inclusive) alpha bounds of pixels to include, with
@@ -53,7 +56,9 @@ are named \verb{<pdr_col>_<stat>} without stencils, and
 \verb{<pdr_col>_<stencil id>_<stat>} with stencils, e.g. \code{pdr_data_mean} or
 \code{pdr_data_Back_head_mean}. If no pixels fall in \code{alpha_range}, \code{px} is 0,
 \code{mean}, \code{sd}, \code{median}, \code{iqr} and quantiles are \code{NA}, and \code{min}/\code{max} are
-\code{Inf}/\code{-Inf} (with a warning).
+\code{Inf}/\code{-Inf} (with a warning). If a drawing is missing (\code{NA}), its \code{.rgba}
+is \code{NA}, or its alpha channel is entirely \code{NA}, all statistics for that
+drawing, including \code{px}, are \code{NA}. Individual \code{NA} pixels are ignored.
 }
 \description{
 Computes summary statistics of the alpha channel of the \code{.rgba} array of
