@@ -11,7 +11,7 @@
 #'   by [pdr_add_rgba()]). Typically passed as a list-column inside
 #'   `dplyr::mutate()`.
 #' @param summary_stat A string specifying the summary statistic to compute
-#'   over drawn pixel alpha values. One or more of `"area"`, `"area_prop"`, `"mean"`,
+#'   over drawn pixel alpha values. One or more of `"px"`, `"area_prop"`, `"mean"`,
 #'   `"sd"`, `"max"`,`"min"`, `"median"`, `"q1"`, `"q5"`, `"q10"`, `"q25"`,
 #'   `"q75"`, `"q90"`, `"q95"`, `"q99"`. Alternatively: `"all"`, or `seven"` (default),
 #'   to return all the above, or the first seven of the above.
@@ -102,10 +102,10 @@ pdr_summarize_rgba <- function(
         ]
 
         result_tib <- tibble::tibble(.rows = 1)
-        if ("area" %in% summary_stat) {
+        if ("px" %in% summary_stat) {
           result_tib <- dplyr::bind_cols(
             result_tib,
-            area = length(alpha_channel)
+            px = length(alpha_channel)
           )
         }
         if ("area_prop" %in% summary_stat) {
@@ -193,10 +193,10 @@ pdr_summarize_rgba <- function(
   ##### Sanity checks #####
   #########################
   if (identical(summary_stat, "seven")) {
-    summary_stat <- c("area", "mean", "max", "min", "median", "sd", "iqr")
+    summary_stat <- c("px", "mean", "max", "min", "median", "sd", "iqr")
   } else if (identical(summary_stat, "all")) {
     summary_stat <- c(
-      "area",
+      "px",
       "area_prop",
       "mean",
       "max",
