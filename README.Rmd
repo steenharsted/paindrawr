@@ -13,7 +13,7 @@ knitr::opts_chunk$set(
 )
 ```
 
-# paindrawr <img src="man/figures/paindraw-logo.png" align="right" height="139" />
+# paindrawr <img src="man/figures/paindrawr-logo.png" align="right" height="139" />
 
 <!-- badges: start -->
 [![R-CMD-check](https://github.com/steenharsted/paindrawr/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/steenharsted/paindrawr/actions/workflows/R-CMD-check.yaml)
