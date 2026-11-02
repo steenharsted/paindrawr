@@ -1,7 +1,7 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# paindrawr <img src="man/figures/paindrawr-logo.png" align="right" height="139" />
+# paindrawr <img src="man/figures/paindrawr-logo.png" align="right" height="220" />
 
 <!-- badges: start -->
 
