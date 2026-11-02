@@ -26,7 +26,7 @@
 #'   deleted on exit. Only relevant when `method = "file"`. Set to `FALSE` to
 #'   retain the file for debugging.
 #' @param polygon Character. Controls whether strokes are rendered as filled
-#'   polygons (in black) instead of their original appearance. One of:
+#'   polygons instead of their original appearance. One of:
 #'   * `"none"` (default) — pen strokes as paths, spray strokes as points.
 #'   * `"pen"` — pen strokes as filled polygons.
 #'   * `"spray"` — spray strokes as filled polygons.
@@ -206,7 +206,8 @@ pdr_add_rgba <- function(
       x = .x,
       y = .y,
       color = .color,
-      alpha = .alpha
+      alpha = .alpha,
+      fill = .color
     )) +
     ggplot2::coord_fixed(
       xlim = c(0, image_width),
@@ -215,6 +216,7 @@ pdr_add_rgba <- function(
     ) +
     ggplot2::theme_void(base_size = 12) +
     ggplot2::scale_color_identity() +
+    ggplot2::scale_fill_identity() +
     ggplot2::scale_size_identity() +
     ggplot2::scale_alpha_identity() +
     ggplot2::scale_linewidth_identity()
@@ -228,8 +230,7 @@ pdr_add_rgba <- function(
           linewidth = size_mm + 1
         ),
         linetype = 1,
-        color = "black",
-        fill = "black"
+        alpha = 1
       )
   } else {
     pdr_base <- pdr_base +
@@ -251,9 +252,8 @@ pdr_add_rgba <- function(
           group = paste0(.id, "_", .index),
           linewidth = size_mm + 1
         ),
-        linetype = 1,
-        color = "black",
-        fill = "black"
+        alpha = 1,
+        linetype = 1
       )
   } else {
     plot_out <- pdr_base +

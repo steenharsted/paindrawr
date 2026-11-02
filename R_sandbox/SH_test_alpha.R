@@ -3,7 +3,7 @@ library(tidyverse)
 
 load_all()
 
-col_alpha_data <- pd_import_json("data-raw/col_alpha_01_to_10.json")
+col_alpha_data <- pdr_import_json("data-raw/col_alpha_01_to_10.json")
 
 col_alpha_data |> pd_recreate_drawing()
 

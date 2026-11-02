@@ -50,10 +50,12 @@
 #'   this ensures a 1:1 pixel correspondence between the original drawing and
 #'   the output. Increase for print-quality output (e.g. `300`), noting this
 #'   does not affect the canvas dimensions, only output pixel density.
-#' @param type A string set to either `"path"` or `"polygon"`. The former
-#'   (default) renders strokes as open paths. The latter renders strokes as
-#'   closed polygons filled in black, which is useful for generating anatomy
-#'   area templates.
+#' @param polygon Character. Controls whether strokes are rendered as filled
+#'   polygons instead of their original appearance. One of:
+#'   * `"none"` (default) — pen strokes as paths, spray strokes as points.
+#'   * `"pen"` — pen strokes as filled polygons.
+#'   * `"spray"` — spray strokes as filled polygons.
+#'   * `"both"` — both pen and spray strokes as filled polygons.
 #'
 #' @return A [ggplot2::ggplot()] object. When `rasterize = TRUE`, the plot
 #'   contains a single [ggplot2::annotation_raster()] layer with a locked
@@ -100,7 +102,7 @@ pdr_plot_xy <- function(
   method = "memory",
   clean_up = TRUE,
   dpi = 96,
-  type = "path"
+  polygon = "none"
 ) {
   # Drop missing drawings (NA or NULL entries) before unnesting
   drawings <- dplyr::pull(.data, {{ paindrawr_data }})
@@ -233,8 +235,15 @@ pdr_plot_xy <- function(
       x = .x,
       y = .y,
       color = .color,
+      fill = .color,
       alpha = .alpha
-    ))
+    )) +
+    ggplot2::theme_void(base_size = 12) +
+    ggplot2::scale_color_identity() +
+    ggplot2::scale_size_identity() +
+    ggplot2::scale_alpha_identity() +
+    ggplot2::scale_fill_identity() +
+    ggplot2::scale_linewidth_identity()
 
   ### If background image is provided, we plot it now
   if (!is.null(background_image)) {
@@ -249,27 +258,19 @@ pdr_plot_xy <- function(
   }
 
   ### Build plot(s) with pen strokes
-  if (type == "polygon") {
+  if (polygon %in% c("pen", "both")) {
     pdr_base <- pdr_base +
       ggplot2::coord_fixed(
         xlim = c(0, image_width),
         ylim = c(0, image_height),
         expand = FALSE
       ) +
-      ggplot2::theme_void(base_size = 12) +
-      ggplot2::scale_color_identity() +
-      ggplot2::scale_size_identity() +
-      ggplot2::scale_alpha_identity() +
-      ggplot2::scale_linewidth_identity() +
       ggplot2::geom_polygon(
         ggplot2::aes(
           group = paste0(.id, "_", .index),
           linewidth = size_mm + 1
         ),
         linetype = 1,
-        #linewidth = 0.5,
-        color = "black",
-        fill = "black",
         alpha = 1
       )
   } else {
@@ -279,11 +280,6 @@ pdr_plot_xy <- function(
         ylim = c(0, image_height),
         expand = FALSE
       ) +
-      ggplot2::theme_void(base_size = 12) +
-      ggplot2::scale_color_identity() +
-      ggplot2::scale_size_identity() +
-      ggplot2::scale_alpha_identity() +
-      ggplot2::scale_linewidth_identity() +
       ggplot2::geom_path(
         ggplot2::aes(
           group = paste0(.id, "_", .index),
@@ -293,12 +289,26 @@ pdr_plot_xy <- function(
       )
   }
 
-  plot_out <- pdr_base +
-    ggplot2::geom_point(
-      data = pdr_spray,
-      ggplot2::aes(size = size_mm),
-      shape = 15
-    )
+  # Draw spray or spray polygon
+  if (polygon %in% c("spray", "both")) {
+    plot_out <- pdr_base +
+      ggplot2::geom_polygon(
+        data = pdr_spray,
+        ggplot2::aes(
+          group = paste0(.id, "_", .index),
+          linewidth = size_mm + 1
+        ),
+        alpha = 1,
+        linetype = 1
+      )
+  } else {
+    plot_out <- pdr_base +
+      ggplot2::geom_point(
+        data = pdr_spray,
+        ggplot2::aes(size = size_mm),
+        shape = 15
+      )
+  }
 
   plot_out <- plot_out +
     ggplot2::facet_wrap(facets = ~.id)

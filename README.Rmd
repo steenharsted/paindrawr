@@ -48,8 +48,9 @@ drawings themselves live in a dedicated list-column, so that each
 drawing — its metadata, strokes, and point coordinates — travels alongside any
 covariates you have collected (for example sex, age, symptom duration, or pain
 intensity). The list column name defaults to `pdr_data`, but can take any name. 
-The package ships with `pdr_example_tibble`, a ready-to-use example
-in exactly this format, which is used throughout the documentation.
+
+The package ships with `pdr_example_data` that has exactly this format, and 
+is used throughout the documentation.
 
 A detailed description of the pain-drawing data structure will be provided in a
 separate vignette.
@@ -59,10 +60,10 @@ separate vignette.
 paindrawr is built to work within the
 [tidyverse](https://www.tidyverse.org/): drawings are stored in a list-column
 of a tibble, and the `pdr_*()` functions are designed to be used with the
-native pipe (`|>`) alongside familiar verbs like `mutate()`, `filter()`, and
-`head()`. The examples below load the tidyverse for this reason.
+native pipe (`|>`) alongside familiar verbs like `mutate()` and `filter()`. 
+The examples below load the tidyverse for this reason.
 
-The example dataset contains 50 respondents, each with a pain drawing in the
+The example dataset contains `r nrow(pdr_example_data)` respondents, each with a pain drawing in the
 `pdr_data` column plus a few covariates:
 
 ```{r example}
@@ -80,18 +81,18 @@ as new columns with `mutate()` — for example the canvas width of each drawing:
 
 ```{r get-info}
 pdr_example_data|>
-  mutate(width = pdr_get_info(pdr_data, var = ".width"))
+  mutate(width = pdr_get_info(pdr_data, id1 = ".width"))
 ```
 
 ### Recreate a single drawing
 
-`pdr_plot_drawing()` redraws an individual pain drawing from its coordinates.
+`pdr_plot_xy()` redraws an individual pain drawing from its coordinates.
 Pipe in a single row of the tibble:
 
 ```{r plot-drawing}
 pdr_example_data|>
   head(1) |>
-  pdr_plot_drawing()
+  pdr_plot_xy()
 ```
 
 
@@ -100,24 +101,52 @@ pdr_example_data|>
 Plots of individual drawings and heatmaps are more interpretable when they include the background image that used during datacollection.
 
 ```{r}
+background <- pdr_example_file("bg_full_body.png")
+
+# To use your own pngs as background use png::readPNG
 background <- png::readPNG("inst/extdata/mird_body_background.png")
+
 
 pdr_example_data|>
   head(1) |>
-  pdr_plot_drawing(
+  pdr_plot_xy(
     background_image = background
   )
 ```
 
+### polygons or xy?
+
+```{r}
+pdr_example_data|>
+  head(1) |>
+  pdr_plot_xy(
+    background_image = background, 
+    polygon = "none"
+  )
+```
+
+### In this case polygon
+
+Add rgba with polygons
+
+```{r}
+pdr_example_data <- pdr_example_data|>
+  mutate(
+    pdr_data = pdr_add_rgba(pdr_data, polygon = "both")
+    )
+
+  
+```
+
 ### Heatmaps across groups
 
-`pdr_plot_heatmap()` aggregates many drawings into density heatmaps, optionally
+`pdr_plot_rgba_heatmap()` aggregates many drawings into density heatmaps, optionally
 stratified by one or two grouping variables. Here we stratify by symptom
 duration:
 
 ```{r plot-heatmap, message = FALSE}
 pdr_example_data|>
-  pdr_plot_heatmap(
+  pdr_plot_rgba_heatmap(
     variables = "duration", 
     background_image = background)
 ```

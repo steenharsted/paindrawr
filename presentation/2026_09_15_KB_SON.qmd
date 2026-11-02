@@ -22,7 +22,7 @@ library(paindrawr)
 #### .. the reason that other guys poster graphics suck!
 
 
-![](boxers.png){width=25% fig-align="center"}
+![](images/boxers.png){width=25% fig-align="center"}
 
 **Raster** vs **Vector**
 
@@ -31,7 +31,7 @@ library(paindrawr)
 
 ## Raster  and Vector images
 
-![](raster_v_vector_images.png)
+![](images/raster_v_vector_images.png)
 
 **Raster** vs **Vector**
 
