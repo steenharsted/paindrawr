@@ -53,9 +53,9 @@ theme_set(theme_classic(base_size = 14))
 theme_gtsummary_compact()
 
 # Load background images
-bg_palmar <- here("inst/extdata/lower_arm_palmar.png")
-bg_mird <- here("inst/extdata/mird_body_background.png")
-bg_zealand <- here("inst/extdata/zealand.png")
+bg_palmar <- here("inst/extdata/bg_lower_arm_palmar.png")
+bg_mird <- here("inst/extdata/bg_full_body.png")
+bg_zealand <- here("inst/extdata/bg_zealand.png")
 ```
 
 

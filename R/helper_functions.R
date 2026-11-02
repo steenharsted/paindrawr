@@ -141,17 +141,6 @@ calculate_pain_density <- function(.data, group_totals, group_vars, grid_size) {
 }
 
 
-#### Scaling function
-# maps bw to size in mm using scale_bw funtion
-pdr_scale_bw <- function(bw) {
-  min_bw <- 1
-  max_bw <- 20
-  min_target <- 0.1
-  max_target <- 5
-  ((bw - min_bw) / (max_bw - min_bw)) * (max_target - min_target) + min_target
-}
-
-
 #' Read and validate a background image
 #'
 #' Shared by the plotting functions that accept a `background_image` argument.

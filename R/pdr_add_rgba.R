@@ -89,7 +89,7 @@
 #' @importFrom ragg agg_capture
 #' @importFrom ggplot2 ggplot aes coord_fixed theme_void scale_color_identity
 #' @importFrom ggplot2 scale_size_identity scale_alpha_identity scale_linewidth_identity
-#' @importFrom ggplot2 geom_path geom_point geom_polygon ggsave
+#' @importFrom ggplot2 geom_path geom_tile geom_polygon ggsave
 #' @importFrom purrr map
 #' @importFrom cli cli_abort
 #' @importFrom stats runif
@@ -174,9 +174,15 @@ pdr_add_rgba <- function(
     pd <- dplyr::full_join(pdr_s, pdr_p, by = dplyr::join_by(.id, .index)) # ".index" is the stroke-index-column that comes from unnesting .strokes and .points
   }
 
-  # Scale brush width (pixels) to mm for ggplot rendering
+  # Rendering resolution. The value is arbitrary and only affects text size
+  # (not used here); it must be the same in the linewidth formula below and in
+  # both rasterization calls (agg_capture, ggsave), or pen widths will be wrong.
+  render_dpi <- 72
+
+  # ggplot2 linewidth (mm) giving a line .tool_width canvas pixels wide at
+  # render_dpi (1 lwd unit = 1/96 inch, 1 linewidth unit = .pt lwd units)
   pd <- pd |>
-    dplyr::mutate(size_mm = pdr_scale_bw(.tool_width))
+    dplyr::mutate(lw = .tool_width * 96 / (render_dpi * ggplot2::.pt))
 
   # Split into pen and spray subsets
   pdr_pen <- dplyr::filter(pd, .tool == "pen")
@@ -187,10 +193,11 @@ pdr_add_rgba <- function(
     pdr_spray <- pdr_spray |>
       tidyr::uncount(weights = .data$.point_density) |>
 
-      # Uniform distribution within a circle of radius pr
+      # Random angles and radii. The radius is uniform (not sqrt-transformed)
+      # to match the PainDraw module, so dots cluster towards the centre
       dplyr::mutate(
         angle = runif(dplyr::n(), 0, 2 * pi),
-        radius = sqrt(runif(dplyr::n(), 0, 1)) * .spray_radius
+        radius = runif(dplyr::n(), 0, 1) * .spray_radius
       ) |>
       dplyr::mutate(
         .x = .x + radius * cos(angle),
@@ -225,7 +232,7 @@ pdr_add_rgba <- function(
       ggplot2::geom_polygon(
         ggplot2::aes(
           group = paste0(.id, "_", .index),
-          linewidth = size_mm + 1
+          linewidth = lw
         ),
         linetype = 1,
         alpha = 1
@@ -235,9 +242,11 @@ pdr_add_rgba <- function(
       ggplot2::geom_path(
         ggplot2::aes(
           group = paste0(.id, "_", .index),
-          linewidth = size_mm + 1
+          linewidth = lw
         ),
-        linetype = 1
+        linetype = 1,
+        lineend = "round",
+        linejoin = "round"
       )
   }
 
@@ -248,17 +257,18 @@ pdr_add_rgba <- function(
         data = pdr_spray,
         ggplot2::aes(
           group = paste0(.id, "_", .index),
-          linewidth = size_mm + 1
+          linewidth = lw
         ),
         alpha = 1,
         linetype = 1
       )
   } else {
     plot_out <- pdr_base +
-      ggplot2::geom_point(
+      # Each dot is a square with side .tool_width canvas pixels, as in the module
+      ggplot2::geom_tile(
         data = pdr_spray,
-        ggplot2::aes(size = size_mm),
-        shape = 15
+        ggplot2::aes(width = .tool_width, height = .tool_width),
+        color = NA
       )
   }
 
@@ -267,6 +277,7 @@ pdr_add_rgba <- function(
       width = image_width,
       height = image_height,
       units = "px",
+      res = render_dpi,
       bg = "transparent"
     )
     print(plot_out) # must explicitly print to render to the device
@@ -290,7 +301,8 @@ pdr_add_rgba <- function(
       file = tmp,
       width = image_width,
       height = image_height,
-      units = "px"
+      units = "px",
+      dpi = render_dpi
     )
 
     rgba_arr <- png::readPNG(tmp)
