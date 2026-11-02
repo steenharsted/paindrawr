@@ -8,3 +8,6 @@
 
 /wip
 /articles
+
+/.quarto/
+**/*.quarto_ipynb

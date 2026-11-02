@@ -1,7 +1,7 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# paindrawr
+# paindrawr <img src="man/figures/paindraw-logo.png" align="right" height="139" />
 
 <!-- badges: start -->
 
@@ -30,6 +30,19 @@ You can install the development version of paindrawr from
 ``` r
 pak::pak("steenharsted/paindrawr")
 ```
+
+## Collect with paindraw. Analyse with paindrawr.
+
+<img src="man/figures/paindraw_and_paindrawr.png" height="160" alt="paindraw logo" />
+
+**paindraw** is a REDCap external module for collecting digital pain
+drawings.
+
+**paindrawr** is an R package for importing, quantifying, analysing, and
+visualising pain drawings.
+
+Together, they provide a workflow from digital data collection to
+research-ready results.
 
 ## Typical workflow
 
