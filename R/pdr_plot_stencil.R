@@ -27,9 +27,7 @@
 #'
 #' @export
 #' @examples
-#' \dontrun{
-#' # TODO: change to \donttest{} (or plain) once pdr_plot_stencil() passes
-#' # background_image/ncol/nrow by name to pdr_plot_rgba()
+#' \donttest{
 #' pdr_stencil_full_body[1:2, ] |>
 #'   pdr_plot_stencil(pdr_data)
 #'
@@ -40,9 +38,17 @@
 #'     invert = TRUE
 #'   )
 #' }
-pdr_plot_stencil <- function(.data, pdr_col = pdr_data, background_image=NULL, ncol = NULL, nrow = NULL, invert=FALSE) {
-
-  if(!pdr_match(.data, as="pdr_tibble")) { stop("Invalid '.data' parameter - should be pdr_tibble.")}
+pdr_plot_stencil <- function(
+  .data,
+  pdr_col = pdr_data,
+  background_image = NULL,
+  ncol = NULL,
+  nrow = NULL,
+  invert = FALSE
+) {
+  if (!isTRUE(pdr_match(.data, as = "pdr_tibble"))) {
+    stop("Invalid '.data' parameter - should be pdr_tibble.")
+  }
 
   # Validate and process background_image
   if (!is.null(background_image)) {
@@ -72,18 +78,24 @@ pdr_plot_stencil <- function(.data, pdr_col = pdr_data, background_image=NULL, n
   # full red, but the alpha channel is the stencil matrix
   # (or the inverted stencil) .. and plot as pdr_plot_rgba
   .data |>
-    mutate( {{pdr_col}} := {{pdr_col}} |>
-      purrr::map(\(pdr_drawing) {
-        pdr_drawing$.rgba[,,1] <- 1
-        pdr_drawing$.rgba[,,2] <- 0
-        pdr_drawing$.rgba[,,3] <- 0
-        if(invert) {
-          pdr_drawing$.rgba[,,4] <- pdr_drawing$.stencil_inv
-        } else {
-          pdr_drawing$.rgba[,,4] <- pdr_drawing$.stencil
-        }
-        pdr_drawing
-      })) |> pdr_plot_rgba({{pdr_col}}, background_image, ncol, nrow)
-
-
+    mutate(
+      {{ pdr_col }} := {{ pdr_col }} |>
+        purrr::map(\(pdr_drawing) {
+          pdr_drawing$.rgba[,, 1] <- 1
+          pdr_drawing$.rgba[,, 2] <- 0
+          pdr_drawing$.rgba[,, 3] <- 0
+          if (invert) {
+            pdr_drawing$.rgba[,, 4] <- pdr_drawing$.stencil_inverted
+          } else {
+            pdr_drawing$.rgba[,, 4] <- pdr_drawing$.stencil
+          }
+          pdr_drawing
+        })
+    ) |>
+    pdr_plot_rgba(
+      {{ pdr_col }},
+      background_image = background_image,
+      ncol = ncol,
+      nrow = nrow
+    )
 }

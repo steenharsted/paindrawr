@@ -51,9 +51,7 @@ is passed on to \code{\link[=pdr_plot_rgba]{pdr_plot_rgba()}}. The drawings must
 an \code{.rgba} element (see \code{\link[=pdr_add_rgba]{pdr_add_rgba()}}).
 }
 \examples{
-\dontrun{
-# TODO: change to \donttest{} (or plain) once pdr_plot_stencil() passes
-# background_image/ncol/nrow by name to pdr_plot_rgba()
+\donttest{
 pdr_stencil_full_body[1:2, ] |>
   pdr_plot_stencil(pdr_data)
 
