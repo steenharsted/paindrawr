@@ -148,7 +148,7 @@ pdr_example_data <- pdr_example_data |>
       color = "#FF0000",
       point_density = as.integer(1),
       spray_radius = as.integer(0),
-      alpha = as.integer(255)
+      alpha = as.numeric(1)
     )
   ) |>
   dplyr::select(-paindrawing_LBP) |>

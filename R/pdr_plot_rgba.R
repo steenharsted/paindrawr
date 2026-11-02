@@ -71,7 +71,7 @@ pdr_plot_rgba <- function(
     as.character(seq_len(nrow(.data)))
   }
   rgbas <- .data$.rgba
-  keep <- !vapply(rgbas, function(x) is.null(x) || length(x) == 0, logical(1))
+  keep <- vapply(rgbas, function(x) length(dim(x)) == 3, logical(1))
   if (!any(keep)) {
     stop("No non-missing .rgba to plot")
   }
