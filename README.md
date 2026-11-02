@@ -33,7 +33,10 @@ pak::pak("steenharsted/paindrawr")
 
 ## Collect with paindraw. Analyse with paindrawr.
 
-<img src="man/figures/paindraw_and_paindrawr.png" height="160" alt="paindraw logo" />
+<p align="center">
+
+<img src="man/figures/paindraw_and_paindrawr.png" height="200" alt="paindraw and paindrawr logos" />
+</p>
 
 **paindraw** is a REDCap external module for collecting digital pain
 drawings.
