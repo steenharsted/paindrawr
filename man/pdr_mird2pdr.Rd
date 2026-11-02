@@ -6,7 +6,7 @@
 \usage{
 pdr_mird2pdr(
   mird_pd,
-  id = 1:length(mird_pd),
+  id = seq_along(mird_pd),
   file = "",
   version = "",
   width = as.integer(450),
@@ -27,7 +27,7 @@ pdr_mird2pdr(
 \arguments{
 \item{mird_pd}{A character vector of MIRD pain drawings.}
 
-\item{id}{A unique id for each drawing (default: \code{1:length(mird_pd)}).}
+\item{id}{A unique id for each drawing (default: \code{seq_along(mird_pd)}).}
 
 \item{file}{File name (default \code{""}).}
 
@@ -53,7 +53,7 @@ pdr_mird2pdr(
 
 \item{spray_radius}{Spray radius, integer (default \code{1L}).}
 
-\item{alpha}{Alpha, numeric (default \code{1.0}).}
+\item{alpha}{Alpha, numeric between 0 and 1 (default \code{1.0}).}
 
 \item{color}{Stroke colour (default \code{"#ff0000"}).}
 
