@@ -129,15 +129,60 @@ test_that("a file with invalid JSON gives a warning", {
   )
 })
 
-test_that("failing files are skipped, as documented", {
-  skip("Known discrepancy: failed files currently yield an empty row")
-
+test_that("failing files are kept as placeholder rows", {
   bad <- withr::local_tempfile(fileext = ".json")
   writeLines("{ this is not json", bad)
 
   res <- suppressWarnings(
     pdr_import_json(c("does_not_exist.json", bad, json_fixture(1)))
   )
+  expect_equal(nrow(res), 3)
+  expect_identical(res$pdr_data[[1]], list())
+  expect_identical(res$pdr_data[[2]], list())
+  expect_identical(
+    res$id,
+    c(NA_character_, NA_character_, "PID4193-R1F-palmar-E13885-I1")
+  )
+})
+
+test_that("a failing file does not overwrite good drawings", {
+  res <- suppressWarnings(
+    pdr_import_json(c(json_fixture(1), "does_not_exist.json", json_fixture(2)))
+  )
+  expect_equal(nrow(res), 3)
+  expect_identical(
+    res$id,
+    c("PID4193-R1F-palmar-E13885-I1", NA, "PID4193-R2F-palmar-E13885-I1")
+  )
+  expect_identical(res$pdr_data[[2]], list())
+})
+
+test_that("a valid drawing without strokes gives zero-row tibbles", {
+  empty <- test_path("fixtures", "json", "empty_palmar.json")
+
+  expect_no_warning(res <- pdr_import_json(empty))
   expect_equal(nrow(res), 1)
-  expect_equal(res$id, "PID4193-R1F-palmar-E13885-I1")
+  expect_equal(res$id, "PID-empty")
+
+  drawing <- res$pdr_data[[1]]
+  expect_equal(drawing$.height, 720)
+  expect_s3_class(drawing$.points, "tbl_df")
+  expect_equal(nrow(drawing$.points), 0)
+  expect_named(drawing$.points, c(".index", ".x", ".y"))
+  expect_s3_class(drawing$.strokes, "tbl_df")
+  expect_equal(nrow(drawing$.strokes), 0)
+  expect_named(
+    drawing$.strokes,
+    c(
+      ".index",
+      ".draw_input_type",
+      ".tool",
+      ".tool_width",
+      ".color",
+      ".alpha",
+      ".spray_radius",
+      ".point_density"
+    ),
+    ignore.order = TRUE
+  )
 })
