@@ -104,7 +104,7 @@ Plots of individual drawings and heatmaps are more interpretable when they inclu
 background <- pdr_example_file("bg_full_body.png")
 
 # To use your own pngs as background use png::readPNG
-background <- png::readPNG("inst/extdata/mird_body_background.png")
+background <- png::readPNG("inst/extdata/bg_full_body.png")
 
 
 pdr_example_data|>
@@ -121,7 +121,7 @@ pdr_example_data|>
   head(1) |>
   pdr_plot_xy(
     background_image = background, 
-    polygon = "none"
+    polygon = "both"
   )
 ```
 
@@ -157,11 +157,11 @@ pdr_example_data|>
 
 paindrawr functions are organised around a common analysis pipeline:
 
-- **Import** raw drawings — `pdr_import_json()`, `pdr_import_mird()`
+- **Import** raw drawings — `pdr_import_json()`, `pdr_import_png()`
 - **Check** that the data is well-formed — `pdr_check_data()`
-- **Modify** and clean drawings — `pdr_modify()`, `pdr_anatomy_merge()`
-- **Quantify** the marked areas — `pdr_poly_areas()`, `pdr_get_alpha_area()`
-- **Visualise** the results — `pdr_plot_drawing()`, `pdr_plot_heatmap()`
+- **add rgba** Consider xy (typical for spray tools) or polygons (typical for pen tools)
+- **Quantify** the marked areas — `pdr_summarize_rgba()`
+- **Visualise** the results — `pdr_plot_rgba()`, `pdr_plot_rgba_heatmap()`
 
 ## Rendering this README
 

@@ -34,17 +34,18 @@ pdr_xa <- tibble::tibble(pdr_data = pdr_xa) |>
 
 # pdr_xa is now a valid pdr_tibble `pdr_xa |> pdr_match("eval")`
 # Lets add .rgba and make a silhouette template as well
-pdr_xa <- pdr_xa |> 
-  dplyr::mutate(pdr_data = pdr_add_rgba(pdr_data, method="memory", polygon = "both")) |>
-  dplyr::mutate(pdr_data = pdr_add_stencil(pdr_data, threshold=0, channel="A", by=">")) 
+pdr_xa <- pdr_xa |>
+  dplyr::mutate(
+    pdr_data = pdr_add_rgba(pdr_data, method = "memory", polygon = "both")
+  ) |>
+  dplyr::mutate(
+    pdr_data = pdr_add_stencil(pdr_data, threshold = 0, channel = "A", by = ">")
+  )
 
 # This is a bit quirky ... but necessary to ensure the variable is named correctly in rda:
-var_name <- "pdr_example_anatomy"
+var_name <- "pdr_stencil_full_body"
 assign(var_name, pdr_xa)
-do.call(save, list(var_name, file = "data/pdr_example_anatomy.rda"))
-
-
-
+do.call(save, list(var_name, file = "data/pdr_stencil_full_body.rda"))
 
 
 # ---- GENERATE SOME GEOMTRIC EXAMPLE CASES ----
@@ -90,30 +91,31 @@ pdr_example_geometry <- tibble::tibble(
     paindrawing_LBP = "(,,)"
   ))
 
-  # pdr_example_zealand <- tibble::tibble(id = "Præstø", paindrawing_LBP = "(,460,709,463,709,464,719,448,720,449,712,454,711,454,714,460,713,)")
-  # pdr_example_zealand <- pdr_example_zealand |> bind_rows(tibble::tibble(id="Holbæk", paindrawing_LBP = "(,393,682,430,672,429,682,423,684,417,688,407,685,399,689,)"))
-  # pdr_example_geometry <- pdr_example_zealand
+# pdr_example_zealand <- tibble::tibble(id = "Præstø", paindrawing_LBP = "(,460,709,463,709,464,719,448,720,449,712,454,711,454,714,460,713,)")
+# pdr_example_zealand <- pdr_example_zealand |> bind_rows(tibble::tibble(id="Holbæk", paindrawing_LBP = "(,393,682,430,672,429,682,423,684,417,688,407,685,399,689,)"))
+# pdr_example_geometry <- pdr_example_zealand
 
-  # THIS ^ IS NO GOOD - IT STORES THE VARIABLE pdr_example_geometry ... fix it if we keep pdr_example_zealand in package, otherwise delete it
+# THIS ^ IS NO GOOD - IT STORES THE VARIABLE pdr_example_geometry ... fix it if we keep pdr_example_zealand in package, otherwise delete it
 
-pdr_example_geometry <- pdr_example_geometry |> 
-  mutate(pdr_data = pdr_mird2pdr(
-    paindrawing_LBP, 
-    id,
-    file = "data/pdr_example_data.csv",
-    version = "2",
-    width = as.integer(356), 
-    height = as.integer(300),
-    units = "px",
-    timestamp = as.character(Sys.time()),
-    app = "paindrawr package",
-    tool = "pen",
-    draw_input_type = "mouse",
-    tool_width = as.integer(1),
-    color = "#FF0000",
-    point_density = as.integer(1),
-    spray_radius = as.integer(0),
-    alpha = as.integer(255)
+pdr_example_geometry <- pdr_example_geometry |>
+  mutate(
+    pdr_data = pdr_mird2pdr(
+      paindrawing_LBP,
+      id,
+      file = "data/pdr_example_data.csv",
+      version = "2",
+      width = as.integer(356),
+      height = as.integer(300),
+      units = "px",
+      timestamp = as.character(Sys.time()),
+      app = "paindrawr package",
+      tool = "pen",
+      draw_input_type = "mouse",
+      tool_width = as.integer(1),
+      color = "#FF0000",
+      point_density = as.integer(1),
+      spray_radius = as.integer(0),
+      alpha = as.integer(255)
     )
   ) |>
   dplyr::select(-paindrawing_LBP)
