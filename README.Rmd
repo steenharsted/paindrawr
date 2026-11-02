@@ -16,6 +16,8 @@ knitr::opts_chunk$set(
 # paindrawr
 
 <!-- badges: start -->
+[![R-CMD-check](https://github.com/steenharsted/paindrawr/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/steenharsted/paindrawr/actions/workflows/R-CMD-check.yaml)
+[![Codecov test coverage](https://codecov.io/gh/steenharsted/paindrawr/graph/badge.svg)](https://app.codecov.io/gh/steenharsted/paindrawr)
 <!-- badges: end -->
 
 **paindrawr** helps you import, transform, quantify, and visualise *pain
@@ -35,36 +37,40 @@ quantitative summaries.
 You can install the development version of paindrawr from
 [GitHub](https://github.com/steenharsted/paindrawr) with:
 
-```{r}
-#| eval: false
+```r
 pak::pak("steenharsted/paindrawr")
 ```
 
 
+## Typical workflow
+
+paindrawr functions are organised around a common analysis pipeline:
+
+1. **Import** raw drawings: `pdr_import_json()`, `pdr_import_png()`
+2. **Check** that the data is well-formed: `pdr_match()`
+3. **Rasterise** the strokes to an RGBA array with `pdr_add_rgba()`. Choose
+   `polygon = "none"` to keep strokes as drawn, or `"pen"`, `"spray"` or
+   `"both"` to render them as filled polygons.
+4. **Quantify** the marked areas: `pdr_summarize_rgba()`
+5. **Visualise** the results: `pdr_plot_xy()`, `pdr_plot_rgba()`,
+   `pdr_plot_rgba_heatmap()`
+
 ## Data structure
 
 paindrawr works with a tibble in which each row is one respondent. The pain
-drawings themselves live in a dedicated list-column, so that each
-drawing — its metadata, strokes, and point coordinates — travels alongside any
-covariates you have collected (for example sex, age, symptom duration, or pain
-intensity). The list column name defaults to `pdr_data`, but can take any name. 
+drawings live in a dedicated list-column (named `pdr_data` by default, but any
+name can be used), so that each drawing, with its metadata, strokes and point
+coordinates, travels alongside covariates such as sex, age, symptom duration or
+pain intensity.
 
-The package ships with `pdr_example_data` that has exactly this format, and 
-is used throughout the documentation.
-
-A detailed description of the pain-drawing data structure will be provided in a
-separate vignette.
+The package ships with `pdr_example_data`, which has exactly this format and is
+used throughout the documentation. See `?pdr_match` for the terminology
+(pdr_drawing, pdr_list, pdr_tibble).
 
 ## Example
 
-paindrawr is built to work within the
-[tidyverse](https://www.tidyverse.org/): drawings are stored in a list-column
-of a tibble, and the `pdr_*()` functions are designed to be used with the
-native pipe (`|>`) alongside familiar verbs like `mutate()` and `filter()`. 
-The examples below load the tidyverse for this reason.
-
-The example dataset contains `r nrow(pdr_example_data)` respondents, each with a pain drawing in the
-`pdr_data` column plus a few covariates:
+The `pdr_*()` functions are designed to be used with the native pipe (`|>`)
+alongside tidyverse verbs such as `mutate()` and `filter()`.
 
 ```{r example}
 #| message: false
@@ -75,96 +81,80 @@ library(tidyverse)
 pdr_example_data
 ```
 
-Metadata stored inside each drawing can be pulled out with `pdr_get_info()`.
-Because the drawings live in a list-column, you can add drawing-level metadata
-as new columns with `mutate()` — for example the canvas width of each drawing:
+The example data contains `r nrow(pdr_example_data)` respondents. Metadata
+stored inside each drawing can be extracted with `pdr_get_info()`, for example
+the canvas width:
 
 ```{r get-info}
-pdr_example_data|>
+pdr_example_data |>
   mutate(width = pdr_get_info(pdr_data, id1 = ".width"))
 ```
 
-### Recreate a single drawing
+### Plot a single drawing
 
-`pdr_plot_xy()` redraws an individual pain drawing from its coordinates.
-Pipe in a single row of the tibble:
+`pdr_plot_xy()` redraws a drawing from its coordinates. Plots are easier to
+interpret with the background image that was used during data collection;
+read your own PNG with `png::readPNG()`.
 
 ```{r plot-drawing}
-pdr_example_data|>
+background <- png::readPNG(pdr_example_file("bg_full_body.png"))
+
+pdr_example_data |>
   head(1) |>
-  pdr_plot_xy()
+  pdr_plot_xy(background_image = background)
 ```
 
+Strokes can also be rendered as filled polygons, which is typically sensible
+for pen tools (whereas spray tools produce many individual points):
 
-### Adding bakground image
-
-Plots of individual drawings and heatmaps are more interpretable when they include the background image that used during datacollection.
-
-```{r}
-background <- pdr_example_file("bg_full_body.png")
-
-# To use your own pngs as background use png::readPNG
-background <- png::readPNG("inst/extdata/bg_full_body.png")
-
-
-pdr_example_data|>
+```{r plot-polygon}
+pdr_example_data |>
   head(1) |>
-  pdr_plot_xy(
+  pdr_plot_xy(background_image = background, polygon = "both")
+```
+
+### Quantify drawings
+
+Quantification and heatmaps work on a rasterised representation of each
+drawing, added to the list-column with `pdr_add_rgba()`:
+
+```{r add-rgba}
+pd <- pdr_example_data |>
+  mutate(pdr_data = pdr_add_rgba(pdr_data, polygon = "both"))
+```
+
+`pdr_summarize_rgba()` then computes summary statistics, such as the number of
+drawn pixels (`px`) and the proportion of the canvas covered (`area_prop`):
+
+```{r summarize}
+pd |>
+  pdr_summarize_rgba(summary_stat = c("px", "area_prop")) |>
+  select(-pdr_data)
+```
+
+Supplying `stencils` (for example body regions) gives statistics per region;
+see `?pdr_summarize_rgba`.
+
+### Heatmaps across groups
+
+`pdr_plot_rgba_heatmap()` aggregates many drawings into density heatmaps,
+optionally stratified by one or two grouping variables. Here we stratify by
+symptom duration:
+
+```{r plot-heatmap}
+#| message: false
+pd |>
+  pdr_plot_rgba_heatmap(
+    variables = "duration",
     background_image = background
   )
 ```
 
-### polygons or xy?
+## Importing your own data
 
-```{r}
-pdr_example_data|>
-  head(1) |>
-  pdr_plot_xy(
-    background_image = background, 
-    polygon = "both"
-  )
+```r
+# Drawings exported as JSON from the REDCap PainDraw module
+pdr_import_json(list.files("path/to/json", full.names = TRUE))
 ```
 
-### In this case polygon
-
-Add rgba with polygons
-
-```{r}
-pdr_example_data <- pdr_example_data|>
-  mutate(
-    pdr_data = pdr_add_rgba(pdr_data, polygon = "both")
-    )
-
-  
-```
-
-### Heatmaps across groups
-
-`pdr_plot_rgba_heatmap()` aggregates many drawings into density heatmaps, optionally
-stratified by one or two grouping variables. Here we stratify by symptom
-duration:
-
-```{r plot-heatmap, message = FALSE}
-pdr_example_data|>
-  pdr_plot_rgba_heatmap(
-    variables = "duration", 
-    background_image = background)
-```
-
-
-
-## Typical workflow
-
-paindrawr functions are organised around a common analysis pipeline:
-
-- **Import** raw drawings — `pdr_import_json()`, `pdr_import_png()`
-- **Check** that the data is well-formed — `pdr_match()`
-- **add rgba** Consider xy (typical for spray tools) or polygons (typical for pen tools)
-- **Quantify** the marked areas — `pdr_summarize_rgba()`
-- **Visualise** the results — `pdr_plot_rgba()`, `pdr_plot_rgba_heatmap()`
-
-## Rendering this README
-
-This file is generated from `README.Rmd`. After editing, re-render it with
-`devtools::build_readme()` and commit the resulting `README.md` and any figure
-files under `man/figures/` so they display on GitHub.
+See `?pdr_import_json` and `?pdr_import_png` for details.

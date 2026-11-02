@@ -12,3 +12,6 @@
 ^todo_paindrawr$
 ^wip$
 ^data/pdr_example_zealand\.rds$
+^\.github$
+^codecov\.yml$
+^cran-comments\.md$
