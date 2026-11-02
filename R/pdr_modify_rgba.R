@@ -16,8 +16,9 @@
 #'     transparent. Requires `stencil`.
 #'   * `"multiply"` — multiplies the whole `.rgba` array by `stencil`.
 #'     Requires `stencil`.
-#'   * `"addition"` — adds `stencil` to the whole `.rgba` array. Requires
-#'     `stencil`.
+#'   * `"addition"` — **unfinished, do not use.** Intended to add `stencil` to
+#'     the whole `.rgba` array, but it currently errors and its weighting is
+#'     still to be decided. Requires `stencil`.
 #'   * `"low_trim"` — sets all `.rgba` values below `threshold` to 0.
 #'   * `"high_trim"` — sets all `.rgba` values above `threshold` to 1.
 #' @param stencil The stencil(s) used by the ops `"apply_stencil"`,
@@ -74,6 +75,14 @@ pdr_modify_rgba <- function(
     stop("Parameter 'threshold' has invalid value.")
   }
   pdr_list <- pdr_match(pdr_list, action = "coerce", as = "pdr_list")
+  if (!all(purrr::map_lgl(pdr_list, \(pd) ".rgba" %in% names(pd)))) {
+    stop(
+      "All pdr_drawings in 'pdr_list' must have an '.rgba' element. See pdr_add_rgba()."
+    )
+  }
+  if (op %in% c("multiply", "addition", "apply_stencil") && is.null(stencil)) {
+    stop("Parameter 'stencil' is required for op = '", op, "'.")
+  }
 
   #### Now coerce the stencil parameter to a list of matrices:
   # stencil can be a pdr_list with a .stencil element, or

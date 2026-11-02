@@ -212,6 +212,35 @@ test_that("an invalid stencil type errors", {
   )
 })
 
+test_that("a missing stencil errors for the ops that require it", {
+  for (op in c("apply_stencil", "multiply", "addition")) {
+    expect_error(
+      pdr_modify_rgba(list(drawing), op = op),
+      paste0("'stencil' is required for op = '", op, "'")
+    )
+  }
+})
+
+test_that("drawings without .rgba error for every op", {
+  no_rgba <- drawing[names(drawing) != ".rgba"]
+
+  for (op in c("low_trim", "high_trim")) {
+    expect_error(
+      pdr_modify_rgba(list(no_rgba), op = op),
+      "must have an '.rgba'"
+    )
+  }
+  expect_error(
+    pdr_modify_rgba(list(no_rgba), op = "apply_stencil", stencil = stencil_mat),
+    "must have an '.rgba'"
+  )
+  # One drawing without .rgba among valid ones is enough to error
+  expect_error(
+    pdr_modify_rgba(list(drawing, no_rgba), op = "low_trim"),
+    "must have an '.rgba'"
+  )
+})
+
 test_that("stencil is ignored by the trim ops", {
   expect_equal(
     pdr_modify_rgba(list(drawing), op = "low_trim", stencil = stencil_mat),

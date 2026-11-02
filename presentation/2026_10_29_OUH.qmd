@@ -514,7 +514,6 @@ my_stencil |>
 
 ## Stencils
 
-
 ```{r}
 example_back_pain |> 
   pdr_summarize_rgba(

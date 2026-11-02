@@ -18,8 +18,9 @@ default \code{""} raises an error); one of:
 transparent. Requires \code{stencil}.
 \item \code{"multiply"} — multiplies the whole \code{.rgba} array by \code{stencil}.
 Requires \code{stencil}.
-\item \code{"addition"} — adds \code{stencil} to the whole \code{.rgba} array. Requires
-\code{stencil}.
+\item \code{"addition"} — \strong{unfinished, do not use.} Intended to add \code{stencil} to
+the whole \code{.rgba} array, but it currently errors and its weighting is
+still to be decided. Requires \code{stencil}.
 \item \code{"low_trim"} — sets all \code{.rgba} values below \code{threshold} to 0.
 \item \code{"high_trim"} — sets all \code{.rgba} values above \code{threshold} to 1.
 }}
