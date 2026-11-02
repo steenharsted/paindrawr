@@ -7,7 +7,8 @@
 pdr_add_stencil(pdr_list, threshold = 1, channel = "A", by = "<")
 }
 \arguments{
-\item{pdr_list}{A valid pdr_list -- see \code{pdr_match()}}
+\item{pdr_list}{A pdr_list in which every pdr_drawing has an \code{.rgba}
+element (see \code{\link[=pdr_add_rgba]{pdr_add_rgba()}} and \code{\link[=pdr_match]{pdr_match()}}).}
 
 \item{threshold}{A threshold value which determines a
 pixel as being 0 or 1}
@@ -18,8 +19,10 @@ RGBA matrix to compare to the threshold.}
 \item{by}{Either '<' or '>'}
 }
 \value{
-A pdr_list with added .stencil element which is
-a matrix of dimensions width x height y with values 0 or 1
+A pdr_list (see \code{\link[=pdr_match]{pdr_match()}}) where each pdr_drawing has two
+added elements: \code{.stencil}, a numeric matrix of dimensions
+height x width with values 0 or 1, and \code{.stencil_inverted}, the same
+matrix with 0 and 1 swapped.
 }
 \description{
 Users should only add a stencil to pain drawings that are
@@ -40,7 +43,12 @@ just 0 and 1 values.
 The 'threshold' parameter determines the threshold at
 which a pixel's value is dichotomized to 0 or 1 (FALSE or
 TRUE) as per the 'by' parameter. E.g. a pixel with alpha
-value 0.4 will evaluate to 0 by '>' a 'threshold' of 0.5
+value 0.4 will evaluate to 0 by '>' a 'threshold' of 0.5.
+With the defaults (\code{threshold = 1}, \code{by = "<"}, \code{channel = "A"})
+a pixel is set to 1 when its alpha is below 1, i.e. when it is
+not fully opaque. For a drawing rendered with \code{pdr_add_rgba()},
+this is the transparent (undrawn) area, while fully opaque
+(drawn) pixels become 0. The inverse is stored in \code{.stencil_inverted}.
 
 The 'channel' parameter determines which of the R, G, B and
 A channels should be evaluated in reference to the
@@ -48,8 +56,12 @@ threshold. E.g. 'RGBA' evaluates all of the channels by
 'OR', and 'A' evaluates only the alpha channel.
 }
 \examples{
-pdr_example_data[1:3,] |> 
-  mutate(pdr_data = pdr_add_rgba(pdr_data, polygon = "both")) |>
-  mutate(pdr_data = pdr_add_stencil(pdr_data, threshold = 0.5, channel="A", by="<"))
-
+\donttest{
+pdr_example_data[1:3, ] |>
+  dplyr::mutate(pdr_data = pdr_add_rgba(pdr_data, polygon = "both")) |>
+  dplyr::mutate(pdr_data = pdr_add_stencil(pdr_data, threshold = 0.5, channel = "A", by = "<"))
+}
+}
+\seealso{
+\code{\link[=pdr_modify_rgba]{pdr_modify_rgba()}}, \code{\link[=pdr_plot_stencil]{pdr_plot_stencil()}}
 }

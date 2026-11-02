@@ -6,7 +6,7 @@
 \usage{
 pdr_plot_stencil(
   .data,
-  pdr_list,
+  pdr_col = pdr_data,
   background_image = NULL,
   ncol = NULL,
   nrow = NULL,
@@ -14,40 +14,57 @@ pdr_plot_stencil(
 )
 }
 \arguments{
-\item{.data}{A data frame with a pdr_list column (see
-\code{paindrawr_data}) whose elements contains \code{.stencil}
-and \code{.stencil_inv} data. These are added by the
-\code{\link[=pdr_add_stencil]{pdr_add_stencil()}} function.}
+\item{.data}{A pdr_tibble (see \code{\link[=pdr_match]{pdr_match()}}) whose pdr_drawings contain
+\code{.rgba}, \code{.stencil} and \code{.stencil_inverted} elements. The stencil
+elements are added by \code{\link[=pdr_add_stencil]{pdr_add_stencil()}}.}
 
-\item{background_image}{Optional background drawn beneath
-each raster. Either a path to a PNG file (character
-string ending in \code{.png}) or a numeric raster array as
-returned by \code{\link[png:readPNG]{png::readPNG()}}. If \code{NULL} (default), no
-background is drawn.}
+\item{pdr_col}{The pdr_list column in \code{.data} holding the pain drawings
+(tidy-eval, unquoted). Defaults to \code{pdr_data}.}
 
-\item{ncol, nrow}{Number of columns and rows in the plot grid. If both are
-\code{NULL} (default), \code{\link[gridExtra:grid.arrange]{gridExtra::grid.arrange()}} chooses the layout.}
+\item{background_image}{Optional background drawn beneath each drawing.
+Either a path to a PNG file (character string ending in \code{.png}) or a
+numeric raster array as returned by \code{\link[png:readPNG]{png::readPNG()}}. If \code{NULL}
+(default), no background is drawn. Use \code{\link[=pdr_example_file]{pdr_example_file()}} to get the
+path to a bundled background.}
 
-\item{invert}{If TRUE, the inverted stencil is plotted.}
+\item{ncol, nrow}{Number of columns and rows in the plot grid, passed to
+\code{\link[ggplot2:facet_wrap]{ggplot2::facet_wrap()}} via \code{\link[=pdr_plot_rgba]{pdr_plot_rgba()}}. If both are \code{NULL}
+(default), \code{facet_wrap()} chooses the layout.}
 
-\item{paindrawr_data}{The pdr_list column in \code{.data}
-which hold the pain drawing data.
-Defaults to \code{pdr_data}.}
+\item{invert}{Logical. If \code{TRUE}, the inverted stencil
+(\code{.stencil_inverted}) is plotted instead of \code{.stencil}. Default is
+\code{FALSE}.}
 }
 \value{
-A ggplot of the .stencil
+A \code{\link[ggplot2:ggplot]{ggplot2::ggplot()}} object with one facet per drawing, showing
+the stencil.
 }
 \description{
-The function is primarily for testing purposes -- it
-plots the .stencil matrix data (or .stencil_inv for the
-inverted stencil).
+Plots the \code{.stencil} matrix of each drawing (or \code{.stencil_inverted} for the
+inverted stencil) as a red mask. The function is primarily for checking
+stencils created with \code{\link[=pdr_add_stencil]{pdr_add_stencil()}}.
 }
 \details{
-It functions basically as a wrapper for the
-\code{pdr_plot_rgba()} function.
+It is a wrapper for \code{\link[=pdr_plot_rgba]{pdr_plot_rgba()}}: the \code{.rgba} of each drawing is
+replaced by a red raster whose alpha channel is the stencil, and the result
+is passed on to \code{\link[=pdr_plot_rgba]{pdr_plot_rgba()}}. The drawings must therefore already have
+an \code{.rgba} element (see \code{\link[=pdr_add_rgba]{pdr_add_rgba()}}).
 }
 \examples{
-#'
-pdr_example_anatomy[1,] |> pdr_plot_stencil(pdr_data, invert=TRUE)
+\dontrun{
+# TODO: change to \donttest{} (or plain) once pdr_plot_stencil() passes
+# background_image/ncol/nrow by name to pdr_plot_rgba()
+pdr_stencil_full_body[1:2, ] |>
+  pdr_plot_stencil(pdr_data)
 
+pdr_stencil_full_body[1:2, ] |>
+  pdr_plot_stencil(
+    pdr_data,
+    background_image = pdr_example_file("bg_full_body.png"),
+    invert = TRUE
+  )
+}
+}
+\seealso{
+\code{\link[=pdr_add_stencil]{pdr_add_stencil()}}, \code{\link[=pdr_plot_rgba]{pdr_plot_rgba()}}
 }

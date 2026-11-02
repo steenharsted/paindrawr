@@ -2,70 +2,94 @@
 % Please edit documentation in R/pdr_summarize_rgba.R
 \name{pdr_summarize_rgba}
 \alias{pdr_summarize_rgba}
-\title{Summarise alpha intensity of drawn pixels in a pain drawing}
+\title{Summarise the alpha values of drawn pixels in a pain drawing}
 \usage{
 pdr_summarize_rgba(
-  pdr_tibble,
-  pdr_list = pdr_data,
+  .data,
+  pdr_col = pdr_data,
   summary_stat = "seven",
   alpha_range = c(0, 1),
   stencils = NULL
 )
 }
 \arguments{
-\item{pdr_list}{Either a list of RGBA arrays (each \verb{[height, width, 4]}), or a
-list of paindrawing data objects containing a \code{.rgba} element (as produced
-by \code{\link[=pdr_add_rgba]{pdr_add_rgba()}}). Typically passed as a list-column inside
-\code{dplyr::mutate()}.}
+\item{.data}{A pdr_tibble (see \code{\link[=pdr_match]{pdr_match()}}) whose pdr_drawings contain an
+\code{.rgba} element. Add it first with \code{\link[=pdr_add_rgba]{pdr_add_rgba()}}.}
 
-\item{summary_stat}{A string specifying the summary statistic to compute
-over drawn pixel alpha values. One or more of \code{"area"}, \code{"area_prop"}, \code{"mean"},
-\code{"sd"}, \code{"max"},\code{"min"}, \code{"median"}, \code{"q1"}, \code{"q5"}, \code{"q10"}, \code{"q25"},
-\code{"q75"}, \code{"q90"}, \code{"q95"}, \code{"q99"}. Alternatively: \code{"all"}, or \verb{seven"} (default),
-to return all the above, or the first seven of the above.}
+\item{pdr_col}{<\code{\link[tidyselect:language]{tidy-select}}> One or more
+list-columns of \code{.data} (pdr_lists) with \code{.rgba} in each drawing. Defaults
+to \code{pdr_data}. Unquoted names, strings and selections such as
+\code{c(a, b)} are accepted; each selected column is summarised separately.}
 
-\item{alpha_range}{A numeric vector of length 2 specifying the lower
-(exclusive) and upper (inclusive) bounds of the alpha range to include.
-Defaults to \code{c(0, 1)}, i.e. all drawn pixels. Use e.g. \code{c(0.5, 1)} to
-restrict to heavily drawn pixels only.}
+\item{summary_stat}{Character vector of statistics to compute from the alpha
+values of the included pixels. Any of \code{"px"} (number of pixels),
+\code{"area_prop"} (\code{px} divided by \code{.width * .height}), \code{"mean"}, \code{"sd"},
+\code{"median"}, \code{"iqr"}, \code{"min"}, \code{"max"}, \code{"q1"}, \code{"q5"}, \code{"q10"}, \code{"q25"},
+\code{"q75"}, \code{"q90"}, \code{"q95"} and \code{"q99"} (the \code{q} statistics are quantiles
+at probabilities 0.01, 0.05, ..., 0.99). Two shortcuts are available when
+given as a single string: \code{"seven"} (default) is \code{px}, \code{mean}, \code{max},
+\code{min}, \code{median}, \code{sd} and \code{iqr}; \code{"all"} is \code{seven} plus \code{area_prop},
+\code{q1}, \code{q5}, \code{q25}, \code{q75}, \code{q90}, \code{q95} and \code{q99} (note: \code{q10} is \emph{not}
+included in \code{"all"}, but can be requested explicitly). Columns are
+returned in a fixed order, not in the order requested.}
 
-\item{stencils}{A list (length == 1 or same length as pdr_list) of (2-dimensional)
-matrices of the same x and y dimension as pdr_list Expected values are 0
-and 1 -- if provided, the stencils are applied (multiplied) with the
-rgba arrays before summarising.}
+\item{alpha_range}{Numeric vector of length 2 giving the lower (exclusive)
+and upper (inclusive) alpha bounds of pixels to include, with
+\verb{0 <= alpha_range[1] < alpha_range[2] <= 1}. Defaults to \code{c(0, 1)}, i.e.
+all drawn pixels. Use e.g. \code{c(0.5, 1)} to restrict to heavily drawn pixels.}
+
+\item{stencils}{Optional pdr_list in which each element has a \code{.stencil}
+(a height x width matrix of 0/1) and an \code{.id}, e.g. the list-column
+\code{pdr_stencil_full_body$pdr_data} or a list built with \code{\link[=pdr_add_stencil]{pdr_add_stencil()}}. Each stencil is applied
+(multiplied) to the alpha channel of every drawing before summarising, so
+the stencil dimensions must match the drawings. Defaults to \code{NULL}
+(no stencil). Note that this is deliberately plural and differs from
+\code{stencil} in \code{\link[=pdr_modify_rgba]{pdr_modify_rgba()}}.}
 }
 \value{
-The input pdr_tibble with a variable number of added columns.
-A column is added for each input pdr_list by summary stat by stencils,
-appropriately named. Each column is the
-requested summary statistic of alpha values for pixels within
-\verb{(alpha_range[1], alpha_range[2]]}, or \code{NA_real_} if no pixels fall in
-that range.
+\code{.data} (a pdr_tibble) with added numeric columns, one per selected
+\code{pdr_col} and statistic (and per stencil, if \code{stencils} is given). Columns
+are named \verb{<pdr_col>_<stat>} without stencils, and
+\verb{<pdr_col>_<stencil id>_<stat>} with stencils, e.g. \code{pdr_data_mean} or
+\code{pdr_data_Back_head_mean}. If no pixels fall in \code{alpha_range}, \code{px} is 0,
+\code{mean}, \code{sd}, \code{median}, \code{iqr} and quantiles are \code{NA}, and \code{min}/\code{max} are
+\code{Inf}/\code{-Inf} (with a warning).
 }
 \description{
-Computes a summary statistic of alpha values across all pixels whose alpha
-falls strictly within \code{alpha_range}. This captures how intensely a patient
-drew -- i.e. how dark or opaque the strokes are -- independently of how much
-area was covered. Use in combination with \code{\link[=pdr_summarize_alpha_area]{pdr_summarize_alpha_area()}} to
-distinguish between a small intense drawing and a large light drawing.
+Computes summary statistics of the alpha channel of the \code{.rgba} array of
+each drawing, using only pixels whose alpha falls within \code{alpha_range}
+(lower bound exclusive, upper bound inclusive). The number of drawn pixels
+(\code{px}) and the proportion of the canvas covered (\code{area_prop}) describe how
+much was drawn, while e.g. \code{mean} or \code{median} describe how dark or opaque
+the strokes are. Optionally, each drawing is first multiplied by one or more
+stencils (e.g. body regions) so that statistics are computed per region.
+}
+\details{
+The drawings must already contain \code{.rgba}; see \code{\link[=pdr_add_rgba]{pdr_add_rgba()}}. For the
+terms pdr_drawing, pdr_list and pdr_tibble, see \code{\link[=pdr_match]{pdr_match()}}.
 }
 \examples{
-pd <- pdr_import_json("data-raw/two_geoms.json") |>
-  dplyr::mutate(rgba = pdr_add_rgba(pdr_list))
+pd <- pdr_example_data |>
+  dplyr::mutate(pdr_data = pdr_add_rgba(pdr_data))
 
-# Mean intensity across all drawn pixels (using rgba list-column)
-pdr_summarize_rgba(pd$rgba)
+# Default: the "seven" statistics across all drawn pixels
+pdr_summarize_rgba(pd)
 
-# Max intensity, passed pdr_list directly
-pdr_summarize_rgba(pd$pdr_list, summary_stat = "max")
+# Selected statistics, only heavily drawn pixels
+pdr_summarize_rgba(
+  pd,
+  summary_stat = c("px", "area_prop", "mean"),
+  alpha_range = c(0.5, 1)
+)
 
-# Use inside mutate()
-pd |> dplyr::mutate(
-  intensity_mean = pdr_summarize_rgba(pdr_list),
-  intensity_max  = pdr_summarize_rgba(pdr_list, summary_stat = "max")
+# Per stencil (here, two body regions)
+pdr_summarize_rgba(
+  pd,
+  summary_stat = "px",
+  stencils = pdr_stencil_full_body$pdr_data[1:2]
 )
 }
 \seealso{
-\code{\link[=pdr_summarize_alpha_area]{pdr_summarize_alpha_area()}} for the complementary area-based metric,
-\code{\link[=pdr_add_rgba]{pdr_add_rgba()}} to add \code{.rgba} to paindrawing data.
+\code{\link[=pdr_add_rgba]{pdr_add_rgba()}} to add \code{.rgba}, \code{\link[=pdr_add_stencil]{pdr_add_stencil()}} and
+\code{\link[=pdr_modify_rgba]{pdr_modify_rgba()}} for stencils, \code{\link[=pdr_plot_rgba]{pdr_plot_rgba()}} to plot the arrays.
 }

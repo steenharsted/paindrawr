@@ -1,40 +1,44 @@
 #' Plot RGBA rasters in a grid
 #'
-#' Plots the `.rgba` raster arrays stored in a paindrawr list-column as a
-#' ggplot, one facet per row of `.data`, using
+#' Plots the `.rgba` raster arrays stored in the pdr_list column of a
+#' pdr_tibble as a ggplot, one facet per row of `.data`, using
 #' [ggplot2::annotation_raster()]. Optionally draws a background image beneath
-#' each raster.
+#' each raster. See [pdr_match()] for the definitions of pdr_tibble, pdr_list
+#' and pdr_drawing.
 #'
-#' @param .data A data frame with a paindrawr list-column (see
-#'   `paindrawr_data`) whose elements contain an `.rgba` entry. Add it first
-#'   with [pdr_add_rgba()].
-#' @param paindrawr_data The list-column in `.data` holding the paindrawr data.
-#'   Defaults to `pdr_data`.
-#' @param background_image Optional background drawn beneath each raster. Either
-#'   a path to a PNG file (character string ending in `.png`) or a numeric
-#'   raster array as returned by [png::readPNG()]. If `NULL` (default), no
-#'   background is drawn.
-#' @param include_id Logical. If `TRUE`, the `.id` value is shown as a facet
-#'   strip label above each panel. Default is `FALSE`.
+#' @param .data A pdr_tibble (see [pdr_match()]) whose pdr_drawings contain an
+#'   `.rgba` element. Add it first with [pdr_add_rgba()].
+#' @param pdr_col The pdr_list column in `.data` holding the pain drawings
+#'   (tidy-eval, unquoted). Defaults to `pdr_data`.
+#' @param background_image Optional background drawn beneath each drawing.
+#'   Either a path to a PNG file (character string ending in `.png`) or a
+#'   numeric raster array as returned by [png::readPNG()]. If `NULL`
+#'   (default), no background is drawn. Use [pdr_example_file()] to get the
+#'   path to a bundled background.
+#' @param include_id Logical. If `TRUE`, the `.id` of each drawing is shown as
+#'   a facet strip label above each panel. Default is `FALSE`.
 #' @param only_alpha Logical. If `TRUE`, pixels with alpha > 0 are drawn
-#'   opaque black and pixels with alpha == 0 are white (still transparent), to
-#'   show which pixels have been drawn on. Default is `FALSE`.
+#'   opaque black and pixels with alpha == 0 are drawn white (still
+#'   transparent), to show which pixels have been drawn on. Default is
+#'   `FALSE`.
 #' @param ncol,nrow Number of columns and rows, passed to
 #'   [ggplot2::facet_wrap()]. If both are `NULL` (default), `facet_wrap()`
 #'   chooses the layout.
 #'
-#' @return A [ggplot2::ggplot()] object with one facet per drawing.
+#' @returns A [ggplot2::ggplot()] object with one facet per drawing.
+#'
+#' @seealso [pdr_add_rgba()], [pdr_plot_rgba_heatmap()], [pdr_plot_stencil()]
 #'
 #' @examples
-#' \dontrun{
-#' pdr_example_data[1,] |>
-#'   mutate(pdr_data = pdr_add_rgba(pdr_data)) |>
+#' pdr_example_data[1, ] |>
+#'   dplyr::mutate(pdr_data = pdr_add_rgba(pdr_data)) |>
 #'   pdr_plot_rgba()
 #'
-#' pdr_example_data[1:10,] |>
-#'   mutate(pdr_data = pdr_add_rgba(pdr_data)) |>
+#' \donttest{
+#' pdr_example_data[1:4, ] |>
+#'   dplyr::mutate(pdr_data = pdr_add_rgba(pdr_data)) |>
 #'   pdr_plot_rgba(
-#'     background_image = pdr_example_file("mird_body_background.png"),
+#'     background_image = pdr_example_file("bg_full_body.png"),
 #'     include_id = TRUE,
 #'     ncol = 2
 #'   )
@@ -43,7 +47,7 @@
 #' @export
 pdr_plot_rgba <- function(
   .data,
-  paindrawr_data = pdr_data,
+  pdr_col = pdr_data,
   background_image = NULL,
   include_id = FALSE,
   only_alpha = FALSE,
@@ -54,8 +58,8 @@ pdr_plot_rgba <- function(
   background_image <- read_background_image(background_image)
 
   .data <- .data |>
-    dplyr::select({{ paindrawr_data }}) |>
-    tidyr::unnest_wider({{ paindrawr_data }})
+    dplyr::select({{ pdr_col }}) |>
+    tidyr::unnest_wider({{ pdr_col }})
 
   if (!".rgba" %in% names(.data)) {
     stop("No .rgba in data, run pdr_add_rgba() first")

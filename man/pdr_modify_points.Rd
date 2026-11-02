@@ -2,30 +2,36 @@
 % Please edit documentation in R/pdr_modify_points.R
 \name{pdr_modify_points}
 \alias{pdr_modify_points}
-\title{Modify pain drawing elements}
+\title{Modify the points of pain drawings}
 \usage{
-pdr_modify_points(pdr_list, ops = "flipy")
+pdr_modify_points(pdr_list, op = "flipy")
 }
 \arguments{
-\item{pdr_list}{The pain drawing data list-col in .data (defaults to pdr_data)}
+\item{pdr_list}{A pdr_list (see \code{\link[=pdr_match]{pdr_match()}}), e.g. the \code{pdr_data} column
+of a pdr_tibble.}
 
-\item{ops}{A string specifying operation. See below:
-
-The parameter \code{ops} can take one of the following values:
+\item{op}{A string specifying the operation. Currently one of:
 \itemize{
-\item "flipy" -- flips the y-coordinates which can be useful to re-locate origo to/from top/bottom of canvas.
+\item \code{"flipy"} (default) — flips the y-coordinates (\code{.y} becomes
+\code{.height - .y}), which is useful to move the origin between the top and
+bottom of the canvas. Drawings without \code{.points} are left unchanged.
 }}
 }
 \value{
-A valid pain drawing data list column
+A pdr_list of the same length as \code{pdr_list}, with the modified
+\code{.points}.
 }
 \description{
-This function takes a valid pain drawing list as input
-and performs one or more operations sequentially on those
-data before returning a valid pain drawing list-column of
-the same length. It is thus suited for \code{mutate()} operations.
+Performs an operation on the \code{.points} of each pdr_drawing in a pdr_list
+and returns a pdr_list of the same length. It is thus suited for use inside
+\code{mutate()}. See \code{\link[=pdr_match]{pdr_match()}} for the definitions of pdr_list and
+pdr_drawing.
 }
 \examples{
-# Flip the y-coordinates and store in a new pain drawing list-col
-pdr_example_data |> mutate(pdr_data_flipped = pdr_mutate(pdr_data, "flipy"))
+# Flip the y-coordinates and store in a new pdr_list column
+pdr_example_data |>
+  dplyr::mutate(pdr_data_flipped = pdr_modify_points(pdr_data, "flipy"))
+}
+\seealso{
+\code{\link[=pdr_modify_rgba]{pdr_modify_rgba()}}
 }

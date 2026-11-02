@@ -11,7 +11,7 @@
 #' a single result, and a list of drawings (of any length, including 1)
 #' returns a list of results of the same length.
 #'
-#' @param paindrawr_data A pain drawing in one of two forms:
+#' @param pdr_list A pain drawing in one of two forms:
 #'   * A single drawing: a named list containing a `.strokes` element, as
 #'     produced by [pdr_import_json()] or extracted from a list-column
 #'     (e.g. `pd$pdr_data[[1]]`).
@@ -38,7 +38,7 @@
 #'   a separate tibble list-column:
 #'   `mutate(rgba = pdr_add_rgba(pdr_data, rgba_only = TRUE))`.
 #'
-#' @return
+#' @returns
 #'   * `rgba_only = FALSE` (default): the input drawing (named list) with
 #'     `$.rgba` appended, or a list of such augmented drawings when a list of
 #'     drawings is supplied.
@@ -50,28 +50,26 @@
 #'   pixels are set to black (`RGB = 0`).
 #'
 #' @examples
-#' \dontrun{
-#' # Single drawing — returns drawing with $.rgba appended
-#' drawing_with_rgba <- pdr_example_data[[1]] |> pdr_add_rgba()
+#' # Single drawing: returns the drawing with $.rgba appended
+#' drawing_with_rgba <- pdr_example_data$pdr_data[[1]] |> pdr_add_rgba()
 #' grid::grid.newpage()
 #' grid::grid.raster(drawing_with_rgba$.rgba)
 #'
-#' # Single drawing — returns list(.rgba = <array>)
-#' rgba <- pdr_example_data[[1]] |> pdr_add_rgba(rgba_only = TRUE)
+#' # Single drawing: returns list(.rgba = <array>)
+#' rgba <- pdr_example_data$pdr_data[[1]] |> pdr_add_rgba(rgba_only = TRUE)
 #' dim(rgba$.rgba)
 #'
-#' # Multiple drawings at once
-#' drawings_with_rgba <- pdr_example_data |> pdr_add_rgba()
-#'
 #' # Render spray strokes as filled polygons
-#' pdr_example_data[[1]] |> pdr_add_rgba(polygon = "spray")
+#' pdr_example_data$pdr_data[[1]] |> pdr_add_rgba(polygon = "spray")
+#'
+#' \donttest{
+#' # Multiple drawings at once (a pdr_list)
+#' drawings_with_rgba <- pdr_example_data$pdr_data[1:3] |> pdr_add_rgba()
 #'
 #' # Tibble workflow
+#' pd <- pdr_example_data[1:3, ]
 #'
-#' ## Data
-#' pd <- tibble::tibble(pdr_data = pdr_example_data)
-#'
-#' ## add .rgba to the input list-column
+#' ## add .rgba to the drawings in the pdr_data list-column
 #' pd |> dplyr::mutate(pdr_data = pdr_add_rgba(pdr_data))
 #'
 #' ## add rgba arrays in a separate list-column
@@ -81,7 +79,7 @@
 #'   )
 #'
 #' ## access the array for the first row
-#' pd_rgba$rgba[[1]]$.rgba
+#' dim(pd_rgba$rgba[[1]]$.rgba)
 #' }
 #'
 #' @importFrom dplyr select mutate filter full_join n pull join_by
@@ -99,7 +97,7 @@
 #'
 #' @export
 pdr_add_rgba <- function(
-  paindrawr_data,
+  pdr_list,
   method = "memory",
   clean_up = TRUE,
   polygon = "none",
@@ -110,22 +108,22 @@ pdr_add_rgba <- function(
   polygon <- match.arg(polygon, choices = c("none", "pen", "spray", "both"))
 
   # NULL returns NULL
-  if (is.null(paindrawr_data)) {
+  if (is.null(pdr_list)) {
     return(NULL)
   }
 
   # A single drawing is a named list containing `.strokes`;
   # anything else is treated as a list of drawings (of any length, incl. 1)
-  is_single_drawing <- is.list(paindrawr_data) &&
-    ".strokes" %in% names(paindrawr_data)
+  is_single_drawing <- is.list(pdr_list) &&
+    ".strokes" %in% names(pdr_list)
 
   if (!is_single_drawing) {
     return(
       purrr::map(
-        paindrawr_data,
+        pdr_list,
         \(x) {
           pdr_add_rgba(
-            paindrawr_data = x,
+            pdr_list = x,
             polygon = polygon,
             method = method,
             clean_up = clean_up,
@@ -137,7 +135,7 @@ pdr_add_rgba <- function(
   }
 
   .data <- tibble::tibble(
-    .list_col = list(paindrawr_data)
+    .list_col = list(pdr_list)
   ) |>
     tidyr::unnest_wider(col = .list_col)
 
@@ -149,9 +147,9 @@ pdr_add_rgba <- function(
   # To do this, they should pass an valid but empty tibble structure
   # Non empty drawings will be unnested
 
-  if (NROW(paindrawr_data$.points) == 0 && NROW(paindrawr_data$.strokes) == 0) {
+  if (NROW(pdr_list$.points) == 0 && NROW(pdr_list$.strokes) == 0) {
     pd <- tibble::tibble(
-      .id = paindrawr_data$.id,
+      .id = pdr_list$.id,
       .index = integer(),
       .x = double(),
       .y = double(),
@@ -304,7 +302,7 @@ pdr_add_rgba <- function(
   if (rgba_only) {
     return(list(.rgba = rgba_arr))
   } else {
-    paindrawr_data$.rgba <- rgba_arr
-    return(paindrawr_data)
+    pdr_list$.rgba <- rgba_arr
+    return(pdr_list)
   }
 }

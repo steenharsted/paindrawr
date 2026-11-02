@@ -37,12 +37,20 @@ Imports:
     tidyr,
     jsonlite,
     ggplot2,
-    gridExtra,
     png,
     tibble,
     grid,
     cli,
-    rlang
+    rlang,
+    ggtext,
+    ragg,
+    scales,
+    stringr,
+    tidyselect,
+    vctrs,
+    stats,
+    grDevices,
+    tools
 Depends: 
     R (>= 4.0)
 Roxygen: list(markdown = TRUE)

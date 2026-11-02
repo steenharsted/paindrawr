@@ -2,55 +2,96 @@
 % Please edit documentation in R/pdr_match.R
 \name{pdr_match}
 \alias{pdr_match}
-\title{Argument verification of pain drawing data types}
+\title{Check or coerce pain drawing data types}
 \usage{
 pdr_match(input, action = "eval", as = "", mode = "superficial")
 }
 \arguments{
-\item{as}{A string of "", "list" or "tibble", specifying whether to coerce a a pdr_drawing or pdr_list to pdr_list or pdr_tibble.}
+\item{input}{A variable to be matched against the pdr_tibble, pdr_list
+and pdr_drawing types.}
 
-\item{mode}{A string of 'validate' or 'superficial' specifying superficial matching or actual validation}
+\item{action}{\code{"eval"} (default) to evaluate the type of \code{input}, or
+\code{"coerce"} to convert \code{input} to the type given in \code{as}.}
 
-\item{arg}{A variable to be matched against 'pdr_tibble', 'pdr_list' and 'pdr_drawing' data types.}
+\item{as}{One of \code{""} (default), \code{"pdr_list"}, \code{"pdr_tibble"} or
+\code{"pdr_drawing"}. For \code{action = "eval"}, the type to test for (\code{""} returns
+the type as a string). For \code{action = "coerce"}, the type to coerce to.}
 
-\item{check_only}{A logical specifying whether to enforce match or return a result string}
+\item{mode}{\code{"superficial"} (default) for a quick structural check, or
+\code{"validate"} for a detailed check of structure and content.}
 }
 \value{
-Depending on input parameters. Will return TRUE/FALSE if action is set to 'eval' and as is specified. Will
-return the input pdr_data type (pdr_tibble, pdr_list og pdr_drawing) as a string if action is set to 'eval' and
-as is not set. Will return an actual pdr_tibble, pdr_list or pdr_drawing, if action is set to 'coerce'.
+For \code{action = "eval"}: a string (the type of \code{input}, or
+\code{"invalid"}) if \code{as = ""}, otherwise \code{TRUE}/\code{FALSE}. For
+\code{action = "coerce"}: \code{input} as a pdr_tibble, pdr_list or pdr_drawing,
+as requested in \code{as}.
 }
 \description{
-\code{pdr_match} matches an input parameter against the three
-pain drawing data types:
+\code{pdr_match()} matches an input against the three pain drawing data types
+used throughout paindrawr, and either reports which type it is (or whether
+it is a given type), or coerces it to another type.
 }
-\details{
-\itemize{
-\item pdr_tibble -- A tidyverse tibble which must contain columns:
-\itemize{
-\item 'id' (type \emph{chr}) of unique identifiers
-\item 'pdr_data' (type \emph{pdr_list})
-}
-\item pdr_list -- A tidyverse list of lists of named elements:
-\itemize{
-\item '.id' (type \emph{chr}) of unique identifiers
-\item '.width' (type \emph{int}) of canvas x dimensions
-\item '.height' (type \emph{int}) of canvas y dimensions
-\item '.points' (type \emph{tibble}) of coordinate data (required: .x, .y, .index)
-\item '.strokes' (type \emph{tibble}) of stroke values (required: .index)
-}
+\section{Terminology}{
+
+This is where the paindrawr data types are defined; all other functions
+refer here.\tabular{ll}{
+   Term \tab Meaning \cr
+   pdr_drawing \tab A named list for one drawing, with elements \code{.id}, \code{.file}, \code{.version}, \code{.width}, \code{.height}, \code{.units}, \code{.timestamp}, \code{.app}, \code{.strokes}, \code{.points}, and optionally \code{.rgba}, \code{.stencil} and \code{.stencil_inverted} \cr
+   pdr_list \tab A list of pdr_drawings (typically the list-column \code{pdr_data}) \cr
+   pdr_tibble \tab A tibble with columns \code{id} and a pdr_list column (default name \code{pdr_data}) \cr
 }
 
-If the parameter 'check_only' is TRUE, the function returns a string of 'pdr_tibble', 'pdr_list', 'pdr_drawing' or 'invalid'.
 
-If the parameter 'mode' is "superficial" a quick and simple check of the structure of arg is done. If 'mode' is "validate", a more detailed check of data structure and content requirements is performed.
-
-When the parameter 'as' is "list", the function will return a pdr_list if 'arg' is a pdr_drawing. Similarly, if 'as' is "tibble", an 'arg' which is a pdr_drawing or a pdr_list will be returned as a pdr_tibble, with columns 'id' and 'pdr_data'. When 'as' is specified, the function defauls to 'mode' = "validate" and 'check_only' = FALSE.
+Required elements of a pdr_drawing:
+\itemize{
+\item \code{.id} (character): unique identifier
+\item \code{.width}, \code{.height} (integer): canvas dimensions
+\item \code{.points} (tibble): coordinates (required columns \code{.x}, \code{.y}, \code{.index},
+all integer)
+\item \code{.strokes} (tibble): stroke values (required column \code{.index}, integer)
 }
+
+Optional: \code{.rgba} (numeric array with dimensions height x width x 4).
+}
+
+\section{Matching}{
+
+With \code{action = "eval"} (default) and \code{as = ""}, the function returns a
+string: \code{"pdr_tibble"}, \code{"pdr_list"}, \code{"pdr_drawing"} or \code{"invalid"}. With
+\code{action = "eval"} and \code{as} set to one of the types, it returns \code{TRUE} or
+\code{FALSE} for whether \code{input} is that type (an \code{input} that is \code{NA} or \code{NULL}
+gives \code{FALSE}).
+
+With \code{action = "coerce"}, \code{as} must be given and the function returns
+\code{input} as that type. Supported conversions: pdr_list to pdr_tibble,
+pdr_drawing to pdr_tibble, and pdr_drawing to pdr_list. If \code{input} already
+is of the requested type it is returned unchanged; any other conversion, or
+an \code{NA}/\code{NULL} input, is an error.
+}
+
+\section{Modes}{
+
+With \code{mode = "superficial"} (default) a quick check of the structure of
+\code{input} is made (a pdr_tibble has columns \code{id} and \code{pdr_data}; a pdr_list
+is a list of lists; a pdr_drawing is a list with the required elements).
+With \code{mode = "validate"}, a more detailed check of the element types and of
+the contents of \code{.points}, \code{.strokes} and \code{.rgba} is made (for a tibble, at
+least one list column must be a valid pdr_list). Invalid \code{.rgba} gives a
+warning.
+}
+
 \examples{
-pdr_example_data |> pdr_match() # Returns "pdr_tibble"
+pdr_example_data |> pdr_match() # "pdr_tibble"
 
-pdr_example_data |> pdr_match(as="pdr_list") # Returns FALSE
+pdr_example_data |> pdr_match(as = "pdr_tibble") # TRUE
 
-pdr_eample_data$pdr_data |> pdr_match(action="coerce", as="pdr_tibble", mode="validate") # Returns a validated pdr_tibble with columns 'id' and `pdr_list` where the latter is named as the input.
+pdr_example_data |> pdr_match(as = "pdr_list") # FALSE
+
+pdr_example_data$pdr_data |> pdr_match() # "pdr_list"
+
+pdr_example_data$pdr_data[[1]] |> pdr_match() # "pdr_drawing"
+
+# Coerce a pdr_list to a pdr_tibble with columns `id` and `pdr_data`
+pdr_example_data$pdr_data |>
+  pdr_match(action = "coerce", as = "pdr_tibble", mode = "validate")
 }

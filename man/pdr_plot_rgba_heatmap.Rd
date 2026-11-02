@@ -6,10 +6,10 @@
 \usage{
 pdr_plot_rgba_heatmap(
   .data,
-  paindrawr_data = pdr_data,
+  pdr_col = pdr_data,
   variables = c(NA, NA),
   n_groups = 2,
-  method = "binary",
+  value = "binary",
   alpha_threshold = 0.05,
   background_image = NULL,
   alpha_scale = c(0, 1),
@@ -21,14 +21,14 @@ pdr_plot_rgba_heatmap(
 )
 }
 \arguments{
-\item{.data}{A tibble with a list-column of pain drawing data, as produced
-by \code{\link[=pdr_import_json]{pdr_import_json()}}, where each drawing contains an \code{.rgba} element
-(see \code{\link[=pdr_add_rgba]{pdr_add_rgba()}}). All drawings must share the same canvas
-dimensions (\code{.width} and \code{.height}). Any additional columns (e.g.
-grouping variables) are preserved and available via \code{variables}.}
+\item{.data}{A pdr_tibble (see \code{\link[=pdr_match]{pdr_match()}}) where each pdr_drawing
+contains an \code{.rgba} element (see \code{\link[=pdr_add_rgba]{pdr_add_rgba()}}). All drawings must
+share the same canvas dimensions (\code{.width} and \code{.height}). Any additional
+columns (e.g. grouping variables such as \code{sex} or \code{age}) are preserved
+and available via \code{variables}.}
 
-\item{paindrawr_data}{The name of the list-column in \code{.data} that contains
-the pain drawing data. Defaults to \code{pdr_data}.}
+\item{pdr_col}{The pdr_list column in \code{.data} holding the pain drawings
+(tidy-eval, unquoted). Defaults to \code{pdr_data}.}
 
 \item{variables}{Character vector of length 1 or 2 specifying the grouping
 variable names present in \code{.data}. Numeric variables are binned into
@@ -41,7 +41,7 @@ to create. A single value is recycled across \code{variables}; supply a vector
 of length 2 for different bin counts. Ignored for factor or character
 variables. Default is \code{2}.}
 
-\item{method}{Character. How each drawing's alpha channel contributes to
+\item{value}{Character. How each drawing's alpha channel contributes to
 the heatmap:
 \itemize{
 \item \code{"binary"} (default) — every pixel with alpha above \code{alpha_threshold}
@@ -52,9 +52,7 @@ heatmap shows the mean alpha per pixel across all drawings in the
 group. Drawings that did not mark a pixel count as 0, so the value
 reflects both how many participants marked the pixel and how densely
 they drew there.
-}
-
-\code{"intensity"} is a deprecated alias for \code{"mean"}.}
+}}
 
 \item{alpha_threshold}{Numeric in \verb{[0, 1)}. Pixels with alpha less than or
 equal to this value are set to 0 before summing. The default \code{0.05}
@@ -65,8 +63,7 @@ if the threshold is above half of the lowest stroke \code{.alpha} in the
 data, as real strokes may then be removed.}
 
 \item{background_image}{Optional background image displayed behind the
-heatmap. Either a file path to a PNG file or a numeric array as returned
-by \code{\link[png:readPNG]{png::readPNG()}}. Defaults to \code{NULL} (no background).}
+heatmap. See \code{\link[=pdr_plot_rgba]{pdr_plot_rgba()}}. Defaults to \code{NULL} (no background).}
 
 \item{alpha_scale}{Numeric vector of length 2 giving the opacity range
 \code{c(min, max)}. Cells with value 0 get \code{min} and cells at the scale
@@ -105,8 +102,16 @@ not comparable in absolute terms.
 above it are shown in the top colour.
 }}
 
-\item{label_format}{Character. Format for quantile group labels: \code{"pct"}
-(default), \code{"num"}, or \code{"both"}. See \code{\link[=pdr_plot_heatmap]{pdr_plot_heatmap()}}.}
+\item{label_format}{Character. Format for the labels of numeric
+(quantile-binned) groups:
+\itemize{
+\item \code{"pct"} (default) — the quantile range as percentages, e.g.
+\code{"< 50\%"} and \code{"≥ 50\%"}.
+\item \code{"num"} — the observed range of the variable's values in each group.
+\item \code{"both"} — both of the above, shown in the strip as markdown.
+}
+
+Ignored for factor or character variables.}
 
 \item{show_n}{Logical. If \code{TRUE}, displays the number of drawings in each
 facet. Default is \code{FALSE}.}
@@ -121,9 +126,8 @@ facet.
 }
 \description{
 Creates faceted heatmaps showing how pain location patterns vary across one
-or two stratification variables. Unlike \code{\link[=pdr_plot_heatmap]{pdr_plot_heatmap()}}, which bins the
-raw stroke and spray coordinates, this function works on the rendered
-\code{.rgba} rasters added by \code{\link[=pdr_add_rgba]{pdr_add_rgba()}}. Each drawing is reduced to its
+or two stratification variables. The function works on the rendered \code{.rgba}
+rasters added by \code{\link[=pdr_add_rgba]{pdr_add_rgba()}}. Each drawing is reduced to its
 alpha channel, drawings are summed pixel-wise within each group, and the sum
 is divided by the number of drawings in the group. Because every group is
 expressed relative to its own size, groups of very different sizes can be
@@ -132,13 +136,13 @@ compared directly and no balancing/downsampling is needed.
 \details{
 The function processes data in the following steps:
 \enumerate{
-\item Validates inputs and unpacks the \code{paindrawr_data} list-column.
+\item Validates inputs and unpacks the \code{pdr_col} list-column.
 \item Checks that \code{.rgba} exists and drops drawings whose \code{.rgba} is
 \code{NULL} or \code{NA}. Drawings with an all-zero \code{.rgba} (nothing drawn) are
 kept and count towards the group size.
 \item Creates stratification groups (quantile bins or factor levels).
 \item Reduces each \code{.rgba} to its alpha channel, applies
-\code{alpha_threshold}, and binarises it if \code{method = "binary"}.
+\code{alpha_threshold}, and binarises it if \code{value = "binary"}.
 \item Sums the alpha matrices within each group and divides by the
 number of drawings in the group, giving the share of participants
 (\code{"binary"}) or the mean alpha (\code{"mean"}) per pixel.
@@ -159,23 +163,24 @@ concave (low values boosted), with \code{m > 0.5} convex.
 The heatmap inherits the rendering choices made in \code{\link[=pdr_add_rgba]{pdr_add_rgba()}}
 (e.g. \code{polygon} mode and stroke widths).
 
-With \code{method = "mean"}, note that alpha is not additive: where strokes
+With \code{value = "mean"}, note that alpha is not additive: where strokes
 overlap, alpha builds up roughly as \code{1 - (1 - a)^k} for \code{k} strokes of
 alpha \code{a}. The mean alpha is therefore a measure of drawing density, not
 a count of strokes.
 }
 \examples{
-\dontrun{
-pd |>
+\donttest{
+pdr_example_data |>
   dplyr::mutate(pdr_data = pdr_add_rgba(pdr_data)) |>
-  pdr_plot_rgba_heatmap(variables = c("age_group", "sex"))
+  pdr_plot_rgba_heatmap(variables = c("sex", "duration"))
 
-# Weight pixels by drawing density
-pd |>
+# Weight pixels by drawing density, stratified by quantiles of age
+pdr_example_data |>
+  dplyr::mutate(pdr_data = pdr_add_rgba(pdr_data)) |>
   pdr_plot_rgba_heatmap(
-    variables = "pain_intensity",
-    method = "mean",
-    background_image = "inst/background.png"
+    variables = "age",
+    value = "mean",
+    background_image = pdr_example_file("bg_full_body.png")
   )
 }
 

@@ -1,58 +1,57 @@
 #' Explode pain drawings into multiple drawings by stroke
 #'
-#' Expodes each pain drawing into multiple drawings such that each stroke
-#' (as defined by the `.strokes` and `.points` list-columns in input data) 
-#' becomes a new separate pain drawing.
-#' 
+#' Explodes each pdr_drawing into multiple pdr_drawings such that each stroke
+#' (as defined by the `.strokes` and `.points` elements of the drawing)
+#' becomes a new separate pdr_drawing.
+#'
 #' **NOTE** The output of this function is (likely) not of same length as input.
 #'
 #' @details
-#' For each input element (pain drawing):
+#' For each input pdr_drawing:
 #'
-#' * Each stroke in the `.strokes` column becomes a new pain drawing element
-#' * The matching coordinates in the `.points` column are retained
-#' * The .id column is modified -- see below.
+#' * Each row in `.strokes` becomes a new pdr_drawing
+#' * The matching rows (same `.index`) of `.points` are retained
+#' * The `.id` element is modified -- see below.
 #'
-#' The output preserves the structure of a valid pain drawing data structure
-#' (see [pdr_check_data()]), but with a different number of pain 
-#' drawings. The function is thus not suited for `mutate()` and similar functions 
-#' which expect the same length of input and output.
+#' The output is a pdr_list (see [pdr_match()]) with a different number of
+#' pdr_drawings than the input. The function is thus not suited for `mutate()`
+#' and similar functions which expect the same length of input and output.
 #'
 #' **Creation of id string**
-#' 
-#' To ensure unique id strings for all observations, the `.id` element of
-#' each pain drawing in the result is prepended by the list index value of 
-#' the input pain drawing data and appended by the stroke index.
+#'
+#' To ensure unique id strings for all pdr_drawings, the new `.id` has the
+#' format `<index>_<id>_<stroke>`, where `<index>` is the position of the
+#' input pdr_drawing in `pdr_list`, `<id>` is its original `.id`, and
+#' `<stroke>` is the stroke's `.index`. E.g. `"2_abc_3"`.
 #'
 #' **Handling of missing or empty data**
 #'
-#' * If `.strokes` or `.points` is `NA` or empty, the corresponding output 
-#' pain drawings rows will contain `NA` in those columns
+#' A pdr_drawing without strokes (`.strokes` is `NA`, `NULL` or has no rows)
+#' contributes no pdr_drawings to the result.
 #'
-#' @param pd A valid pain drawing data structure (see [pdr_check_data()]).
+#' @param pdr_list A pdr_list (see [pdr_match()]), e.g. the `pdr_data`
+#'   column of a pdr_tibble.
 #'
 #' @returns
-#' A list representing a valid pain drawing data structure where each element
-#' corresponds to a pain drawing with a single stroke from the input.
+#' A pdr_list where each element is a pdr_drawing containing a single stroke
+#' from the input.
 #'
 #' @export
 #'
 #' @examples
-#' # Explode strokes into separate rows
-#' pdr_exploded <- pdr_explode(pdr_demo_data)
+#' # Explode a pdr_list into one pdr_drawing per stroke
+#' pdr_exploded <- pdr_explode(pdr_example_data$pdr_data[1:3])
 #'
-#' # Inspect how many strokes per original drawing
-#' pdr_demo_data |>
-#'   dplyr::count(id)
-#' pdr_exploded |>
-#'   dplyr::count(id)
+#' # Number of strokes per original drawing vs. number of exploded drawings
+#' sapply(pdr_example_data$pdr_data[1:3], \(d) nrow(d$.strokes))
+#' length(pdr_exploded)
 #'
-#' # Each row now contains exactly one stroke
-#' pdr_exploded$p[[1]]
-
-
-
-pdr_explode <- function(pdr) {
+#' # The new ids have the format <index>_<id>_<stroke>
+#' pdr_get_info(pdr_exploded, ".id")[1:5]
+#'
+#' # Each pdr_drawing now contains exactly one stroke
+#' nrow(pdr_exploded[[1]]$.strokes)
+pdr_explode <- function(pdr_list) {
 
   # This function takes pain drawing data as input.
   # It explodes/expands each pain drawing (row) into
@@ -60,7 +59,7 @@ pdr_explode <- function(pdr) {
 
 
 
-  result <- pdr |>
+  result <- pdr_list |>
 
   purrr::imap(\(obj, indx) {
 

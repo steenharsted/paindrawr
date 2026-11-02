@@ -2,7 +2,7 @@
 % Please edit documentation in R/pdr_mird2pdr.R
 \name{pdr_mird2pdr}
 \alias{pdr_mird2pdr}
-\title{Convert MIRD pain drawings to pdr_tibble}
+\title{Convert MIRD pain drawings to a pdr_list}
 \usage{
 pdr_mird2pdr(
   mird_pd,
@@ -25,66 +25,82 @@ pdr_mird2pdr(
 )
 }
 \arguments{
-\item{mird_pd}{A vector of MIRD pain drawings}
+\item{mird_pd}{A character vector of MIRD pain drawings.}
 
-\item{id}{A unique id for each drawing (default: 1:length(mird_pd))}
+\item{id}{A unique id for each drawing (default: \code{1:length(mird_pd)}).}
 
-\item{file}{Defaults to ""}
+\item{file}{File name (default \code{""}).}
 
-\item{version}{Defaults to ""}
+\item{version}{Version (default \code{""}).}
 
-\item{width}{of canvas -- Defaults to 450}
+\item{width}{Canvas width, integer (default \code{450L}).}
 
-\item{height}{of canvas -- Defaults to 500}
+\item{height}{Canvas height, integer (default \code{500L}).}
 
-\item{units}{Defaults to "px"}
+\item{units}{Units (default \code{"px"}).}
 
-\item{timestamp}{Defaults to ""}
+\item{timestamp}{Timestamp (default \code{""}).}
 
-\item{app}{Defaults to ""}
+\item{app}{App name (default \code{""}).}
 
-\item{tool}{Defaults to "pen"}
+\item{tool}{Drawing tool (default \code{"pen"}).}
 
-\item{draw_input_type}{Defaults to "mouse"}
+\item{draw_input_type}{Input type (default \code{"mouse"}).}
 
-\item{tool_width}{Defaults to "1"}
+\item{tool_width}{Tool width, integer (default \code{1L}).}
 
-\item{point_density}{Defaults to "1"}
+\item{point_density}{Point density, integer (default \code{1L}).}
 
-\item{spray_radius}{Defaults to "1"}
+\item{spray_radius}{Spray radius, integer (default \code{1L}).}
 
-\item{alpha}{Defaults to "1.0"}
+\item{alpha}{Alpha, numeric (default \code{1.0}).}
 
-\item{color}{Defaults to "#ff0000"}
+\item{color}{Stroke colour (default \code{"#ff0000"}).}
+
+\item{flipy}{Logical (default \code{TRUE}). If \code{TRUE}, the y-axis is flipped
+(via \code{\link[=pdr_modify_points]{pdr_modify_points()}} with \code{op = "flipy"}), because MIRD has its
+origin in the upper left corner whereas paindrawr uses the lower left.}
 }
 \value{
-A valid pain drawing data list column
+A pdr_list (see \code{\link[=pdr_match]{pdr_match()}}) of length \code{length(mird_pd)}.
 }
 \description{
 MIRD exports pain drawings in a custom format like:
-(,1,2,5,4,),(,8,8,7,7,)
-which corresponds to:\tabular{lll}{
+\verb{(,1,2,5,4,),(,8,8,7,7,)}
+which corresponds to:
+}
+\details{
+\tabular{lll}{
    x \tab y \tab index \cr
    1 \tab 2 \tab 1 \cr
    5 \tab 4 \tab 1 \cr
    8 \tab 8 \tab 2 \cr
    7 \tab 7 \tab 2 \cr
 }
-}
-\details{
-This functions takes a vector of length n of such MIRD
-strings and converts it into a list of length n of valid
-paindrawr data list col.
 
-The intended use case, is a data frame (tibble) of MIRD
-data including pain drawing data. A new paindrawr data
-list cloumn can be generate with a simple mutate() call.
 
-Each of the parameters supplied must be either of the
-same length as MIRD pain drawing vector or of length 1,
-in which case it will be repeated.
+This function takes a vector of length n of such MIRD strings and converts
+it into a pdr_list of length n (see \code{\link[=pdr_match]{pdr_match()}} for the terminology).
+Strings that are \code{NA} or too short to hold a point give a pdr_drawing
+without points and strokes.
+
+The intended use case is a data frame (tibble) of MIRD data including pain
+drawing data. A new pdr_list column can be generated with a simple
+\code{dplyr::mutate()} call.
+
+Each of the parameters supplied (except \code{mird_pd}) must be either of the
+same length as \code{mird_pd} or of length 1, in which case it is repeated.
 }
 \examples{
-readr::read_csv("data-raw/short_demo_data_with_NA.csv") |> mutate(pdr_data = pdr_mird2pdr(paindrawing_LBP, id=id))
+mird <- c(
+  "(,460,709,463,709,464,719,448,720,449,712,)",
+  "(,393,682,430,672,429,682,)",
+  NA
+)
+pdr_list <- pdr_mird2pdr(mird, id = c("a", "b", "c"))
+pdr_list[[1]]$.points
 
+# Typical use: create a pdr_list column in a tibble
+tibble::tibble(id = c("a", "b", "c"), mird = mird) |>
+  dplyr::mutate(pdr_data = pdr_mird2pdr(mird, id = id))
 }

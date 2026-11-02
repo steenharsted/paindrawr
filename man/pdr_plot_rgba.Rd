@@ -6,7 +6,7 @@
 \usage{
 pdr_plot_rgba(
   .data,
-  paindrawr_data = pdr_data,
+  pdr_col = pdr_data,
   background_image = NULL,
   include_id = FALSE,
   only_alpha = FALSE,
@@ -15,24 +15,25 @@ pdr_plot_rgba(
 )
 }
 \arguments{
-\item{.data}{A data frame with a paindrawr list-column (see
-\code{paindrawr_data}) whose elements contain an \code{.rgba} entry. Add it first
-with \code{\link[=pdr_add_rgba]{pdr_add_rgba()}}.}
+\item{.data}{A pdr_tibble (see \code{\link[=pdr_match]{pdr_match()}}) whose pdr_drawings contain an
+\code{.rgba} element. Add it first with \code{\link[=pdr_add_rgba]{pdr_add_rgba()}}.}
 
-\item{paindrawr_data}{The list-column in \code{.data} holding the paindrawr data.
-Defaults to \code{pdr_data}.}
+\item{pdr_col}{The pdr_list column in \code{.data} holding the pain drawings
+(tidy-eval, unquoted). Defaults to \code{pdr_data}.}
 
-\item{background_image}{Optional background drawn beneath each raster. Either
-a path to a PNG file (character string ending in \code{.png}) or a numeric
-raster array as returned by \code{\link[png:readPNG]{png::readPNG()}}. If \code{NULL} (default), no
-background is drawn.}
+\item{background_image}{Optional background drawn beneath each drawing.
+Either a path to a PNG file (character string ending in \code{.png}) or a
+numeric raster array as returned by \code{\link[png:readPNG]{png::readPNG()}}. If \code{NULL}
+(default), no background is drawn. Use \code{\link[=pdr_example_file]{pdr_example_file()}} to get the
+path to a bundled background.}
 
-\item{include_id}{Logical. If \code{TRUE}, the \code{.id} value is shown as a facet
-strip label above each panel. Default is \code{FALSE}.}
+\item{include_id}{Logical. If \code{TRUE}, the \code{.id} of each drawing is shown as
+a facet strip label above each panel. Default is \code{FALSE}.}
 
 \item{only_alpha}{Logical. If \code{TRUE}, pixels with alpha > 0 are drawn
-opaque black and pixels with alpha == 0 are white (still transparent), to
-show which pixels have been drawn on. Default is \code{FALSE}.}
+opaque black and pixels with alpha == 0 are drawn white (still
+transparent), to show which pixels have been drawn on. Default is
+\code{FALSE}.}
 
 \item{ncol, nrow}{Number of columns and rows, passed to
 \code{\link[ggplot2:facet_wrap]{ggplot2::facet_wrap()}}. If both are \code{NULL} (default), \code{facet_wrap()}
@@ -42,24 +43,28 @@ chooses the layout.}
 A \code{\link[ggplot2:ggplot]{ggplot2::ggplot()}} object with one facet per drawing.
 }
 \description{
-Plots the \code{.rgba} raster arrays stored in a paindrawr list-column as a
-ggplot, one facet per row of \code{.data}, using
+Plots the \code{.rgba} raster arrays stored in the pdr_list column of a
+pdr_tibble as a ggplot, one facet per row of \code{.data}, using
 \code{\link[ggplot2:annotation_raster]{ggplot2::annotation_raster()}}. Optionally draws a background image beneath
-each raster.
+each raster. See \code{\link[=pdr_match]{pdr_match()}} for the definitions of pdr_tibble, pdr_list
+and pdr_drawing.
 }
 \examples{
-\dontrun{
-pdr_example_data[1,] |>
-  mutate(pdr_data = pdr_add_rgba(pdr_data)) |>
+pdr_example_data[1, ] |>
+  dplyr::mutate(pdr_data = pdr_add_rgba(pdr_data)) |>
   pdr_plot_rgba()
 
-pdr_example_data[1:10,] |>
-  mutate(pdr_data = pdr_add_rgba(pdr_data)) |>
+\donttest{
+pdr_example_data[1:4, ] |>
+  dplyr::mutate(pdr_data = pdr_add_rgba(pdr_data)) |>
   pdr_plot_rgba(
-    background_image = pdr_example_file("mird_body_background.png"),
+    background_image = pdr_example_file("bg_full_body.png"),
     include_id = TRUE,
     ncol = 2
   )
 }
 
+}
+\seealso{
+\code{\link[=pdr_add_rgba]{pdr_add_rgba()}}, \code{\link[=pdr_plot_rgba_heatmap]{pdr_plot_rgba_heatmap()}}, \code{\link[=pdr_plot_stencil]{pdr_plot_stencil()}}
 }

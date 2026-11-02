@@ -158,7 +158,7 @@ pdr_example_data|>
 paindrawr functions are organised around a common analysis pipeline:
 
 - **Import** raw drawings — `pdr_import_json()`, `pdr_import_png()`
-- **Check** that the data is well-formed — `pdr_check_data()`
+- **Check** that the data is well-formed — `pdr_match()`
 - **add rgba** Consider xy (typical for spray tools) or polygons (typical for pen tools)
 - **Quantify** the marked areas — `pdr_summarize_rgba()`
 - **Visualise** the results — `pdr_plot_rgba()`, `pdr_plot_rgba_heatmap()`

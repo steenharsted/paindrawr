@@ -5,7 +5,7 @@
 \title{Add an RGBA raster array to a pain drawing based on spray coordinates}
 \usage{
 pdr_add_rgba(
-  paindrawr_data,
+  pdr_list,
   method = "memory",
   clean_up = TRUE,
   polygon = "none",
@@ -13,7 +13,7 @@ pdr_add_rgba(
 )
 }
 \arguments{
-\item{paindrawr_data}{A pain drawing in one of two forms:
+\item{pdr_list}{A pain drawing in one of two forms:
 \itemize{
 \item A single drawing: a named list containing a \code{.strokes} element, as
 produced by \code{\link[=pdr_import_json]{pdr_import_json()}} or extracted from a list-column
@@ -35,7 +35,7 @@ deleted on exit. Only relevant when \code{method = "file"}. Set to \code{FALSE} 
 retain the file for debugging.}
 
 \item{polygon}{Character. Controls whether strokes are rendered as filled
-polygons (in black) instead of their original appearance. One of:
+polygons instead of their original appearance. One of:
 \itemize{
 \item \code{"none"} (default) — pen strokes as paths, spray strokes as points.
 \item \code{"pen"} — pen strokes as filled polygons.
@@ -77,28 +77,26 @@ a single result, and a list of drawings (of any length, including 1)
 returns a list of results of the same length.
 }
 \examples{
-\dontrun{
-# Single drawing — returns drawing with $.rgba appended
-drawing_with_rgba <- pdr_example_data[[1]] |> pdr_add_rgba()
+# Single drawing: returns the drawing with $.rgba appended
+drawing_with_rgba <- pdr_example_data$pdr_data[[1]] |> pdr_add_rgba()
 grid::grid.newpage()
 grid::grid.raster(drawing_with_rgba$.rgba)
 
-# Single drawing — returns list(.rgba = <array>)
-rgba <- pdr_example_data[[1]] |> pdr_add_rgba(rgba_only = TRUE)
+# Single drawing: returns list(.rgba = <array>)
+rgba <- pdr_example_data$pdr_data[[1]] |> pdr_add_rgba(rgba_only = TRUE)
 dim(rgba$.rgba)
 
-# Multiple drawings at once
-drawings_with_rgba <- pdr_example_data |> pdr_add_rgba()
-
 # Render spray strokes as filled polygons
-pdr_example_data[[1]] |> pdr_add_rgba(polygon = "spray")
+pdr_example_data$pdr_data[[1]] |> pdr_add_rgba(polygon = "spray")
+
+\donttest{
+# Multiple drawings at once (a pdr_list)
+drawings_with_rgba <- pdr_example_data$pdr_data[1:3] |> pdr_add_rgba()
 
 # Tibble workflow
+pd <- pdr_example_data[1:3, ]
 
-## Data
-pd <- tibble::tibble(pdr_data = pdr_example_data)
-
-## add .rgba to the input list-column
+## add .rgba to the drawings in the pdr_data list-column
 pd |> dplyr::mutate(pdr_data = pdr_add_rgba(pdr_data))
 
 ## add rgba arrays in a separate list-column
@@ -108,7 +106,7 @@ pd_rgba <- pd |>
   )
 
 ## access the array for the first row
-pd_rgba$rgba[[1]]$.rgba
+dim(pd_rgba$rgba[[1]]$.rgba)
 }
 
 }

@@ -12,77 +12,49 @@
 #' Missing drawings (`NA` or `NULL` entries in the list-column) are dropped
 #' with a warning; an error is raised only if no drawings remain.
 #'
-#' @param .data A tibble with a single list-column of pain drawing data, as
-#'   produced by [pdr_import_json()]. Each row holds a named list containing
-#'   the drawing data for one recording. The name of that list-column is
-#'   specified via `paindrawr_data`. All drawings must share the same canvas
-#'   dimensions (`.width` and `.height`).
-#' @param paindrawr_data The name of the list-column in `.data` that contains
-#'   the pain drawing data. Defaults to `pdr_data`. The column is unpacked with
-#'   [tidyr::unnest_wider()] before processing; the resulting columns are
-#'   expected to include `.id`, `.width`, `.height`, `.strokes`, `.points`,
-#'   `.tool`, `.tool_width`, `.color`, `.alpha`, `.spray_radius`, and
-#'   `.point_density`.
-#' @param background_image Optional background image displayed behind the
-#'   strokes. Accepts either:
-#'   * A file path to a PNG file (character string), or
-#'   * A numeric array as returned by [png::readPNG()].
-#'
-#'   Defaults to `NULL` (no background).
-#' @param include_id Logical. If `TRUE`, the `.id` value is shown as a facet
-#'   strip label above each panel. Default is `FALSE`.
+#' @inheritParams pdr_plot_rgba
 #' @param rasterize Logical. If `TRUE` (default), the plot is rasterized and
 #'   returned as a new ggplot with [ggplot2::annotation_raster()]. The output
 #'   is pixel-accurate with a locked aspect ratio. If `FALSE`, the raw ggplot
 #'   with vector strokes is returned.
-#' @param method Character. Controls the rasterization back-end when
-#'   `rasterize = TRUE`. Either:
-#'   * `"memory"` (default) — renders in-memory via [ragg::agg_capture()],
-#'     no temp file is written to disk.
-#'   * `"file"` — saves to a temporary PNG via [ggplot2::ggsave()] and reads
-#'     it back with [png::readPNG()]. Use this if the `"memory"` path produces
-#'     unexpected rendering artefacts.
-#' @param clean_up Logical. If `TRUE` (default), the temporary PNG file is
-#'   deleted on exit. Only relevant when `method = "file"`. Set to `FALSE` to
-#'   retain the file for debugging.
+#' @inheritParams pdr_add_rgba
 #' @param dpi Resolution used during rasterization. Defaults to `96`, matching
 #'   the CSS pixel density of the web canvas where drawings are collected —
 #'   this ensures a 1:1 pixel correspondence between the original drawing and
 #'   the output. Increase for print-quality output (e.g. `300`), noting this
 #'   does not affect the canvas dimensions, only output pixel density.
-#' @param polygon Character. Controls whether strokes are rendered as filled
-#'   polygons instead of their original appearance. One of:
-#'   * `"none"` (default) — pen strokes as paths, spray strokes as points.
-#'   * `"pen"` — pen strokes as filled polygons.
-#'   * `"spray"` — spray strokes as filled polygons.
-#'   * `"both"` — both pen and spray strokes as filled polygons.
-#'
-#' @return A [ggplot2::ggplot()] object. When `rasterize = TRUE`, the plot
+#' @returns A [ggplot2::ggplot()] object. When `rasterize = TRUE`, the plot
 #'   contains a single [ggplot2::annotation_raster()] layer with a locked
 #'   aspect ratio. When `rasterize = FALSE`, the plot contains vector stroke
 #'   layers and supports further ggplot2 additions.
 #'
 #' @seealso [pdr_import_json()] to read pain drawing JSON files,
-#'   [pdr_add_rgba()] to store raster arrays as a column in the tibble,
+#'   [pdr_plot_rgba()] to plot rasterised drawings, [pdr_add_rgba()] to store
+#'   raster arrays in a pdr_list, [pdr_match()] for the pdr_tibble definition.
 #'
 #' @examples
-#' \dontrun{
-#' pd <- pdr_import_json(c("data-raw/two_geoms.json", "data-raw/four_geoms.json"))
+#' bg <- pdr_example_file("bg_full_body.png")
+#' pd <- pdr_example_data[1:2, ]
 #'
-#' # Default: in-memory rasterization with background
-#' pd |> pdr_plot_xy(background_image = "inst/background.png")
+#' # Default: in-memory rasterization with a background image
+#' pdr_plot_xy(pd, background_image = bg)
 #'
+#' \donttest{
 #' # File-based rasterization
-#' pd |> pdr_plot_xy(method = "file")
+#' pdr_plot_xy(pd, method = "file")
 #'
-#' # Vector output — can add further ggplot layers
-#' pd |> pdr_plot_xy(rasterize = FALSE)
+#' # Vector output -- can add further ggplot layers
+#' pdr_plot_xy(pd, rasterize = FALSE)
 #'
 #' # Show id labels in facet strips
-#' pd |> pdr_plot_xy(include_id = TRUE)
+#' pdr_plot_xy(pd, include_id = TRUE)
+#'
+#' # Draw strokes as filled polygons
+#' pdr_plot_xy(pd, polygon = "both")
 #'
 #' # Use a custom list-column name
-#' pd |> pdr_plot_xy(paindrawr_data = my_col)
+#' pd2 <- dplyr::rename(pd, my_col = pdr_data)
+#' pdr_plot_xy(pd2, pdr_col = my_col)
 #' }
 #'
 #' @importFrom dplyr select mutate filter full_join join_by n
@@ -95,7 +67,7 @@
 #' @export
 pdr_plot_xy <- function(
   .data,
-  paindrawr_data = pdr_data,
+  pdr_col = pdr_data,
   background_image = NULL,
   include_id = FALSE,
   rasterize = TRUE,
@@ -105,7 +77,7 @@ pdr_plot_xy <- function(
   polygon = "none"
 ) {
   # Drop missing drawings (NA or NULL entries) before unnesting
-  drawings <- dplyr::pull(.data, {{ paindrawr_data }})
+  drawings <- dplyr::pull(.data, {{ pdr_col }})
   is_valid <- vapply(
     drawings,
     function(x) is.list(x) && length(x) > 0,
@@ -121,7 +93,7 @@ pdr_plot_xy <- function(
   }
 
   # Unnest list
-  .data <- .data |> tidyr::unnest_wider({{ paindrawr_data }})
+  .data <- .data |> tidyr::unnest_wider({{ pdr_col }})
 
   # Validate method argument
   method <- match.arg(method, choices = c("memory", "file"))

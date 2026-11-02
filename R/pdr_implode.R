@@ -1,41 +1,47 @@
-#' Implode multiple pain drawwings into one.
+#' Implode multiple pain drawings into one
 #'
-#' This function takes as input a pain drawing data structure, 
-#' with multiple elements, i.e. pain drawings. The strokes
-#' of these are imploded (or collated) into a single pain drawing 
-#' with all strokes (including NA) retained in the original 
-#' order.
-#' 
-#' The function is useful, for instance, for imploding anatomcial 
-#' regions into larger anatomical regions which can then be
-#' merged (via `pdr_modify()`) into a sinigle larger region.
-#' 
-#' #' **NOTE** The output of this function is (likely) not of same length as input.
-#' 
-#' @param pdr must be a valid pain drawing data structure. 
-#' Furthermore, each element in `pdr` should have the same 
-#' `.units`. If elements of `pdr` has different canvas widths
-#' or heights, they will all be reset to the maximum canvas
-#' dimensions.
-#' @returns A new pain drawing data structure with a single
-#' element with all strokes from the input pain drawings
-#' retained. Note, that stroke indeces are reset and in
-#' `.strokes` and `.points`. The `.id` element is also reset.
+#' Collates the strokes of several pain drawings into a single pain drawing,
+#' with all strokes (including `NA`) retained in the original order.
+#'
+#' The function is useful, for instance, for imploding anatomical regions
+#' into a larger anatomical region, which can then be merged (e.g. via
+#' [pdr_modify_rgba()]) into a single larger region.
+#'
+#' **NOTE** The output of this function is (likely) not of the same length as
+#' the input.
+#'
+#' If `pdr_col` holds only one drawing, it is returned as is (as the pdr_list
+#' pulled from `.data`, not as a pdr_tibble). If the drawings have different
+#' `.units`, a warning is given and `NA` is returned. If they have different
+#' canvas widths or heights, a warning is given and the maximum width and
+#' height are used. For `.file`, `.version` and `.app` the common value is kept
+#' if unique, otherwise `"multiple"`. `.timestamp` is the maximum of the
+#' inputs. See [pdr_match()] for the terminology (pdr_tibble, pdr_list,
+#' pdr_drawing).
+#'
+#' @param .data A pdr_tibble (see [pdr_match()]). The drawings in `pdr_col`
+#'   should all have the same `.units`.
+#' @param pdr_col The column in `.data` holding the pdr_list to implode
+#'   (default `pdr_data`). The result has a column of the same name.
+#'
+#' @returns A pdr_tibble (see [pdr_match()]) with one row: `id` is
+#'   `"imploded_<time>"` and `pdr_col` holds a pdr_list with a single
+#'   pdr_drawing containing all strokes and points of the input drawings.
+#'   Stroke indices (`.index`) in `.strokes` and `.points` are renumbered, and
+#'   `.id` is reset to the same `"imploded_<time>"` value. Any `.rgba` or
+#'   `.stencil` elements are not carried over.
 #'
 #' @export
 #' @examples
-#' pdr_implode(pd_demo_anatomy)
-#' 
-#' bi <- pdr_example("mird_body_background")
-#' pd_demo_anatomy |> pd_recreate_drawing(background_image = bi) # Note: execution time > 5 sec
-#' pd_demo_anatomy |> pd_implode() |> pd_recreate_drawing(background_image = bi)
-#' pd_demo_anatomy |> pd_implode() |> pd_sanitize(overlaps="merge") |> pd_recreate_drawing(background_image = bi)
-#' 
-#' pd_demo_anatomy |> dplyr::filter(id %in% c("Front_left_thigh", "Front_left_leg", "Front_left_foot")) |> pd_recreate_drawing(background_image = bi)#' 
-#' pd_demo_anatomy |> dplyr::filter(id %in% c("Front_left_thigh", "Front_left_leg", "Front_left_foot")) |> pd_implode() |> pd_recreate_drawing(background_image = bi)
-#' 
-pdr_implode <- function(.data, paindrawr_data = pdr_data) {
-  pdr <- .data |> dplyr::pull({{paindrawr_data}})
+#' pdr_example_data |> pdr_implode()
+#'
+#' # Compare plots of three original drawings and the imploded drawing
+#' bg <- pdr_example_file("bg_zealand.png")
+#' three <- pdr_example_data[1:3, ]
+#' three |> pdr_plot_xy(background_image = bg)
+#' three |> pdr_implode() |> pdr_plot_xy(background_image = bg)
+pdr_implode <- function(.data, pdr_col = pdr_data) {
+  pdr <- .data |> dplyr::pull({{pdr_col}})
 
   # Sanity checks
   # If only one pain drawing -- return input
@@ -116,7 +122,7 @@ pdr_implode <- function(.data, paindrawr_data = pdr_data) {
   result <- tibble::tibble(
     id = tmp_id,
     pdr = result
-  ) |> dplyr::rename({{paindrawr_data}} := pdr)
+  ) |> dplyr::rename({{pdr_col}} := pdr)
 
   return(result)
 }

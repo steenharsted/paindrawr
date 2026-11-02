@@ -246,7 +246,7 @@ check_alpha_curve <- function(alpha_curve, call = rlang::caller_env()) {
 
 #' Map heatmap values to opacity along an S-curve
 #'
-#' Values are first expressed relative to `max_value` (u in [0, 1], values
+#' Values are first expressed relative to `max_value` (`u` in `[0, 1]`, values
 #' above the maximum are capped at 1), then passed through
 #'
 #'   f(u) = u^k / (u^k + (m / (1 - m))^k * (1 - u)^k)

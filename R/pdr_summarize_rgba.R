@@ -1,58 +1,80 @@
-#' Summarise alpha intensity of drawn pixels in a pain drawing
+#' Summarise the alpha values of drawn pixels in a pain drawing
 #'
-#' Computes a summary statistic of alpha values across all pixels whose alpha
-#' falls strictly within `alpha_range`. This captures how intensely a patient
-#' drew -- i.e. how dark or opaque the strokes are -- independently of how much
-#' area was covered. Use in combination with [pdr_summarize_alpha_area()] to
-#' distinguish between a small intense drawing and a large light drawing.
+#' Computes summary statistics of the alpha channel of the `.rgba` array of
+#' each drawing, using only pixels whose alpha falls within `alpha_range`
+#' (lower bound exclusive, upper bound inclusive). The number of drawn pixels
+#' (`px`) and the proportion of the canvas covered (`area_prop`) describe how
+#' much was drawn, while e.g. `mean` or `median` describe how dark or opaque
+#' the strokes are. Optionally, each drawing is first multiplied by one or more
+#' stencils (e.g. body regions) so that statistics are computed per region.
 #'
-#' @param pdr_list Either a list of RGBA arrays (each `[height, width, 4]`), or a
-#'   list of paindrawing data objects containing a `.rgba` element (as produced
-#'   by [pdr_add_rgba()]). Typically passed as a list-column inside
-#'   `dplyr::mutate()`.
-#' @param summary_stat A string specifying the summary statistic to compute
-#'   over drawn pixel alpha values. One or more of `"px"`, `"area_prop"`, `"mean"`,
-#'   `"sd"`, `"max"`,`"min"`, `"median"`, `"q1"`, `"q5"`, `"q10"`, `"q25"`,
-#'   `"q75"`, `"q90"`, `"q95"`, `"q99"`. Alternatively: `"all"`, or `seven"` (default),
-#'   to return all the above, or the first seven of the above.
-#' @param alpha_range A numeric vector of length 2 specifying the lower
-#'   (exclusive) and upper (inclusive) bounds of the alpha range to include.
-#'   Defaults to `c(0, 1)`, i.e. all drawn pixels. Use e.g. `c(0.5, 1)` to
-#'   restrict to heavily drawn pixels only.
-#' @param stencils A list (length == 1 or same length as pdr_list) of (2-dimensional)
-#'   matrices of the same x and y dimension as pdr_list Expected values are 0
-#'   and 1 -- if provided, the stencils are applied (multiplied) with the
-#'   rgba arrays before summarising.
+#' The drawings must already contain `.rgba`; see [pdr_add_rgba()]. For the
+#' terms pdr_drawing, pdr_list and pdr_tibble, see [pdr_match()].
 #'
-#' @returns The input pdr_tibble with a variable number of added columns.
-#'   A column is added for each input pdr_list by summary stat by stencils,
-#'   appropriately named. Each column is the
-#'   requested summary statistic of alpha values for pixels within
-#'   `(alpha_range[1], alpha_range[2]]`, or `NA_real_` if no pixels fall in
-#'   that range.
+#' @inheritParams pdr_plot_rgba
+#' @param pdr_col <[`tidy-select`][tidyselect::language]> One or more
+#'   list-columns of `.data` (pdr_lists) with `.rgba` in each drawing. Defaults
+#'   to `pdr_data`. Unquoted names, strings and selections such as
+#'   `c(a, b)` are accepted; each selected column is summarised separately.
+#' @param summary_stat Character vector of statistics to compute from the alpha
+#'   values of the included pixels. Any of `"px"` (number of pixels),
+#'   `"area_prop"` (`px` divided by `.width * .height`), `"mean"`, `"sd"`,
+#'   `"median"`, `"iqr"`, `"min"`, `"max"`, `"q1"`, `"q5"`, `"q10"`, `"q25"`,
+#'   `"q75"`, `"q90"`, `"q95"` and `"q99"` (the `q` statistics are quantiles
+#'   at probabilities 0.01, 0.05, ..., 0.99). Two shortcuts are available when
+#'   given as a single string: `"seven"` (default) is `px`, `mean`, `max`,
+#'   `min`, `median`, `sd` and `iqr`; `"all"` is `seven` plus `area_prop`,
+#'   `q1`, `q5`, `q25`, `q75`, `q90`, `q95` and `q99` (note: `q10` is *not*
+#'   included in `"all"`, but can be requested explicitly). Columns are
+#'   returned in a fixed order, not in the order requested.
+#' @param alpha_range Numeric vector of length 2 giving the lower (exclusive)
+#'   and upper (inclusive) alpha bounds of pixels to include, with
+#'   `0 <= alpha_range[1] < alpha_range[2] <= 1`. Defaults to `c(0, 1)`, i.e.
+#'   all drawn pixels. Use e.g. `c(0.5, 1)` to restrict to heavily drawn pixels.
+#' @param stencils Optional pdr_list in which each element has a `.stencil`
+#'   (a height x width matrix of 0/1) and an `.id`, e.g. the list-column
+#'   `pdr_stencil_full_body$pdr_data` or a list built with [pdr_add_stencil()]. Each stencil is applied
+#'   (multiplied) to the alpha channel of every drawing before summarising, so
+#'   the stencil dimensions must match the drawings. Defaults to `NULL`
+#'   (no stencil). Note that this is deliberately plural and differs from
+#'   `stencil` in [pdr_modify_rgba()].
 #'
-#' @seealso [pdr_summarize_alpha_area()] for the complementary area-based metric,
-#'   [pdr_add_rgba()] to add `.rgba` to paindrawing data.
+#' @returns `.data` (a pdr_tibble) with added numeric columns, one per selected
+#'   `pdr_col` and statistic (and per stencil, if `stencils` is given). Columns
+#'   are named `<pdr_col>_<stat>` without stencils, and
+#'   `<pdr_col>_<stencil id>_<stat>` with stencils, e.g. `pdr_data_mean` or
+#'   `pdr_data_Back_head_mean`. If no pixels fall in `alpha_range`, `px` is 0,
+#'   `mean`, `sd`, `median`, `iqr` and quantiles are `NA`, and `min`/`max` are
+#'   `Inf`/`-Inf` (with a warning).
 #'
+#' @seealso [pdr_add_rgba()] to add `.rgba`, [pdr_add_stencil()] and
+#'   [pdr_modify_rgba()] for stencils, [pdr_plot_rgba()] to plot the arrays.
+#'
+#' @importFrom stats quantile sd median IQR
 #' @export
 #' @examples
-#' pd <- pdr_import_json("data-raw/two_geoms.json") |>
-#'   dplyr::mutate(rgba = pdr_add_rgba(pdr_list))
+#' pd <- pdr_example_data |>
+#'   dplyr::mutate(pdr_data = pdr_add_rgba(pdr_data))
 #'
-#' # Mean intensity across all drawn pixels (using rgba list-column)
-#' pdr_summarize_rgba(pd$rgba)
+#' # Default: the "seven" statistics across all drawn pixels
+#' pdr_summarize_rgba(pd)
 #'
-#' # Max intensity, passed pdr_list directly
-#' pdr_summarize_rgba(pd$pdr_list, summary_stat = "max")
+#' # Selected statistics, only heavily drawn pixels
+#' pdr_summarize_rgba(
+#'   pd,
+#'   summary_stat = c("px", "area_prop", "mean"),
+#'   alpha_range = c(0.5, 1)
+#' )
 #'
-#' # Use inside mutate()
-#' pd |> dplyr::mutate(
-#'   intensity_mean = pdr_summarize_rgba(pdr_list),
-#'   intensity_max  = pdr_summarize_rgba(pdr_list, summary_stat = "max")
+#' # Per stencil (here, two body regions)
+#' pdr_summarize_rgba(
+#'   pd,
+#'   summary_stat = "px",
+#'   stencils = pdr_stencil_full_body$pdr_data[1:2]
 #' )
 pdr_summarize_rgba <- function(
-  pdr_tibble,
-  pdr_list = pdr_data,
+  .data,
+  pdr_col = pdr_data,
   summary_stat = "seven",
   alpha_range = c(0, 1),
   stencils = NULL
@@ -62,10 +84,10 @@ pdr_summarize_rgba <- function(
   ############################
 
   # We must handle both string input, unquaoted col names, and 1 or more at the same time
-  pdr_list <- names(
+  pdr_col <- names(
     tidyselect::eval_select(
-      rlang::enquo(pdr_list),
-      pdr_tibble
+      rlang::enquo(pdr_col),
+      .data
     )
   )
 
@@ -250,12 +272,12 @@ pdr_summarize_rgba <- function(
     # Loop pdr_list
     # loop stencil
     # map prd_list
-    for (i in pdr_list) {
+    for (i in pdr_col) {
       for (j in seq_along(stencils)) {
-        pdr_tibble <- dplyr::bind_cols(
-          pdr_tibble,
+        .data <- dplyr::bind_cols(
+          .data,
           summarize_drawing_as_tibble(
-            pdr_tibble[[i]],
+            .data[[i]],
             summary_stat,
             alpha_range,
             stencils[[j]]$.stencil, # one stencil
@@ -268,11 +290,11 @@ pdr_summarize_rgba <- function(
     # stencils is NULL
     # Loop pdr_list
     # map prd_list
-    for (i in pdr_list) {
-      pdr_tibble <- dplyr::bind_cols(
-        pdr_tibble,
+    for (i in pdr_col) {
+      .data <- dplyr::bind_cols(
+        .data,
         summarize_drawing_as_tibble(
-          pdr_tibble[[i]],
+          .data[[i]],
           summary_stat,
           alpha_range,
           NULL, # no stencil
@@ -282,5 +304,5 @@ pdr_summarize_rgba <- function(
     }
   }
 
-  pdr_tibble
+  .data
 }

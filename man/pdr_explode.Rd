@@ -4,57 +4,58 @@
 \alias{pdr_explode}
 \title{Explode pain drawings into multiple drawings by stroke}
 \usage{
-pdr_explode(pdr)
+pdr_explode(pdr_list)
 }
 \arguments{
-\item{pd}{A valid pain drawing data structure (see \code{\link[=pdr_check_data]{pdr_check_data()}}).}
+\item{pdr_list}{A pdr_list (see \code{\link[=pdr_match]{pdr_match()}}), e.g. the \code{pdr_data}
+column of a pdr_tibble.}
 }
 \value{
-A list representing a valid pain drawing data structure where each element
-corresponds to a pain drawing with a single stroke from the input.
+A pdr_list where each element is a pdr_drawing containing a single stroke
+from the input.
 }
 \description{
-Expodes each pain drawing into multiple drawings such that each stroke
-(as defined by the \code{.strokes} and \code{.points} list-columns in input data)
-becomes a new separate pain drawing.
+Explodes each pdr_drawing into multiple pdr_drawings such that each stroke
+(as defined by the \code{.strokes} and \code{.points} elements of the drawing)
+becomes a new separate pdr_drawing.
 }
 \details{
 \strong{NOTE} The output of this function is (likely) not of same length as input.
 
-For each input element (pain drawing):
+For each input pdr_drawing:
 \itemize{
-\item Each stroke in the \code{.strokes} column becomes a new pain drawing element
-\item The matching coordinates in the \code{.points} column are retained
-\item The .id column is modified -- see below.
+\item Each row in \code{.strokes} becomes a new pdr_drawing
+\item The matching rows (same \code{.index}) of \code{.points} are retained
+\item The \code{.id} element is modified -- see below.
 }
 
-The output preserves the structure of a valid pain drawing data structure
-(see \code{\link[=pdr_check_data]{pdr_check_data()}}), but with a different number of pain
-drawings. The function is thus not suited for \code{mutate()} and similar functions
-which expect the same length of input and output.
+The output is a pdr_list (see \code{\link[=pdr_match]{pdr_match()}}) with a different number of
+pdr_drawings than the input. The function is thus not suited for \code{mutate()}
+and similar functions which expect the same length of input and output.
 
 \strong{Creation of id string}
 
-To ensure unique id strings for all observations, the \code{.id} element of
-each pain drawing in the result is prepended by the list index value of
-the input pain drawing data and appended by the stroke index.
+To ensure unique id strings for all pdr_drawings, the new \code{.id} has the
+format \verb{<index>_<id>_<stroke>}, where \verb{<index>} is the position of the
+input pdr_drawing in \code{pdr_list}, \verb{<id>} is its original \code{.id}, and
+\verb{<stroke>} is the stroke's \code{.index}. E.g. \code{"2_abc_3"}.
 
 \strong{Handling of missing or empty data}
-\itemize{
-\item If \code{.strokes} or \code{.points} is \code{NA} or empty, the corresponding output
-pain drawings rows will contain \code{NA} in those columns
-}
+
+A pdr_drawing without strokes (\code{.strokes} is \code{NA}, \code{NULL} or has no rows)
+contributes no pdr_drawings to the result.
 }
 \examples{
-# Explode strokes into separate rows
-pdr_exploded <- pdr_explode(pdr_demo_data)
+# Explode a pdr_list into one pdr_drawing per stroke
+pdr_exploded <- pdr_explode(pdr_example_data$pdr_data[1:3])
 
-# Inspect how many strokes per original drawing
-pdr_demo_data |>
-  dplyr::count(id)
-pdr_exploded |>
-  dplyr::count(id)
+# Number of strokes per original drawing vs. number of exploded drawings
+sapply(pdr_example_data$pdr_data[1:3], \(d) nrow(d$.strokes))
+length(pdr_exploded)
 
-# Each row now contains exactly one stroke
-pdr_exploded$p[[1]]
+# The new ids have the format <index>_<id>_<stroke>
+pdr_get_info(pdr_exploded, ".id")[1:5]
+
+# Each pdr_drawing now contains exactly one stroke
+nrow(pdr_exploded[[1]]$.strokes)
 }

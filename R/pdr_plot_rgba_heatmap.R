@@ -1,21 +1,19 @@
 #' Plot a pain heatmap from rendered RGBA rasters
 #'
 #' Creates faceted heatmaps showing how pain location patterns vary across one
-#' or two stratification variables. Unlike [pdr_plot_heatmap()], which bins the
-#' raw stroke and spray coordinates, this function works on the rendered
-#' `.rgba` rasters added by [pdr_add_rgba()]. Each drawing is reduced to its
+#' or two stratification variables. The function works on the rendered `.rgba`
+#' rasters added by [pdr_add_rgba()]. Each drawing is reduced to its
 #' alpha channel, drawings are summed pixel-wise within each group, and the sum
 #' is divided by the number of drawings in the group. Because every group is
 #' expressed relative to its own size, groups of very different sizes can be
 #' compared directly and no balancing/downsampling is needed.
 #'
-#' @param .data A tibble with a list-column of pain drawing data, as produced
-#'   by [pdr_import_json()], where each drawing contains an `.rgba` element
-#'   (see [pdr_add_rgba()]). All drawings must share the same canvas
-#'   dimensions (`.width` and `.height`). Any additional columns (e.g.
-#'   grouping variables) are preserved and available via `variables`.
-#' @param paindrawr_data The name of the list-column in `.data` that contains
-#'   the pain drawing data. Defaults to `pdr_data`.
+#' @inheritParams pdr_plot_rgba
+#' @param .data A pdr_tibble (see [pdr_match()]) where each pdr_drawing
+#'   contains an `.rgba` element (see [pdr_add_rgba()]). All drawings must
+#'   share the same canvas dimensions (`.width` and `.height`). Any additional
+#'   columns (e.g. grouping variables such as `sex` or `age`) are preserved
+#'   and available via `variables`.
 #' @param variables Character vector of length 1 or 2 specifying the grouping
 #'   variable names present in `.data`. Numeric variables are binned into
 #'   quantile groups; categorical variables use their existing levels. Use `NA`
@@ -25,7 +23,7 @@
 #'   to create. A single value is recycled across `variables`; supply a vector
 #'   of length 2 for different bin counts. Ignored for factor or character
 #'   variables. Default is `2`.
-#' @param method Character. How each drawing's alpha channel contributes to
+#' @param value Character. How each drawing's alpha channel contributes to
 #'   the heatmap:
 #'   * `"binary"` (default) — every pixel with alpha above `alpha_threshold`
 #'     counts as 1. The heatmap shows the share of participants who marked
@@ -35,8 +33,6 @@
 #'     group. Drawings that did not mark a pixel count as 0, so the value
 #'     reflects both how many participants marked the pixel and how densely
 #'     they drew there.
-#'
-#'   `"intensity"` is a deprecated alias for `"mean"`.
 #' @param alpha_threshold Numeric in `[0, 1)`. Pixels with alpha less than or
 #'   equal to this value are set to 0 before summing. The default `0.05`
 #'   removes most of the anti-aliased fringe around strokes (pixels only
@@ -45,8 +41,7 @@
 #'   if the threshold is above half of the lowest stroke `.alpha` in the
 #'   data, as real strokes may then be removed.
 #' @param background_image Optional background image displayed behind the
-#'   heatmap. Either a file path to a PNG file or a numeric array as returned
-#'   by [png::readPNG()]. Defaults to `NULL` (no background).
+#'   heatmap. See [pdr_plot_rgba()]. Defaults to `NULL` (no background).
 #' @param alpha_scale Numeric vector of length 2 giving the opacity range
 #'   `c(min, max)`. Cells with value 0 get `min` and cells at the scale
 #'   maximum get `max`; `alpha_curve` controls the shape in between. Pass two
@@ -77,27 +72,33 @@
 #'     not comparable in absolute terms.
 #'   * A single numeric value — sets a fixed upper limit for the scale; values
 #'     above it are shown in the top colour.
-#' @param label_format Character. Format for quantile group labels: `"pct"`
-#'   (default), `"num"`, or `"both"`. See [pdr_plot_heatmap()].
+#' @param label_format Character. Format for the labels of numeric
+#'   (quantile-binned) groups:
+#'   * `"pct"` (default) — the quantile range as percentages, e.g.
+#'     `"< 50%"` and `"≥ 50%"`.
+#'   * `"num"` — the observed range of the variable's values in each group.
+#'   * `"both"` — both of the above, shown in the strip as markdown.
+#'
+#'   Ignored for factor or character variables.
 #' @param show_n Logical. If `TRUE`, displays the number of drawings in each
 #'   facet. Default is `FALSE`.
 #' @param strips_in_markdown Logical. If `TRUE` (default), renders strip text
 #'   using [ggtext::element_markdown()].
 #'
-#' @return A [ggplot2::ggplot()] object with the faceted heatmap. The first
+#' @returns A [ggplot2::ggplot()] object with the faceted heatmap. The first
 #'   variable in `variables` maps to the column facet; the second to the row
 #'   facet.
 #'
 #' @details
 #' The function processes data in the following steps:
 #' \enumerate{
-#'   \item Validates inputs and unpacks the `paindrawr_data` list-column.
+#'   \item Validates inputs and unpacks the `pdr_col` list-column.
 #'   \item Checks that `.rgba` exists and drops drawings whose `.rgba` is
 #'     `NULL` or `NA`. Drawings with an all-zero `.rgba` (nothing drawn) are
 #'     kept and count towards the group size.
 #'   \item Creates stratification groups (quantile bins or factor levels).
 #'   \item Reduces each `.rgba` to its alpha channel, applies
-#'     `alpha_threshold`, and binarises it if `method = "binary"`.
+#'     `alpha_threshold`, and binarises it if `value = "binary"`.
 #'   \item Sums the alpha matrices within each group and divides by the
 #'     number of drawings in the group, giving the share of participants
 #'     (`"binary"`) or the mean alpha (`"mean"`) per pixel.
@@ -118,23 +119,24 @@
 #' The heatmap inherits the rendering choices made in [pdr_add_rgba()]
 #' (e.g. `polygon` mode and stroke widths).
 #'
-#' With `method = "mean"`, note that alpha is not additive: where strokes
+#' With `value = "mean"`, note that alpha is not additive: where strokes
 #' overlap, alpha builds up roughly as `1 - (1 - a)^k` for `k` strokes of
 #' alpha `a`. The mean alpha is therefore a measure of drawing density, not
 #' a count of strokes.
 #'
 #' @examples
-#' \dontrun{
-#' pd |>
+#' \donttest{
+#' pdr_example_data |>
 #'   dplyr::mutate(pdr_data = pdr_add_rgba(pdr_data)) |>
-#'   pdr_plot_rgba_heatmap(variables = c("age_group", "sex"))
+#'   pdr_plot_rgba_heatmap(variables = c("sex", "duration"))
 #'
-#' # Weight pixels by drawing density
-#' pd |>
+#' # Weight pixels by drawing density, stratified by quantiles of age
+#' pdr_example_data |>
+#'   dplyr::mutate(pdr_data = pdr_add_rgba(pdr_data)) |>
 #'   pdr_plot_rgba_heatmap(
-#'     variables = "pain_intensity",
-#'     method = "mean",
-#'     background_image = "inst/background.png"
+#'     variables = "age",
+#'     value = "mean",
+#'     background_image = pdr_example_file("bg_full_body.png")
 #'   )
 #' }
 #'
@@ -153,10 +155,10 @@
 #' @export
 pdr_plot_rgba_heatmap <- function(
   .data,
-  paindrawr_data = pdr_data,
+  pdr_col = pdr_data,
   variables = c(NA, NA),
   n_groups = 2,
-  method = "binary",
+  value = "binary",
   alpha_threshold = 0.05,
   background_image = NULL,
   alpha_scale = c(0, 1),
@@ -171,7 +173,7 @@ pdr_plot_rgba_heatmap <- function(
   # ============================================================================
   cli::cli_inform("Validating inputs...")
 
-  method <- rlang::arg_match(method, c("binary", "mean"))
+  value <- rlang::arg_match(value, c("binary", "mean"))
   label_format <- rlang::arg_match(label_format, c("pct", "num", "both"))
 
   # Test alpha_threshold
@@ -231,7 +233,7 @@ pdr_plot_rgba_heatmap <- function(
 
   # Unnest list: one row per drawing, with .rgba, .width, .height, .strokes
   # etc. as columns next to the user's grouping variables
-  .data <- .data |> tidyr::unnest_wider({{ paindrawr_data }})
+  .data <- .data |> tidyr::unnest_wider({{ pdr_col }})
 
   # ============================================================================
   # STEP 2: Check .rgba and drop drawings without one
@@ -345,7 +347,7 @@ pdr_plot_rgba_heatmap <- function(
       n_group = dplyr::n(),
       alpha_sum = list(
         Reduce(
-          \(acc, rgba) acc + rgba_to_alpha(rgba, method, alpha_threshold),
+          \(acc, rgba) acc + rgba_to_alpha(rgba, value, alpha_threshold),
           .rgba,
           matrix(0, nrow = image_height, ncol = image_width)
         )
@@ -394,14 +396,14 @@ pdr_plot_rgba_heatmap <- function(
 
   legend_title <- if (identical(color_scale, "facet")) {
     "Relative to facet maximum"
-  } else if (method == "binary") {
+  } else if (value == "binary") {
     "Share of participants"
   } else {
     "Mean intensity"
   }
 
   # Percent only makes sense for shares; mean alpha is shown as a number
-  fill_labels <- if (method == "binary" || identical(color_scale, "facet")) {
+  fill_labels <- if (value == "binary" || identical(color_scale, "facet")) {
     scales::percent
   } else {
     scales::label_number(accuracy = 0.01)
@@ -438,16 +440,16 @@ pdr_plot_rgba_heatmap <- function(
 #' Reduce an RGBA array to a thresholded alpha matrix
 #'
 #' @param rgba Numeric array, height x width x 4.
-#' @param method "binary" (pixels above threshold become 1) or "mean"
+#' @param value "binary" (pixels above threshold become 1) or "mean"
 #'   (pixels above threshold keep their alpha).
 #' @param alpha_threshold Pixels with alpha <= this value become 0.
 #' @return Numeric matrix, height x width.
 #' @noRd
-rgba_to_alpha <- function(rgba, method, alpha_threshold) {
+rgba_to_alpha <- function(rgba, value, alpha_threshold) {
   alpha <- rgba[,, 4]
   alpha[is.na(alpha)] <- 0
   alpha[alpha <= alpha_threshold] <- 0
-  if (method == "binary") {
+  if (value == "binary") {
     alpha <- (alpha > 0) * 1
   }
   alpha
@@ -458,7 +460,7 @@ rgba_to_alpha <- function(rgba, method, alpha_threshold) {
 #'
 #' Matrix row 1 is the top of the image, while ggplot's y axis points up, so
 #' rows are flipped. Cell centres are placed at half-pixel offsets so the
-#' raster spans exactly [0, width] x [0, height], matching the background.
+#' raster spans exactly `[0, width] x [0, height]`, matching the background.
 #' Zero cells are set to NA so they are drawn transparent.
 #'
 #' @param m Numeric matrix.

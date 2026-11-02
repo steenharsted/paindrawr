@@ -1,50 +1,63 @@
-#' Convert MIRD pain drawings to pdr_tibble 
-#' 
+#' Convert MIRD pain drawings to a pdr_list
+#'
 #' MIRD exports pain drawings in a custom format like:
-#' (,1,2,5,4,),(,8,8,7,7,)
+#' `(,1,2,5,4,),(,8,8,7,7,)`
 #' which corresponds to:
-#'  x | y | index
-#' ---|---|-------
-#'  1 | 2 | 1
-#'  5 | 4 | 1
-#'  8 | 8 | 2
-#'  7 | 7 | 2
-#' 
-#' This functions takes a vector of length n of such MIRD
-#' strings and converts it into a list of length n of valid
-#' paindrawr data list col.
-#' 
-#' The intended use case, is a data frame (tibble) of MIRD
-#' data including pain drawing data. A new paindrawr data
-#' list cloumn can be generate with a simple mutate() call.
 #'
-#' Each of the parameters supplied must be either of the 
-#' same length as MIRD pain drawing vector or of length 1,
-#' in which case it will be repeated.
-#' 
-#' @param mird_pd A vector of MIRD pain drawings 
-#' @param id A unique id for each drawing (default: 1:length(mird_pd)) 
-#' @param file Defaults to ""
-#' @param version Defaults to ""
-#' @param width of canvas -- Defaults to 450
-#' @param height of canvas -- Defaults to 500
-#' @param units Defaults to "px"
-#' @param timestamp Defaults to ""
-#' @param app Defaults to ""
-#' @param tool Defaults to "pen"
-#' @param draw_input_type Defaults to "mouse"
-#' @param tool_width Defaults to "1"
-#' @param point_density Defaults to "1"
-#' @param spray_radius Defaults to "1"
-#' @param alpha Defaults to "1.0"
-#' @param color Defaults to "#ff0000"
+#' | x | y | index |
+#' |---|---|-------|
+#' | 1 | 2 | 1 |
+#' | 5 | 4 | 1 |
+#' | 8 | 8 | 2 |
+#' | 7 | 7 | 2 |
 #'
-#' @returns A valid pain drawing data list column
+#' This function takes a vector of length n of such MIRD strings and converts
+#' it into a pdr_list of length n (see [pdr_match()] for the terminology).
+#' Strings that are `NA` or too short to hold a point give a pdr_drawing
+#' without points and strokes.
+#'
+#' The intended use case is a data frame (tibble) of MIRD data including pain
+#' drawing data. A new pdr_list column can be generated with a simple
+#' `dplyr::mutate()` call.
+#'
+#' Each of the parameters supplied (except `mird_pd`) must be either of the
+#' same length as `mird_pd` or of length 1, in which case it is repeated.
+#'
+#' @param mird_pd A character vector of MIRD pain drawings.
+#' @param id A unique id for each drawing (default: `1:length(mird_pd)`).
+#' @param file File name (default `""`).
+#' @param version Version (default `""`).
+#' @param width Canvas width, integer (default `450L`).
+#' @param height Canvas height, integer (default `500L`).
+#' @param units Units (default `"px"`).
+#' @param timestamp Timestamp (default `""`).
+#' @param app App name (default `""`).
+#' @param tool Drawing tool (default `"pen"`).
+#' @param draw_input_type Input type (default `"mouse"`).
+#' @param tool_width Tool width, integer (default `1L`).
+#' @param point_density Point density, integer (default `1L`).
+#' @param spray_radius Spray radius, integer (default `1L`).
+#' @param alpha Alpha, numeric (default `1.0`).
+#' @param color Stroke colour (default `"#ff0000"`).
+#' @param flipy Logical (default `TRUE`). If `TRUE`, the y-axis is flipped
+#'   (via [pdr_modify_points()] with `op = "flipy"`), because MIRD has its
+#'   origin in the upper left corner whereas paindrawr uses the lower left.
+#'
+#' @returns A pdr_list (see [pdr_match()]) of length `length(mird_pd)`.
 #'
 #' @export
 #' @examples
-#' readr::read_csv("data-raw/short_demo_data_with_NA.csv") |> mutate(pdr_data = pdr_mird2pdr(paindrawing_LBP, id=id))
-#' 
+#' mird <- c(
+#'   "(,460,709,463,709,464,719,448,720,449,712,)",
+#'   "(,393,682,430,672,429,682,)",
+#'   NA
+#' )
+#' pdr_list <- pdr_mird2pdr(mird, id = c("a", "b", "c"))
+#' pdr_list[[1]]$.points
+#'
+#' # Typical use: create a pdr_list column in a tibble
+#' tibble::tibble(id = c("a", "b", "c"), mird = mird) |>
+#'   dplyr::mutate(pdr_data = pdr_mird2pdr(mird, id = id))
 pdr_mird2pdr <- function(
   mird_pd,
   id = 1:length(mird_pd),
@@ -249,7 +262,7 @@ pdr_mird2pdr <- function(
     })
   
   if(flipy) {
-    pdr_list <- pdr_list |> pdr_modify_points(ops="flipy")
+    pdr_list <- pdr_list |> pdr_modify_points(op="flipy")
   }
   
   # Return this

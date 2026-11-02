@@ -2,10 +2,76 @@
 % Please edit documentation in R/pdr_modify_rgba.R
 \name{pdr_modify_rgba}
 \alias{pdr_modify_rgba}
-\title{Modify rgba data stored in the pain drawing list column}
+\title{Modify the rgba data of pain drawings}
 \usage{
 pdr_modify_rgba(pdr_list, op = "", stencil = NULL, threshold = 0.5)
 }
+\arguments{
+\item{pdr_list}{A pdr_list (see \code{\link[=pdr_match]{pdr_match()}}) whose pdr_drawings contain
+\code{.rgba}, e.g. the \code{pdr_data} column of a pdr_tibble.}
+
+\item{op}{A string specifying the operation. There is no default (the
+default \code{""} raises an error); one of:
+\itemize{
+\item \code{"apply_stencil"} — multiplies the alpha channel (4th layer) of
+\code{.rgba} by \code{stencil}, so that pixels outside the stencil become fully
+transparent. Requires \code{stencil}.
+\item \code{"multiply"} — multiplies the whole \code{.rgba} array by \code{stencil}.
+Requires \code{stencil}.
+\item \code{"addition"} — adds \code{stencil} to the whole \code{.rgba} array. Requires
+\code{stencil}.
+\item \code{"low_trim"} — sets all \code{.rgba} values below \code{threshold} to 0.
+\item \code{"high_trim"} — sets all \code{.rgba} values above \code{threshold} to 1.
+}}
+
+\item{stencil}{The stencil(s) used by the ops \code{"apply_stencil"},
+\code{"multiply"} and \code{"addition"}; otherwise ignored. Either
+\itemize{
+\item a single matrix,
+\item a list of matrices, or
+\item a pdr_list in which every pdr_drawing has a \code{.stencil} element (see
+\code{\link[=pdr_add_stencil]{pdr_add_stencil()}}), e.g. \code{pdr_stencil_full_body$pdr_data}.
+}
+
+The length must be 1 (the stencil is used for every drawing) or equal to
+the length of \code{pdr_list} (stencils are paired with drawings by position).
+The height and width of each stencil must match the \code{.rgba} of the
+drawing it is paired with. Default is \code{NULL}.}
+
+\item{threshold}{A number between 0 and 1 used by \code{"low_trim"} and
+\code{"high_trim"}; otherwise ignored. Default is \code{0.5}.}
+}
+\value{
+A pdr_list of the same length as \code{pdr_list}, with modified \code{.rgba}
+elements.
+}
 \description{
-Modify rgba data stored in the pain drawing list column
+Modifies the \code{.rgba} array of each pdr_drawing in a pdr_list, e.g. to apply
+a stencil that restricts a drawing to an anatomical region, or to trim
+low/high alpha values. It returns a pdr_list of the same length and is thus
+suited for use inside \code{mutate()}. The drawings must already have an \code{.rgba}
+element (see \code{\link[=pdr_add_rgba]{pdr_add_rgba()}}). See \code{\link[=pdr_match]{pdr_match()}} for the definitions of
+pdr_list and pdr_drawing.
+}
+\examples{
+# Keep only the pain drawn within the first region of the full body stencils
+pdr_example_data[1:2, ] |>
+  dplyr::mutate(
+    pdr_data = pdr_add_rgba(pdr_data) |>
+      pdr_modify_rgba(
+        op = "apply_stencil",
+        stencil = pdr_stencil_full_body$pdr_data[1]
+      )
+  ) |>
+  pdr_plot_rgba()
+
+# Remove faint (low alpha) pixels
+pdr_example_data[1:2, ] |>
+  dplyr::mutate(
+    pdr_data = pdr_add_rgba(pdr_data) |>
+      pdr_modify_rgba(op = "low_trim", threshold = 0.3)
+  )
+}
+\seealso{
+\code{\link[=pdr_add_stencil]{pdr_add_stencil()}}, \code{\link[=pdr_add_rgba]{pdr_add_rgba()}}, \code{\link[=pdr_plot_stencil]{pdr_plot_stencil()}}
 }

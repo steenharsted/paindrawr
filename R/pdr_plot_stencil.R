@@ -1,35 +1,46 @@
 #' Plot stencil data
 #'
-#' The function is primarily for testing purposes -- it 
-#' plots the .stencil matrix data (or .stencil_inv for the 
-#' inverted stencil).
-#' 
-#' It functions basically as a wrapper for the 
-#' `pdr_plot_rgba()` function.
+#' Plots the `.stencil` matrix of each drawing (or `.stencil_inverted` for the
+#' inverted stencil) as a red mask. The function is primarily for checking
+#' stencils created with [pdr_add_stencil()].
 #'
-#' @param .data A data frame with a pdr_list column (see
-#'   `paindrawr_data`) whose elements contains `.stencil` 
-#'   and `.stencil_inv` data. These are added by the 
-#'   [pdr_add_stencil()] function.
-#' @param paindrawr_data The pdr_list column in `.data` 
-#'   which hold the pain drawing data. 
-#'   Defaults to `pdr_data`.
-#' @param background_image Optional background drawn beneath 
-#'   each raster. Either a path to a PNG file (character 
-#'   string ending in `.png`) or a numeric raster array as 
-#'   returned by [png::readPNG()]. If `NULL` (default), no
-#'   background is drawn.
-#' @param ncol,nrow Number of columns and rows in the plot grid. If both are
-#'   `NULL` (default), [gridExtra::grid.arrange()] chooses the layout.
-#' @param invert If TRUE, the inverted stencil is plotted.
+#' It is a wrapper for [pdr_plot_rgba()]: the `.rgba` of each drawing is
+#' replaced by a red raster whose alpha channel is the stencil, and the result
+#' is passed on to [pdr_plot_rgba()]. The drawings must therefore already have
+#' an `.rgba` element (see [pdr_add_rgba()]).
 #'
-#' @returns A ggplot of the .stencil 
+#' @inheritParams pdr_plot_rgba
+#' @param .data A pdr_tibble (see [pdr_match()]) whose pdr_drawings contain
+#'   `.rgba`, `.stencil` and `.stencil_inverted` elements. The stencil
+#'   elements are added by [pdr_add_stencil()].
+#' @param ncol,nrow Number of columns and rows in the plot grid, passed to
+#'   [ggplot2::facet_wrap()] via [pdr_plot_rgba()]. If both are `NULL`
+#'   (default), `facet_wrap()` chooses the layout.
+#' @param invert Logical. If `TRUE`, the inverted stencil
+#'   (`.stencil_inverted`) is plotted instead of `.stencil`. Default is
+#'   `FALSE`.
+#'
+#' @returns A [ggplot2::ggplot()] object with one facet per drawing, showing
+#'   the stencil.
+#'
+#' @seealso [pdr_add_stencil()], [pdr_plot_rgba()]
 #'
 #' @export
-#' @examples#'
-#' pdr_example_anatomy[1,] |> pdr_plot_stencil(pdr_data, invert=TRUE)
-#' 
-pdr_plot_stencil <- function(.data, pdr_list, background_image=NULL, ncol = NULL, nrow = NULL, invert=FALSE) {
+#' @examples
+#' \dontrun{
+#' # TODO: change to \donttest{} (or plain) once pdr_plot_stencil() passes
+#' # background_image/ncol/nrow by name to pdr_plot_rgba()
+#' pdr_stencil_full_body[1:2, ] |>
+#'   pdr_plot_stencil(pdr_data)
+#'
+#' pdr_stencil_full_body[1:2, ] |>
+#'   pdr_plot_stencil(
+#'     pdr_data,
+#'     background_image = pdr_example_file("bg_full_body.png"),
+#'     invert = TRUE
+#'   )
+#' }
+pdr_plot_stencil <- function(.data, pdr_col = pdr_data, background_image=NULL, ncol = NULL, nrow = NULL, invert=FALSE) {
 
   if(!pdr_match(.data, as="pdr_tibble")) { stop("Invalid '.data' parameter - should be pdr_tibble.")}
 
@@ -61,7 +72,7 @@ pdr_plot_stencil <- function(.data, pdr_list, background_image=NULL, ncol = NULL
   # full red, but the alpha channel is the stencil matrix
   # (or the inverted stencil) .. and plot as pdr_plot_rgba
   .data |>
-    mutate( {{pdr_list}} := {{pdr_list}} |>
+    mutate( {{pdr_col}} := {{pdr_col}} |>
       purrr::map(\(pdr_drawing) {
         pdr_drawing$.rgba[,,1] <- 1
         pdr_drawing$.rgba[,,2] <- 0
@@ -72,7 +83,7 @@ pdr_plot_stencil <- function(.data, pdr_list, background_image=NULL, ncol = NULL
           pdr_drawing$.rgba[,,4] <- pdr_drawing$.stencil
         }
         pdr_drawing
-      })) |> pdr_plot_rgba({{pdr_list}}, background_image, ncol, nrow)
+      })) |> pdr_plot_rgba({{pdr_col}}, background_image, ncol, nrow)
 
 
 }

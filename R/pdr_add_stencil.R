@@ -17,31 +17,41 @@
 #' The 'threshold' parameter determines the threshold at 
 #' which a pixel's value is dichotomized to 0 or 1 (FALSE or 
 #' TRUE) as per the 'by' parameter. E.g. a pixel with alpha 
-#' value 0.4 will evaluate to 0 by '>' a 'threshold' of 0.5
+#' value 0.4 will evaluate to 0 by '>' a 'threshold' of 0.5.
+#' With the defaults (`threshold = 1`, `by = "<"`, `channel = "A"`)
+#' a pixel is set to 1 when its alpha is below 1, i.e. when it is
+#' not fully opaque. For a drawing rendered with `pdr_add_rgba()`,
+#' this is the transparent (undrawn) area, while fully opaque
+#' (drawn) pixels become 0. The inverse is stored in `.stencil_inverted`.
 #' 
 #' The 'channel' parameter determines which of the R, G, B and 
 #' A channels should be evaluated in reference to the 
 #' threshold. E.g. 'RGBA' evaluates all of the channels by 
 #' 'OR', and 'A' evaluates only the alpha channel.
 #'
-#' @param pdr_list A valid pdr_list -- see `pdr_match()`
+#' @param pdr_list A pdr_list in which every pdr_drawing has an `.rgba`
+#' element (see [pdr_add_rgba()] and [pdr_match()]).
 #' @param threshold A threshold value which determines a 
 #' pixel as being 0 or 1
 #' @param channel A string specifying which channels of the 
 #' RGBA matrix to compare to the threshold. 
 #' @param by Either '<' or '>'
 #'
-#' @returns A pdr_list with added .stencil element which is 
-#' a matrix of dimensions width x height y with values 0 or 1
+#' @returns A pdr_list (see [pdr_match()]) where each pdr_drawing has two
+#' added elements: `.stencil`, a numeric matrix of dimensions
+#' height x width with values 0 or 1, and `.stencil_inverted`, the same
+#' matrix with 0 and 1 swapped.
+#' @seealso [pdr_modify_rgba()], [pdr_plot_stencil()]
 #'
 #' @export
 #' @examples
-#' pdr_example_data[1:3,] |> 
-#'   mutate(pdr_data = pdr_add_rgba(pdr_data, polygon = "both")) |>
-#'   mutate(pdr_data = pdr_add_stencil(pdr_data, threshold = 0.5, channel="A", by="<"))
-#' 
+#' \donttest{
+#' pdr_example_data[1:3, ] |>
+#'   dplyr::mutate(pdr_data = pdr_add_rgba(pdr_data, polygon = "both")) |>
+#'   dplyr::mutate(pdr_data = pdr_add_stencil(pdr_data, threshold = 0.5, channel = "A", by = "<"))
+#' }
 pdr_add_stencil <- function(pdr_list, threshold=1, channel="A", by = "<") {
-  # NOTE. This function is channeld on any one of the
+  # NOTE. This function is based on any one of the
   # R, G, B or A levels/channels of the .rgba array being 
   # smaller than the threshold value (i.e darker) ... if 
   # that is the case for a given pixel, it is represented as

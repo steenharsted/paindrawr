@@ -1,11 +1,63 @@
-#' Modify rgba data stored in the pain drawing list column
-#' 
-#' @param pdr_list
+#' Modify the rgba data of pain drawings
 #'
-#' @returns
+#' Modifies the `.rgba` array of each pdr_drawing in a pdr_list, e.g. to apply
+#' a stencil that restricts a drawing to an anatomical region, or to trim
+#' low/high alpha values. It returns a pdr_list of the same length and is thus
+#' suited for use inside `mutate()`. The drawings must already have an `.rgba`
+#' element (see [pdr_add_rgba()]). See [pdr_match()] for the definitions of
+#' pdr_list and pdr_drawing.
+#'
+#' @param pdr_list A pdr_list (see [pdr_match()]) whose pdr_drawings contain
+#'   `.rgba`, e.g. the `pdr_data` column of a pdr_tibble.
+#' @param op A string specifying the operation. There is no default (the
+#'   default `""` raises an error); one of:
+#'   * `"apply_stencil"` — multiplies the alpha channel (4th layer) of
+#'     `.rgba` by `stencil`, so that pixels outside the stencil become fully
+#'     transparent. Requires `stencil`.
+#'   * `"multiply"` — multiplies the whole `.rgba` array by `stencil`.
+#'     Requires `stencil`.
+#'   * `"addition"` — adds `stencil` to the whole `.rgba` array. Requires
+#'     `stencil`.
+#'   * `"low_trim"` — sets all `.rgba` values below `threshold` to 0.
+#'   * `"high_trim"` — sets all `.rgba` values above `threshold` to 1.
+#' @param stencil The stencil(s) used by the ops `"apply_stencil"`,
+#'   `"multiply"` and `"addition"`; otherwise ignored. Either
+#'   * a single matrix,
+#'   * a list of matrices, or
+#'   * a pdr_list in which every pdr_drawing has a `.stencil` element (see
+#'     [pdr_add_stencil()]), e.g. `pdr_stencil_full_body$pdr_data`.
+#'
+#'   The length must be 1 (the stencil is used for every drawing) or equal to
+#'   the length of `pdr_list` (stencils are paired with drawings by position).
+#'   The height and width of each stencil must match the `.rgba` of the
+#'   drawing it is paired with. Default is `NULL`.
+#' @param threshold A number between 0 and 1 used by `"low_trim"` and
+#'   `"high_trim"`; otherwise ignored. Default is `0.5`.
+#'
+#' @returns A pdr_list of the same length as `pdr_list`, with modified `.rgba`
+#'   elements.
+#'
+#' @seealso [pdr_add_stencil()], [pdr_add_rgba()], [pdr_plot_stencil()]
 #'
 #' @export
 #' @examples
+#' # Keep only the pain drawn within the first region of the full body stencils
+#' pdr_example_data[1:2, ] |>
+#'   dplyr::mutate(
+#'     pdr_data = pdr_add_rgba(pdr_data) |>
+#'       pdr_modify_rgba(
+#'         op = "apply_stencil",
+#'         stencil = pdr_stencil_full_body$pdr_data[1]
+#'       )
+#'   ) |>
+#'   pdr_plot_rgba()
+#'
+#' # Remove faint (low alpha) pixels
+#' pdr_example_data[1:2, ] |>
+#'   dplyr::mutate(
+#'     pdr_data = pdr_add_rgba(pdr_data) |>
+#'       pdr_modify_rgba(op = "low_trim", threshold = 0.3)
+#'   )
 pdr_modify_rgba <- function(pdr_list, op="", stencil=NULL, threshold = 0.5) {
   # Sanity checks -- see stop message for explanation
   if(!op %in% c("multiply", "addition", "apply_stencil", "low_trim","high_trim")) { stop("Parameter 'op' has invalid value.")}

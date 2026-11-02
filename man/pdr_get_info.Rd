@@ -7,27 +7,39 @@
 pdr_get_info(pdr_list, id1 = ".id", id2 = NULL)
 }
 \arguments{
-\item{pdr_list}{A valid pain drawing list-column -- see pdr_match for details.}
+\item{pdr_list}{A pdr_list (see \code{\link[=pdr_match]{pdr_match()}}), e.g. the \code{pdr_data}
+column of a pdr_tibble.}
 
-\item{id1}{A string specifying which element of pdr_list to get}
+\item{id1}{A string specifying which element of each pdr_drawing to get.
+Default \code{".id"}.}
 
-\item{id2}{A string specifying which element of id1 to get, assuming id1 is a tibble or list element of pdr_list}
+\item{id2}{Optional string naming a column within \code{id1} (when \code{id1} is a
+tibble such as \code{.points} or \code{.strokes}) to extract.}
 }
 \value{
-If vector of same length as pdr_list consisting of the specified elements
+If \code{id2} is \code{NULL} and \code{id1} is one of \code{.points}, \code{.strokes}, \code{.polygons},
+\code{.rgba} or \code{.stencil}: a list of the same length as \code{pdr_list}, with the
+element from each drawing. If \code{id2} is \code{NULL} and \code{id1} is any other
+element: a vector of the same length as \code{pdr_list}.
+If \code{id2} is given: the column \code{id2} of \code{id1} for each drawing, as a list
+with one element per drawing (simplified to a vector only if every drawing
+contributes exactly one value).
 }
 \description{
-Extracts metadata or variables from a pain drawing (\code{data_col}) list-column.
-Simple elements (such as \code{".id"} or \code{".timestamp"}) are returned as a vector,
-whereas columns within the nested \code{.strokes} or \code{.points} tibbles are
-returned as a list with one element per pain drawing.
+Extracts metadata or variables from a pdr_list (see \code{\link[=pdr_match]{pdr_match()}}), e.g.
+the list-column \code{pdr_data}. Simple elements (such as \code{".id"} or
+\code{".timestamp"}) are returned as a vector, whereas the nested elements
+\code{.points}, \code{.strokes}, \code{.polygons}, \code{.rgba} and \code{.stencil} are returned as
+a list with one element per pdr_drawing.
 }
 \examples{
-# Extract ids
-pdr_example_data |> mutate(id = pdr_get_info(pdr_data, ".id"))
+# Extract ids (a vector)
+pdr_example_data |>
+  dplyr::mutate(id = pdr_get_info(pdr_data, ".id"))
 
-# Extract x coordinates from the .points tibble
-pdr_example_data |> mutate(x_coord = pdr_get_info(pdr_data, ".strokes", ".x"))
+# Extract the .x coordinates from the .points tibbles (a list)
+pdr_example_data |>
+  dplyr::mutate(x_coord = pdr_get_info(pdr_data, ".points", ".x"))
 
 }
 \seealso{

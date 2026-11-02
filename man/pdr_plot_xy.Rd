@@ -6,55 +6,43 @@
 \usage{
 pdr_plot_xy(
   .data,
-  paindrawr_data = pdr_data,
+  pdr_col = pdr_data,
   background_image = NULL,
   include_id = FALSE,
   rasterize = TRUE,
   method = "memory",
   clean_up = TRUE,
   dpi = 96,
-  type = "path"
+  polygon = "none"
 )
 }
 \arguments{
-\item{.data}{A tibble with a single list-column of pain drawing data, as
-produced by \code{\link[=pdr_import_json]{pdr_import_json()}}. Each row holds a named list containing
-the drawing data for one recording. The name of that list-column is
-specified via \code{paindrawr_data}. All drawings must share the same canvas
-dimensions (\code{.width} and \code{.height}).}
+\item{.data}{A pdr_tibble (see \code{\link[=pdr_match]{pdr_match()}}) whose pdr_drawings contain an
+\code{.rgba} element. Add it first with \code{\link[=pdr_add_rgba]{pdr_add_rgba()}}.}
 
-\item{paindrawr_data}{The name of the list-column in \code{.data} that contains
-the pain drawing data. Defaults to \code{pdr_data}. The column is unpacked with
-\code{\link[tidyr:unnest_wider]{tidyr::unnest_wider()}} before processing; the resulting columns are
-expected to include \code{.id}, \code{.width}, \code{.height}, \code{.strokes}, \code{.points},
-\code{.tool}, \code{.tool_width}, \code{.color}, \code{.alpha}, \code{.spray_radius}, and
-\code{.point_density}.}
+\item{pdr_col}{The pdr_list column in \code{.data} holding the pain drawings
+(tidy-eval, unquoted). Defaults to \code{pdr_data}.}
 
-\item{background_image}{Optional background image displayed behind the
-strokes. Accepts either:
-\itemize{
-\item A file path to a PNG file (character string), or
-\item A numeric array as returned by \code{\link[png:readPNG]{png::readPNG()}}.
-}
+\item{background_image}{Optional background drawn beneath each drawing.
+Either a path to a PNG file (character string ending in \code{.png}) or a
+numeric raster array as returned by \code{\link[png:readPNG]{png::readPNG()}}. If \code{NULL}
+(default), no background is drawn. Use \code{\link[=pdr_example_file]{pdr_example_file()}} to get the
+path to a bundled background.}
 
-Defaults to \code{NULL} (no background).}
-
-\item{include_id}{Logical. If \code{TRUE}, the \code{.id} value is shown as a facet
-strip label above each panel. Default is \code{FALSE}.}
+\item{include_id}{Logical. If \code{TRUE}, the \code{.id} of each drawing is shown as
+a facet strip label above each panel. Default is \code{FALSE}.}
 
 \item{rasterize}{Logical. If \code{TRUE} (default), the plot is rasterized and
 returned as a new ggplot with \code{\link[ggplot2:annotation_raster]{ggplot2::annotation_raster()}}. The output
 is pixel-accurate with a locked aspect ratio. If \code{FALSE}, the raw ggplot
 with vector strokes is returned.}
 
-\item{method}{Character. Controls the rasterization back-end when
-\code{rasterize = TRUE}. Either:
+\item{method}{Character. Controls the rasterization back-end. Either:
 \itemize{
 \item \code{"memory"} (default) — renders in-memory via \code{\link[ragg:agg_capture]{ragg::agg_capture()}},
 no temp file is written to disk.
 \item \code{"file"} — saves to a temporary PNG via \code{\link[ggplot2:ggsave]{ggplot2::ggsave()}} and reads
-it back with \code{\link[png:readPNG]{png::readPNG()}}. Use this if the \code{"memory"} path produces
-unexpected rendering artefacts.
+it back with \code{\link[png:readPNG]{png::readPNG()}}. Use this if the \code{"memory"} path is slow.
 }}
 
 \item{clean_up}{Logical. If \code{TRUE} (default), the temporary PNG file is
@@ -67,10 +55,14 @@ this ensures a 1:1 pixel correspondence between the original drawing and
 the output. Increase for print-quality output (e.g. \code{300}), noting this
 does not affect the canvas dimensions, only output pixel density.}
 
-\item{type}{A string set to either \code{"path"} or \code{"polygon"}. The former
-(default) renders strokes as open paths. The latter renders strokes as
-closed polygons filled in black, which is useful for generating anatomy
-area templates.}
+\item{polygon}{Character. Controls whether strokes are rendered as filled
+polygons instead of their original appearance. One of:
+\itemize{
+\item \code{"none"} (default) — pen strokes as paths, spray strokes as points.
+\item \code{"pen"} — pen strokes as filled polygons.
+\item \code{"spray"} — spray strokes as filled polygons.
+\item \code{"both"} — both pen and spray strokes as filled polygons.
+}}
 }
 \value{
 A \code{\link[ggplot2:ggplot]{ggplot2::ggplot()}} object. When \code{rasterize = TRUE}, the plot
@@ -93,27 +85,33 @@ Missing drawings (\code{NA} or \code{NULL} entries in the list-column) are dropp
 with a warning; an error is raised only if no drawings remain.
 }
 \examples{
-\dontrun{
-pd <- pdr_import_json(c("data-raw/two_geoms.json", "data-raw/four_geoms.json"))
+bg <- pdr_example_file("bg_full_body.png")
+pd <- pdr_example_data[1:2, ]
 
-# Default: in-memory rasterization with background
-pd |> pdr_plot_xy(background_image = "inst/background.png")
+# Default: in-memory rasterization with a background image
+pdr_plot_xy(pd, background_image = bg)
 
+\donttest{
 # File-based rasterization
-pd |> pdr_plot_xy(method = "file")
+pdr_plot_xy(pd, method = "file")
 
-# Vector output — can add further ggplot layers
-pd |> pdr_plot_xy(rasterize = FALSE)
+# Vector output -- can add further ggplot layers
+pdr_plot_xy(pd, rasterize = FALSE)
 
 # Show id labels in facet strips
-pd |> pdr_plot_xy(include_id = TRUE)
+pdr_plot_xy(pd, include_id = TRUE)
+
+# Draw strokes as filled polygons
+pdr_plot_xy(pd, polygon = "both")
 
 # Use a custom list-column name
-pd |> pdr_plot_xy(paindrawr_data = my_col)
+pd2 <- dplyr::rename(pd, my_col = pdr_data)
+pdr_plot_xy(pd2, pdr_col = my_col)
 }
 
 }
 \seealso{
 \code{\link[=pdr_import_json]{pdr_import_json()}} to read pain drawing JSON files,
-\code{\link[=pdr_add_rgba]{pdr_add_rgba()}} to store raster arrays as a column in the tibble,
+\code{\link[=pdr_plot_rgba]{pdr_plot_rgba()}} to plot rasterised drawings, \code{\link[=pdr_add_rgba]{pdr_add_rgba()}} to store
+raster arrays in a pdr_list, \code{\link[=pdr_match]{pdr_match()}} for the pdr_tibble definition.
 }

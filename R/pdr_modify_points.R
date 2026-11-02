@@ -1,45 +1,47 @@
-
-#' Modify pain drawing elements
-#' 
-#' This function takes a valid pain drawing list as input
-#' and performs one or more operations sequentially on those 
-#' data before returning a valid pain drawing list-column of 
-#' the same length. It is thus suited for `mutate()` operations.
-#' 
-#' 
-#' @param pdr_list The pain drawing data list-col in .data (defaults to pdr_data) 
-#' @param ops A string specifying operation. See below:
-#' 
-#' The parameter `ops` can take one of the following values:
-#' * "flipy" -- flips the y-coordinates which can be useful to re-locate origo to/from top/bottom of canvas.
+#' Modify the points of pain drawings
 #'
-#' @returns A valid pain drawing data list column
+#' Performs an operation on the `.points` of each pdr_drawing in a pdr_list
+#' and returns a pdr_list of the same length. It is thus suited for use inside
+#' `mutate()`. See [pdr_match()] for the definitions of pdr_list and
+#' pdr_drawing.
+#'
+#' @param pdr_list A pdr_list (see [pdr_match()]), e.g. the `pdr_data` column
+#'   of a pdr_tibble.
+#' @param op A string specifying the operation. Currently one of:
+#'   * `"flipy"` (default) — flips the y-coordinates (`.y` becomes
+#'     `.height - .y`), which is useful to move the origin between the top and
+#'     bottom of the canvas. Drawings without `.points` are left unchanged.
+#'
+#' @returns A pdr_list of the same length as `pdr_list`, with the modified
+#'   `.points`.
+#'
+#' @seealso [pdr_modify_rgba()]
 #'
 #' @export
 #' @examples
-#' # Flip the y-coordinates and store in a new pain drawing list-col
-#' pdr_example_data |> mutate(pdr_data_flipped = pdr_mutate(pdr_data, "flipy"))
-
-pdr_modify_points <- function(pdr_list, ops="flipy") {
+#' # Flip the y-coordinates and store in a new pdr_list column
+#' pdr_example_data |>
+#'   dplyr::mutate(pdr_data_flipped = pdr_modify_points(pdr_data, "flipy"))
+pdr_modify_points <- function(pdr_list, op="flipy") {
 
   ########## Sanity checks ##########
   accepted_ops <- c("flipy")
 
-  # Require 'ops' to be a character vector of fixed options
-  if(!is.character(ops)) {
-    stop("Stopped: The function `pdr_modify()` expects a character vector as parameter 'ops'.")
+  # Require 'op' to be a character vector of fixed options
+  if(!is.character(op)) {
+    stop("Stopped: The function `pdr_modify_points()` expects a character vector as parameter 'op'.")
   } 
-  if(any(identical(NA, ops)) || any(ops == "")) {
-    warning("Unknown ops specified in function `pdr_modify()`.")
+  if(any(identical(NA, op)) || any(op == "")) {
+    warning("Unknown op specified in function `pdr_modify_points()`.")
     return(pdr)
   }
-  if(any(!{ops %in% accepted_ops})) {
-    warning("Unknown ops specified in function `pdr_modify()`.")
+  if(any(!{op %in% accepted_ops})) {
+    warning("Unknown op specified in function `pdr_modify_points()`.")
   }
   
   ########## End sanity checks ##########
 
-  ########## ops functions ##########
+  ########## op functions ##########
   flipy <- function(pdr) {
       # This function flips (mirrors) the y-axis
       # This solves a common problem where different platforms
@@ -56,10 +58,10 @@ pdr_modify_points <- function(pdr_list, ops="flipy") {
         })
   }
 
-  ########## End ops functions ########## 
+  ########## End op functions ########## 
 
 
-  if("flipy" %in% ops) {
+  if("flipy" %in% op) {
     pdr_list <- flipy(pdr_list)
   }
 

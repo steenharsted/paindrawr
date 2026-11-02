@@ -4,9 +4,8 @@
 #' such as e.g. background images, stored in the inst/extdata 
 #' folder of the package.
 #' 
-#' **Pain drawing data structure**: This function does not 
-#' take a pain drawing data structure as input, nor return 
-#' one as output.
+#' This function does not take a pdr_list or pdr_tibble as input,
+#' nor return one as output (see [pdr_match()]).
 #'
 #' @param path File name or path to example file in inst/extdata
 #'
@@ -21,9 +20,8 @@
 #' 
 #' # Get the absolute path to a file in the _example files_
 #' # folder
-#' pdr_example_data[1,] |> 
-#'   pdr_plot_drawing(background=pdr_example_file("mird_body_background.png"))
-#' 
+#' pdr_example_data[1, ] |>
+#'   pdr_plot_xy(background_image = pdr_example_file("bg_full_body.png"))
 pdr_example_file <- function(path = NULL) {
   # This function provides users with easy access to example
   # data stored in the inst/extdata folder
