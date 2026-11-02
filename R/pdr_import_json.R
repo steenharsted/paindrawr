@@ -136,6 +136,7 @@ pdr_import_json <- function(files) {
       }
     }
   }
-  
-  tibble::tibble(pdr_data = result) |> mutate(id = pdr_get_info(pdr_data, ".id")) # return
+
+  tibble::tibble(pdr_data = result) |>
+    dplyr::mutate(id = pdr_get_info(pdr_data, ".id")) # return
 }
