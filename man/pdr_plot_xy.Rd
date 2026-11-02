@@ -12,7 +12,6 @@ pdr_plot_xy(
   rasterize = TRUE,
   method = "memory",
   clean_up = TRUE,
-  dpi = 96,
   polygon = "none"
 )
 }
@@ -48,12 +47,6 @@ it back with \code{\link[png:readPNG]{png::readPNG()}}. Use this if the \code{"m
 \item{clean_up}{Logical. If \code{TRUE} (default), the temporary PNG file is
 deleted on exit. Only relevant when \code{method = "file"}. Set to \code{FALSE} to
 retain the file for debugging.}
-
-\item{dpi}{Resolution used during rasterization. Defaults to \code{96}, matching
-the CSS pixel density of the web canvas where drawings are collected —
-this ensures a 1:1 pixel correspondence between the original drawing and
-the output. Increase for print-quality output (e.g. \code{300}), noting this
-does not affect the canvas dimensions, only output pixel density.}
 
 \item{polygon}{Character. Controls whether strokes are rendered as filled
 polygons instead of their original appearance. One of:

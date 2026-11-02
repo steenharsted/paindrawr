@@ -18,11 +18,6 @@
 #'   is pixel-accurate with a locked aspect ratio. If `FALSE`, the raw ggplot
 #'   with vector strokes is returned.
 #' @inheritParams pdr_add_rgba
-#' @param dpi Resolution used during rasterization. Defaults to `96`, matching
-#'   the CSS pixel density of the web canvas where drawings are collected —
-#'   this ensures a 1:1 pixel correspondence between the original drawing and
-#'   the output. Increase for print-quality output (e.g. `300`), noting this
-#'   does not affect the canvas dimensions, only output pixel density.
 #' @returns A [ggplot2::ggplot()] object. When `rasterize = TRUE`, the plot
 #'   contains a single [ggplot2::annotation_raster()] layer with a locked
 #'   aspect ratio. When `rasterize = FALSE`, the plot contains vector stroke
@@ -61,7 +56,7 @@
 #' @importFrom tidyr unnest unnest_wider uncount
 #' @importFrom png readPNG
 #' @importFrom ragg agg_capture
-#' @importFrom ggplot2 ggplot aes coord_fixed theme_void theme element_blank scale_color_identity scale_size_identity scale_alpha_identity scale_linewidth_identity geom_path geom_point facet_wrap annotation_raster ggsave
+#' @importFrom ggplot2 ggplot aes coord_fixed theme_void theme element_blank scale_color_identity scale_size_identity scale_alpha_identity scale_linewidth_identity geom_path geom_tile facet_wrap annotation_raster ggsave
 #' @importFrom cli cli_warn cli_abort
 #'
 #' @export
@@ -73,7 +68,6 @@ pdr_plot_xy <- function(
   rasterize = TRUE,
   method = "memory",
   clean_up = TRUE,
-  dpi = 96,
   polygon = "none"
 ) {
   # Drop missing drawings (NA or NULL entries) before unnesting
@@ -110,29 +104,7 @@ pdr_plot_xy <- function(
     )
   }
 
-  # Validate and process background_image
-  if (!is.null(background_image)) {
-    if (is.character(background_image)) {
-      # It's a file path
-      if (!file.exists(background_image)) {
-        cli::cli_abort(
-          "Background image file does not exist: {.path {background_image}}"
-        )
-      }
-      if (!grepl("\\.png$", background_image, ignore.case = TRUE)) {
-        cli::cli_abort(
-          "Background image must be a PNG file (ending in {.val .png})."
-        )
-      }
-      background_image <- png::readPNG(background_image)
-    } else if (!is.numeric(background_image) || !is.array(background_image)) {
-      # Not a numeric array (expected output from png::readPNG)
-      cli::cli_abort(
-        "{.arg background_image} must be either a file path to a PNG image
-        (character string) or a raster array from {.fn png::readPNG}."
-      )
-    }
-  }
+  background_image <- read_background_image(background_image)
 
   # Extract number of ids
   id_n <- nrow(.data)
@@ -159,10 +131,16 @@ pdr_plot_xy <- function(
 
   .data <- dplyr::full_join(pdr_s, pdr_p, by = dplyr::join_by(.id, .index))
 
-  # map bw to size in mm using scale_bw funtion
+  # Rendering resolution. The value is arbitrary and only affects text size
+  # (facet labels); it must be the same in the linewidth formula below and in
+  # both rasterization calls (agg_capture, ggsave), or pen widths will be wrong.
+  render_dpi <- 72
+
+  # ggplot2 linewidth (mm) giving a line .tool_width canvas pixels wide at
+  # render_dpi (1 lwd unit = 1/96 inch, 1 linewidth unit = .pt lwd units)
   .data <- .data |>
     dplyr::mutate(
-      size_mm = pdr_scale_bw(.tool_width)
+      lw = .tool_width * 96 / (render_dpi * ggplot2::.pt)
     )
 
   ## Spray and Pen needs to be plotted differently
@@ -183,11 +161,11 @@ pdr_plot_xy <- function(
       # Create extra rows according to spray density (pd)
       tidyr::uncount(weights = .data$.point_density) |>
 
-      # Generate random angles and radii for uniform distribution within a circle
-      # pr holds information about the spray radius
+      # Random angles and radii. The radius is uniform (not sqrt-transformed)
+      # to match the PainDraw module, so dots cluster towards the centre
       dplyr::mutate(
         angle = runif(dplyr::n(), 0, 2 * pi),
-        radius = sqrt(runif(dplyr::n(), 0, 1)) * .spray_radius
+        radius = runif(dplyr::n(), 0, 1) * .spray_radius
       ) |>
 
       # Calculate offsets and new x, y positions
@@ -240,7 +218,7 @@ pdr_plot_xy <- function(
       ggplot2::geom_polygon(
         ggplot2::aes(
           group = paste0(.id, "_", .index),
-          linewidth = size_mm + 1
+          linewidth = lw
         ),
         linetype = 1,
         alpha = 1
@@ -255,9 +233,11 @@ pdr_plot_xy <- function(
       ggplot2::geom_path(
         ggplot2::aes(
           group = paste0(.id, "_", .index),
-          linewidth = size_mm + 1
+          linewidth = lw
         ),
-        linetype = 1
+        linetype = 1,
+        lineend = "round",
+        linejoin = "round"
       )
   }
 
@@ -268,17 +248,18 @@ pdr_plot_xy <- function(
         data = pdr_spray,
         ggplot2::aes(
           group = paste0(.id, "_", .index),
-          linewidth = size_mm + 1
+          linewidth = lw
         ),
         alpha = 1,
         linetype = 1
       )
   } else {
     plot_out <- pdr_base +
-      ggplot2::geom_point(
+      # Each dot is a square with side .tool_width canvas pixels, as in the module
+      ggplot2::geom_tile(
         data = pdr_spray,
-        ggplot2::aes(size = size_mm),
-        shape = 15
+        ggplot2::aes(width = .tool_width, height = .tool_width),
+        color = NA
       )
   }
 
@@ -294,9 +275,6 @@ pdr_plot_xy <- function(
     return(plot_out)
   }
 
-  ### Translate size to mm, accounting for facet grid dimensions
-  mm_per_inch <- 25.4
-
   # ncol defaults to what facet_wrap uses: ceiling(sqrt(n))
   n_col <- ceiling(sqrt(id_n))
   n_row <- ceiling(id_n / n_col)
@@ -310,6 +288,7 @@ pdr_plot_xy <- function(
       width = image_width,
       height = image_height,
       units = "px",
+      res = render_dpi,
       bg = "transparent"
     )
     print(plot_out) # must explicitly print to render to the device
@@ -338,7 +317,8 @@ pdr_plot_xy <- function(
       file = tmp,
       width = image_width,
       height = image_height,
-      units = "px"
+      units = "px",
+      dpi = render_dpi
     )
 
     raster_img <- as.raster(png::readPNG(tmp))
