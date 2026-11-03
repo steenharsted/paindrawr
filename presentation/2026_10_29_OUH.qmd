@@ -88,10 +88,13 @@ json_files <- list.files(
   recursive = TRUE
 )
 
+
 paindraw_data <- pdr_import_json(here(
     "presentation/2026_10_29_drawings/",
     json_files
   ))
+
+
 
 ## Id is nested in the drawing id string
 paindraw_data <- paindraw_data |>
@@ -122,7 +125,7 @@ my_data <- base_data |>
 
 ## REmove drawing 22
 ## Keep it for later bug fixing
-my_data <- my_data |> filter_out(record_id == 22)
+#my_data <- my_data |> filter_out(record_id == 22)
 
 ## ADD RGBA
 my_data <- my_data |> 
@@ -515,9 +518,6 @@ my_stencil |>
 ## Stencils
 
 ```{r}
-example_back_pain[2,] $pdr_data <- NA
-example_back_pain
-
 example_back_pain |> 
   pdr_summarize_rgba(
       pdr_col = pdr_data, 
