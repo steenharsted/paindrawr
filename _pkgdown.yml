@@ -1,0 +1,45 @@
+url: https://steenharsted.github.io/paindrawr/
+template:
+  bootstrap: 5
+  bootswatch: flatly
+
+reference:
+- title: "Importing"
+  desc: "Functions for importing data into paindrawr"
+  contents: 
+  - pdr_import_json
+  - pdr_import_png
+  - pdr_mird2pdr
+
+- title: "Plotting"
+  desc: "Functions for Plotting data."
+  contents:
+  - contains("plot")
+
+- title: "Image quantification"
+  contents:
+  - pdr_summarize_rgba
+
+- title: "paindrawr data modification"
+  contents:
+  - pdr_add_rgba
+  - pdr_explode
+  - pdr_implode
+  - pdr_modify_points
+  - pdr_modify_rgba
+
+- title: "Stencils"
+  desc: "Premade stencils to aid in image analysis"
+  contents:
+  - contains("stencil")
+
+- title: "Example data"
+  desc: "Example data and files"
+  contents:
+  - contains("example")
+
+- title: "Helper functions"
+  contents:
+  - pdr_match
+  - pdr_get_info
+

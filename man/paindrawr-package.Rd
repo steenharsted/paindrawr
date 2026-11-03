@@ -24,6 +24,7 @@ See \code{\link[=pdr_match]{pdr_match()}} for validating and coercing between th
 Useful links:
 \itemize{
   \item \url{https://github.com/steenharsted/paindrawr}
+  \item \url{https://steenharsted.github.io/paindrawr/}
   \item Report bugs at \url{https://github.com/steenharsted/paindrawr/issues}
 }
 

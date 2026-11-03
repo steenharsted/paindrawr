@@ -13,16 +13,16 @@ knitr::opts_chunk$set(
 )
 ```
 
-# paindrawr <img src="man/figures/paindrawr-logo.png" align="right" height="220" />
+# paindrawr <img src="man/figures/paindrawr-logo.png" align="right" height="220" alt="paindrawr package logo" />
 
 <!-- badges: start -->
 [![R-CMD-check](https://github.com/steenharsted/paindrawr/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/steenharsted/paindrawr/actions/workflows/R-CMD-check.yaml)
 [![Codecov test coverage](https://codecov.io/gh/steenharsted/paindrawr/graph/badge.svg)](https://app.codecov.io/gh/steenharsted/paindrawr)
 <!-- badges: end -->
 
-**paindrawr** helps you import, transform, quantify, and visualise *pain
-drawings* — schematic illustrations on which patients mark where they feel
-pain on an outline of the human body.
+**paindrawr** is an R package for analysing and visualising pain drawings — illustrations on which patients indicate where they experience pain. Pain drawings typically use a full-body outline but can also focus on specific anatomical regions.
+
+The package provides tools to import pain drawing data, visualise the marked areas, and quantify pain location, distribution, and extent. This allows researchers to turn patient-reported pain drawings into quantitative data for statistical analysis.
 
 Pain drawings have traditionally been scored by dividing the body into a
 fixed set of anatomical regions and recording, for each region, whether it
@@ -112,6 +112,7 @@ interpret with the background image that was used during data collection;
 read your own PNG with `png::readPNG()`.
 
 ```{r plot-drawing}
+#| fig-alt: Example plot with background image
 background <- png::readPNG(pdr_example_file("bg_full_body.png"))
 
 pdr_example_data |>
@@ -123,6 +124,7 @@ Strokes can also be rendered as filled polygons, which is typically sensible
 for pen tools (whereas spray tools produce many individual points):
 
 ```{r plot-polygon}
+#| fig-alt: Example polygon plot with background image
 pdr_example_data |>
   head(1) |>
   pdr_plot_xy(background_image = background, polygon = "both")
@@ -157,6 +159,7 @@ optionally stratified by one or two grouping variables. Here we stratify by
 symptom duration:
 
 ```{r plot-heatmap}
+#| fig-alt: Heatmap
 #| message: false
 pd |>
   pdr_plot_rgba_heatmap(

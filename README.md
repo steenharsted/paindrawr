@@ -1,7 +1,7 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# paindrawr <img src="man/figures/paindrawr-logo.png" align="right" height="220" />
+# paindrawr <img src="man/figures/paindrawr-logo.png" align="right" height="220" alt="paindrawr package logo" />
 
 <!-- badges: start -->
 
@@ -10,9 +10,15 @@
 coverage](https://codecov.io/gh/steenharsted/paindrawr/graph/badge.svg)](https://app.codecov.io/gh/steenharsted/paindrawr)
 <!-- badges: end -->
 
-**paindrawr** helps you import, transform, quantify, and visualise *pain
-drawings* — schematic illustrations on which patients mark where they
-feel pain on an outline of the human body.
+**paindrawr** is an R package for analysing and visualising pain
+drawings — illustrations on which patients indicate where they
+experience pain. Pain drawings typically use a full-body outline but can
+also focus on specific anatomical regions.
+
+The package provides tools to import pain drawing data, visualise the
+marked areas, and quantify pain location, distribution, and extent. This
+allows researchers to turn patient-reported pain drawings into
+quantitative data for statistical analysis.
 
 Pain drawings have traditionally been scored by dividing the body into a
 fixed set of anatomical regions and recording, for each region, whether
@@ -135,7 +141,7 @@ pdr_example_data |>
   pdr_plot_xy(background_image = background)
 ```
 
-<img src="man/figures/README-plot-drawing-1.png" alt="" width="100%" />
+<img src="man/figures/README-plot-drawing-1.png" alt="Example plot with background image" width="100%" />
 
 Strokes can also be rendered as filled polygons, which is typically
 sensible for pen tools (whereas spray tools produce many individual
@@ -147,7 +153,7 @@ pdr_example_data |>
   pdr_plot_xy(background_image = background, polygon = "both")
 ```
 
-<img src="man/figures/README-plot-polygon-1.png" alt="" width="100%" />
+<img src="man/figures/README-plot-polygon-1.png" alt="Example polygon plot with background image" width="100%" />
 
 ### Quantify drawings
 
@@ -200,7 +206,7 @@ pd |>
   )
 ```
 
-<img src="man/figures/README-plot-heatmap-1.png" alt="" width="100%" />
+<img src="man/figures/README-plot-heatmap-1.png" alt="Heatmap" width="100%" />
 
 ## Importing your own data
 

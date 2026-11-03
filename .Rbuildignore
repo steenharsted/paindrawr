@@ -16,3 +16,6 @@
 ^codecov\.yml$
 ^cran-comments\.md$
 ^\.gitattributes$
+^_pkgdown\.yml$
+^docs$
+^pkgdown$
