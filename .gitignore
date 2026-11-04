@@ -12,3 +12,5 @@
 /.quarto/
 **/*.quarto_ipynb
 docs
+/doc/
+/Meta/

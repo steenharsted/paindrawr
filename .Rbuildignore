@@ -19,4 +19,9 @@
 ^_pkgdown\.yml$
 ^docs$
 ^pkgdown$
-^how_to_create_a_stencil
+^vignettes/paindrawr_files$
+^vignettes/.*_files$
+^vignettes/\.quarto$
+^vignettes/.*\.html$
+^doc$
+^Meta$

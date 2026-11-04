@@ -2,6 +2,10 @@
 title: "Introduction to paindrawr"
 description: >
   Learn how to get started with the basics of paindrawr.
+vignette: >
+  %\VignetteIndexEntry{Introduction to paindrawr}
+  %\VignetteEngine{quarto::html}
+  %\VignetteEncoding{UTF-8}
 ---
 
 # Welcome to `paindrawr`
