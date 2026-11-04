@@ -78,8 +78,8 @@ name can be used), so that each drawing, with its metadata, strokes and point
 coordinates, travels alongside covariates such as sex, age, symptom duration or
 pain intensity.
 
-The package ships with `pdr_example_data`, which has exactly this format and is
-used throughout the documentation. See `?pdr_match` for the terminology
+The package ships with several examples data sets. `pdr_example_palmar` is
+ used in this documentation. See `?pdr_match` for the terminology
 (pdr_drawing, pdr_list, pdr_tibble).
 
 ## Example
@@ -93,14 +93,18 @@ alongside tidyverse verbs such as `mutate()` and `filter()`.
 library(paindrawr)
 library(tidyverse)
 
-pdr_example_data
+pdr_example_palmar
+
 ```
 
-The example data contains `r nrow(pdr_example_data)` respondents. Metadata
+The example data contains `r nrow(pdr_example_palmar)` respondents. Metadata
 stored inside each drawing can be extracted with `pdr_get_info()`, for example
 the canvas width:
 
 ```{r get-info}
+pdr_example_palmar |>
+  mutate(width = pdr_get_info(palmar, id1 = ".width"))
+
 pdr_example_data |>
   mutate(width = pdr_get_info(pdr_data, id1 = ".width"))
 ```
