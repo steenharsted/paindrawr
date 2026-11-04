@@ -1,10 +1,9 @@
 ---
 title: "Introduction to paindrawr"
-description: >
-  Learn how to get started with the basics of paindrawr.
+output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{Introduction to paindrawr}
-  %\VignetteEngine{quarto::html}
+  %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
 

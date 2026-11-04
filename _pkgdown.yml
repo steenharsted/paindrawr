@@ -3,6 +3,12 @@ template:
   bootstrap: 5
   bootswatch: flatly
 
+articles:
+- title: "Articles"
+  navbar: ~
+  contents:
+  - articles/how_to_create_stencil
+
 reference:
 - title: "Importing"
   desc: "Functions for importing data into paindrawr"

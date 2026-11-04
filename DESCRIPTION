@@ -43,10 +43,11 @@ Roxygen: list(markdown = TRUE)
 Suggests: 
     covr,
     knitr,
-    quarto,
+    rmarkdown,
     testthat (>= 3.0.0),
     withr
-VignetteBuilder: quarto
+VignetteBuilder: knitr
+Config/Needs/website: quarto
 Config/testthat/edition: 3
 Config/roxygen2/version: 8.1.1
 URL: https://github.com/steenharsted/paindrawr, https://steenharsted.github.io/paindrawr/

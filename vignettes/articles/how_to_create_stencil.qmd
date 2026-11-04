@@ -2,10 +2,6 @@
 title: "How to create a stencil"
 description: >
   Create a stencil (background template) for a pain drawing.
-vignette: >
-  %\VignetteIndexEntry{How to create a stencil}
-  %\VignetteEngine{quarto::html}
-  %\VignetteEncoding{UTF-8}
 knitr:
   opts_chunk:
     collapse: true
@@ -49,7 +45,7 @@ dim(img)
 # Inserting a static image
 
 Screenshots and other images that are only displayed live in
-`vignettes/images/` and are included with `knitr::include_graphics()`.
+`vignettes/articles/images/` and are included with `knitr::include_graphics()`.
 
 ```{r}
 #| label: static-image

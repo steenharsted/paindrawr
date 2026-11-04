@@ -21,6 +21,7 @@
 ^vignettes/paindrawr_files$
 ^vignettes/.*_files$
 ^vignettes/\.quarto$
+^vignettes/articles$
 ^vignettes/.*\.html$
 ^doc$
 ^Meta$
