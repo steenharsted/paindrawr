@@ -31,7 +31,14 @@
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto">
+<li class="nav-item"><a class="nav-link" href="articles/paindrawr.html">Get started</a></li>
 <li class="nav-item"><a class="nav-link" href="reference/index.html">Reference</a></li>
+<li class="nav-item dropdown">
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
+<li><a class="dropdown-item" href="articles/how_to_create_stencil.html">How to create a stencil</a></li>
+  </ul>
+</li>
       </ul>
 <ul class="navbar-nav">
 <li class="nav-item"><form class="form-inline" role="search">
@@ -78,8 +85,7 @@
 <strong>Import</strong> raw drawings: <code><a href="reference/pdr_import_json.html">pdr_import_json()</a></code>, <code><a href="reference/pdr_import_png.html">pdr_import_png()</a></code>
 </li>
 <li>
-<strong>Check</strong> that the data is well-formed: <code><a href="reference/pdr_match.html">pdr_match()</a></code>
-</li>
+<strong>Check</strong> individual drawings against the background image with <code><a href="reference/pdr_plot_xy.html">pdr_plot_xy()</a></code>, to confirm face validity and to decide how to rasterise them</li>
 <li>
 <strong>Rasterise</strong> the strokes to an RGBA array with <code><a href="reference/pdr_add_rgba.html">pdr_add_rgba()</a></code>. Choose <code>polygon = "none"</code> to keep strokes as drawn, or <code>"pen"</code>, <code>"spray"</code> or <code>"both"</code> to render them as filled polygons.</li>
 <li>
@@ -94,103 +100,93 @@
 <h2 id="data-structure">Data structure<a class="anchor" aria-label="anchor" href="#data-structure"></a>
 </h2>
 <p>paindrawr works with a tibble in which each row is one respondent. The pain drawings live in a dedicated list-column (named <code>pdr_data</code> by default, but any name can be used), so that each drawing, with its metadata, strokes and point coordinates, travels alongside covariates such as sex, age, symptom duration or pain intensity.</p>
-<p>The package ships with <code>pdr_example_data</code>, which has exactly this format and is used throughout the documentation. See <code><a href="reference/pdr_match.html">?pdr_match</a></code> for the terminology (pdr_drawing, pdr_list, pdr_tibble).</p>
+<p>The package ships with several example datasets; this README uses <code>pdr_example_palmar</code>. In it, the drawing column is called <code>palmar</code>, which is why later code uses <code>pdr_col = palmar</code>. See <code><a href="reference/pdr_match.html">?pdr_match</a></code> for the terminology (pdr_drawing, pdr_list, pdr_tibble).</p>
 </div>
 <div class="section level2">
 <h2 id="example">Example<a class="anchor" aria-label="anchor" href="#example"></a>
 </h2>
-<p>The <code>pdr_*()</code> functions are designed to be used with the native pipe (<code>|&gt;</code>) alongside tidyverse verbs such as <code>mutate()</code> and <code><a href="https://rdrr.io/r/stats/filter.html" class="external-link">filter()</a></code>.</p>
+<p>The <code>pdr_*()</code> functions are designed to be used with the native pipe (<code>|&gt;</code>) alongside tidyverse verbs such as <code><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate()</a></code> and <code><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter()</a></code>.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/steenharsted/paindrawr" class="external-link">paindrawr</a></span><span class="op">)</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://tidyverse.tidyverse.org" class="external-link">tidyverse</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">pdr_example_data</span></span>
-<span><span class="co">#&gt; # A tibble: 50 × 6</span></span>
-<span><span class="co">#&gt;    id                               pdr_data          sex     age duration  pain</span></span>
-<span><span class="co">#&gt;    &lt;chr&gt;                            &lt;list&gt;            &lt;fct&gt; &lt;dbl&gt; &lt;fct&gt;    &lt;dbl&gt;</span></span>
-<span><span class="co">#&gt;  1 6d63804892233bbb18bc21bcf0d81d0d &lt;named list [10]&gt; Fema…  46   Chronic      6</span></span>
-<span><span class="co">#&gt;  2 c8b12cd45d08e94241d4de9990d60f71 &lt;named list [10]&gt; Fema…  35.4 Acute        6</span></span>
-<span><span class="co">#&gt;  3 25062ac7dbeb08d8b532ac474a7849ca &lt;named list [10]&gt; Fema…  38.4 Acute        5</span></span>
-<span><span class="co">#&gt;  4 0dc657fa6ed70150f9596fe692f2f9a0 &lt;named list [10]&gt; Male   98   Subacute     3</span></span>
-<span><span class="co">#&gt;  5 fb61c33ffa09270a5c7931813e9d2d71 &lt;named list [10]&gt; Fema…  58.3 Acute        1</span></span>
-<span><span class="co">#&gt;  6 328d31503202db3e5c1b8e78f287810e &lt;named list [10]&gt; Male   68.9 Subacute     7</span></span>
-<span><span class="co">#&gt;  7 e07d8d7e7034ba3ae7f907de022af58d &lt;named list [10]&gt; Fema…  67.4 Subacute     6</span></span>
-<span><span class="co">#&gt;  8 9996f1a95c8e939c6ab6258bfc76f722 &lt;named list [10]&gt; Fema…  53.4 Chronic      9</span></span>
-<span><span class="co">#&gt;  9 41aa308e694ad270b7cfaea054c7c1a2 &lt;named list [10]&gt; Fema…  36.8 Chronic      9</span></span>
-<span><span class="co">#&gt; 10 0bcfd36a71b799e857f13c29011d21ff &lt;named list [10]&gt; Fema…  34.9 Subacute     4</span></span>
-<span><span class="co">#&gt; # ℹ 40 more rows</span></span></code></pre></div>
-<p>The example data contains 50 respondents. Metadata stored inside each drawing can be extracted with <code><a href="reference/pdr_get_info.html">pdr_get_info()</a></code>, for example the canvas width:</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">pdr_example_data</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu">mutate</span><span class="op">(</span>width <span class="op">=</span> <span class="fu"><a href="reference/pdr_get_info.html">pdr_get_info</a></span><span class="op">(</span><span class="va">pdr_data</span>, id1 <span class="op">=</span> <span class="st">".width"</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; # A tibble: 50 × 7</span></span>
-<span><span class="co">#&gt;    id                              pdr_data     sex     age duration  pain width</span></span>
-<span><span class="co">#&gt;    &lt;chr&gt;                           &lt;list&gt;       &lt;fct&gt; &lt;dbl&gt; &lt;fct&gt;    &lt;dbl&gt; &lt;int&gt;</span></span>
-<span><span class="co">#&gt;  1 6d63804892233bbb18bc21bcf0d81d… &lt;named list&gt; Fema…  46   Chronic      6   450</span></span>
-<span><span class="co">#&gt;  2 c8b12cd45d08e94241d4de9990d60f… &lt;named list&gt; Fema…  35.4 Acute        6   450</span></span>
-<span><span class="co">#&gt;  3 25062ac7dbeb08d8b532ac474a7849… &lt;named list&gt; Fema…  38.4 Acute        5   450</span></span>
-<span><span class="co">#&gt;  4 0dc657fa6ed70150f9596fe692f2f9… &lt;named list&gt; Male   98   Subacute     3   450</span></span>
-<span><span class="co">#&gt;  5 fb61c33ffa09270a5c7931813e9d2d… &lt;named list&gt; Fema…  58.3 Acute        1   450</span></span>
-<span><span class="co">#&gt;  6 328d31503202db3e5c1b8e78f28781… &lt;named list&gt; Male   68.9 Subacute     7   450</span></span>
-<span><span class="co">#&gt;  7 e07d8d7e7034ba3ae7f907de022af5… &lt;named list&gt; Fema…  67.4 Subacute     6   450</span></span>
-<span><span class="co">#&gt;  8 9996f1a95c8e939c6ab6258bfc76f7… &lt;named list&gt; Fema…  53.4 Chronic      9   450</span></span>
-<span><span class="co">#&gt;  9 41aa308e694ad270b7cfaea054c7c1… &lt;named list&gt; Fema…  36.8 Chronic      9   450</span></span>
-<span><span class="co">#&gt; 10 0bcfd36a71b799e857f13c29011d21… &lt;named list&gt; Fema…  34.9 Subacute     4   450</span></span>
-<span><span class="co">#&gt; # ℹ 40 more rows</span></span></code></pre></div>
+<span><span class="va">pdr_example_palmar</span></span>
+<span><span class="co">#&gt; # A tibble: 30 × 4</span></span>
+<span><span class="co">#&gt;       id palmar            tool   distance      </span></span>
+<span><span class="co">#&gt;    &lt;dbl&gt; &lt;list&gt;            &lt;fct&gt;  &lt;fct&gt;         </span></span>
+<span><span class="co">#&gt;  1     1 &lt;named list [10]&gt; Hammer 10 centimeters</span></span>
+<span><span class="co">#&gt;  2     2 &lt;named list [10]&gt; Apple  1 meter       </span></span>
+<span><span class="co">#&gt;  3     3 &lt;named list [10]&gt; Apple  1 meter       </span></span>
+<span><span class="co">#&gt;  4     4 &lt;named list [10]&gt; Apple  1 meter       </span></span>
+<span><span class="co">#&gt;  5     5 &lt;named list [10]&gt; Apple  10 centimeters</span></span>
+<span><span class="co">#&gt;  6     6 &lt;named list [10]&gt; Hammer 1 meter       </span></span>
+<span><span class="co">#&gt;  7     7 &lt;named list [10]&gt; Hammer 10 centimeters</span></span>
+<span><span class="co">#&gt;  8     8 &lt;named list [10]&gt; Apple  10 centimeters</span></span>
+<span><span class="co">#&gt;  9     9 &lt;named list [10]&gt; Apple  1 meter       </span></span>
+<span><span class="co">#&gt; 10    10 &lt;named list [10]&gt; Hammer 1 meter       </span></span>
+<span><span class="co">#&gt; # ℹ 20 more rows</span></span></code></pre></div>
+<p><code>pdr_example_palmar</code> is a small, deliberately silly dataset with 30 respondents. Each person imagined that an object (<code>tool</code>: an apple or a hammer) had fallen onto their left hand from a given height (<code>distance</code>: 10 cm or 1 m), and drew their imaginary pain on a palmar lower-arm template.</p>
 <div class="section level3">
 <h3 id="plot-a-single-drawing">Plot a single drawing<a class="anchor" aria-label="anchor" href="#plot-a-single-drawing"></a>
 </h3>
-<p><code><a href="reference/pdr_plot_xy.html">pdr_plot_xy()</a></code> redraws a drawing from its coordinates. Plots are easier to interpret with the background image that was used during data collection; read your own PNG with <code><a href="https://rdrr.io/pkg/png/man/readPNG.html" class="external-link">png::readPNG()</a></code>.</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">background</span> <span class="op">&lt;-</span> <span class="fu">png</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/png/man/readPNG.html" class="external-link">readPNG</a></span><span class="op">(</span><span class="fu"><a href="reference/pdr_example_file.html">pdr_example_file</a></span><span class="op">(</span><span class="st">"bg_full_body.png"</span><span class="op">)</span><span class="op">)</span></span>
+<p><code><a href="reference/pdr_plot_xy.html">pdr_plot_xy()</a></code> redraws a drawing from its coordinates. Plots are easier to interpret with the background image used during data collection. Use <code><a href="reference/pdr_example_file.html">pdr_example_file()</a></code> to get an example image, or read your own PNG with <code><a href="https://rdrr.io/pkg/png/man/readPNG.html" class="external-link">png::readPNG()</a></code>.</p>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">background</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/pdr_example_file.html">pdr_example_file</a></span><span class="op">(</span><span class="st">"bg_lower_arm_palmar.png"</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">pdr_example_data</span> <span class="op">|&gt;</span></span>
+<span><span class="va">pdr_example_palmar</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="reference/pdr_plot_xy.html">pdr_plot_xy</a></span><span class="op">(</span>background_image <span class="op">=</span> <span class="va">background</span><span class="op">)</span></span></code></pre></div>
+<span>  <span class="fu"><a href="reference/pdr_plot_xy.html">pdr_plot_xy</a></span><span class="op">(</span></span>
+<span>    pdr_col <span class="op">=</span> <span class="va">palmar</span>,</span>
+<span>    background_image <span class="op">=</span> <span class="va">background</span><span class="op">)</span></span></code></pre></div>
 <p><img src="reference/figures/README-plot-drawing-1.png" alt="Example plot with background image" width="100%"></p>
-<p>Strokes can also be rendered as filled polygons, which is typically sensible for pen tools (whereas spray tools produce many individual points):</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">pdr_example_data</span> <span class="op">|&gt;</span></span>
+<p>Strokes can also be rendered as filled polygons, which usually suits drawings made with a pen tool (see <code>pdr_example_data</code> and <code>pdr_example_zeeland</code>). <code>pdr_example_palmar</code> was drawn with a spray tool (many individual points), but you can still render it as polygons with <code>polygon = "both"</code>.</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">pdr_example_palmar</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="reference/pdr_plot_xy.html">pdr_plot_xy</a></span><span class="op">(</span>background_image <span class="op">=</span> <span class="va">background</span>, polygon <span class="op">=</span> <span class="st">"both"</span><span class="op">)</span></span></code></pre></div>
+<span>  <span class="fu"><a href="reference/pdr_plot_xy.html">pdr_plot_xy</a></span><span class="op">(</span></span>
+<span>    pdr_col <span class="op">=</span> <span class="va">palmar</span>,</span>
+<span>    background_image <span class="op">=</span> <span class="va">background</span>, </span>
+<span>    polygon <span class="op">=</span> <span class="st">"both"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="reference/figures/README-plot-polygon-1.png" alt="Example polygon plot with background image" width="100%"></p>
 </div>
 <div class="section level3">
 <h3 id="quantify-drawings">Quantify drawings<a class="anchor" aria-label="anchor" href="#quantify-drawings"></a>
 </h3>
-<p>Quantification and heatmaps work on a rasterised representation of each drawing, added to the list-column with <code><a href="reference/pdr_add_rgba.html">pdr_add_rgba()</a></code>:</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">pd</span> <span class="op">&lt;-</span> <span class="va">pdr_example_data</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu">mutate</span><span class="op">(</span>pdr_data <span class="op">=</span> <span class="fu"><a href="reference/pdr_add_rgba.html">pdr_add_rgba</a></span><span class="op">(</span><span class="va">pdr_data</span>, polygon <span class="op">=</span> <span class="st">"both"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<p>Quantification and heatmaps work on a rasterised representation of each drawing, added to the list-column with <code><a href="reference/pdr_add_rgba.html">pdr_add_rgba()</a></code>. We store the result in <code>pd</code> and reuse it below:</p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">pd</span> <span class="op">&lt;-</span> <span class="va">pdr_example_palmar</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>palmar <span class="op">=</span> <span class="fu"><a href="reference/pdr_add_rgba.html">pdr_add_rgba</a></span><span class="op">(</span><span class="va">palmar</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <p><code><a href="reference/pdr_summarize_rgba.html">pdr_summarize_rgba()</a></code> then computes summary statistics, such as the number of drawn pixels (<code>px</code>) and the proportion of the canvas covered (<code>area_prop</code>):</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">pd</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="reference/pdr_summarize_rgba.html">pdr_summarize_rgba</a></span><span class="op">(</span>summary_stat <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"px"</span>, <span class="st">"area_prop"</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu">select</span><span class="op">(</span><span class="op">-</span><span class="va">pdr_data</span><span class="op">)</span></span>
-<span><span class="co">#&gt; # A tibble: 50 × 7</span></span>
-<span><span class="co">#&gt;    id                  sex     age duration  pain pdr_data_px pdr_data_area_prop</span></span>
-<span><span class="co">#&gt;    &lt;chr&gt;               &lt;fct&gt; &lt;dbl&gt; &lt;fct&gt;    &lt;dbl&gt;       &lt;int&gt;              &lt;dbl&gt;</span></span>
-<span><span class="co">#&gt;  1 6d63804892233bbb18… Fema…  46   Chronic      6        4232            0.0188 </span></span>
-<span><span class="co">#&gt;  2 c8b12cd45d08e94241… Fema…  35.4 Acute        6       12782            0.0568 </span></span>
-<span><span class="co">#&gt;  3 25062ac7dbeb08d8b5… Fema…  38.4 Acute        5        1287            0.00572</span></span>
-<span><span class="co">#&gt;  4 0dc657fa6ed70150f9… Male   98   Subacute     3        6291            0.0280 </span></span>
-<span><span class="co">#&gt;  5 fb61c33ffa09270a5c… Fema…  58.3 Acute        1         579            0.00257</span></span>
-<span><span class="co">#&gt;  6 328d31503202db3e5c… Male   68.9 Subacute     7        3744            0.0166 </span></span>
-<span><span class="co">#&gt;  7 e07d8d7e7034ba3ae7… Fema…  67.4 Subacute     6        3355            0.0149 </span></span>
-<span><span class="co">#&gt;  8 9996f1a95c8e939c6a… Fema…  53.4 Chronic      9        3399            0.0151 </span></span>
-<span><span class="co">#&gt;  9 41aa308e694ad270b7… Fema…  36.8 Chronic      9        1384            0.00615</span></span>
-<span><span class="co">#&gt; 10 0bcfd36a71b799e857… Fema…  34.9 Subacute     4        2884            0.0128 </span></span>
-<span><span class="co">#&gt; # ℹ 40 more rows</span></span></code></pre></div>
+<span>  <span class="fu"><a href="reference/pdr_summarize_rgba.html">pdr_summarize_rgba</a></span><span class="op">(</span></span>
+<span>    pdr_col <span class="op">=</span> <span class="va">palmar</span>,</span>
+<span>    summary_stat <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"px"</span>, <span class="st">"area_prop"</span><span class="op">)</span><span class="op">)</span> </span>
+<span><span class="co">#&gt; # A tibble: 30 × 6</span></span>
+<span><span class="co">#&gt;       id palmar            tool   distance       palmar_px palmar_area_prop</span></span>
+<span><span class="co">#&gt;    &lt;dbl&gt; &lt;list&gt;            &lt;fct&gt;  &lt;fct&gt;              &lt;dbl&gt;            &lt;dbl&gt;</span></span>
+<span><span class="co">#&gt;  1     1 &lt;named list [11]&gt; Hammer 10 centimeters      4854          0.0108 </span></span>
+<span><span class="co">#&gt;  2     2 &lt;named list [11]&gt; Apple  1 meter            14464          0.0322 </span></span>
+<span><span class="co">#&gt;  3     3 &lt;named list [11]&gt; Apple  1 meter             3759          0.00837</span></span>
+<span><span class="co">#&gt;  4     4 &lt;named list [11]&gt; Apple  1 meter             2125          0.00473</span></span>
+<span><span class="co">#&gt;  5     5 &lt;named list [11]&gt; Apple  10 centimeters      1069          0.00238</span></span>
+<span><span class="co">#&gt;  6     6 &lt;named list [11]&gt; Hammer 1 meter            46663          0.104  </span></span>
+<span><span class="co">#&gt;  7     7 &lt;named list [11]&gt; Hammer 10 centimeters      4897          0.0109 </span></span>
+<span><span class="co">#&gt;  8     8 &lt;named list [11]&gt; Apple  10 centimeters     13610          0.0303 </span></span>
+<span><span class="co">#&gt;  9     9 &lt;named list [11]&gt; Apple  1 meter            13161          0.0293 </span></span>
+<span><span class="co">#&gt; 10    10 &lt;named list [11]&gt; Hammer 1 meter            11527          0.0257 </span></span>
+<span><span class="co">#&gt; # ℹ 20 more rows</span></span></code></pre></div>
 <p>Supplying <code>stencils</code> (for example body regions) gives statistics per region; see <code><a href="reference/pdr_summarize_rgba.html">?pdr_summarize_rgba</a></code>.</p>
 </div>
 <div class="section level3">
 <h3 id="heatmaps-across-groups">Heatmaps across groups<a class="anchor" aria-label="anchor" href="#heatmaps-across-groups"></a>
 </h3>
-<p><code><a href="reference/pdr_plot_rgba_heatmap.html">pdr_plot_rgba_heatmap()</a></code> aggregates many drawings into density heatmaps, optionally stratified by one or two grouping variables. Here we stratify by symptom duration:</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<p><code><a href="reference/pdr_plot_rgba_heatmap.html">pdr_plot_rgba_heatmap()</a></code> aggregates many drawings into density heatmaps, optionally stratified by one or two grouping variables. Here we compare drawings by <code>distance</code>, the height the object fell from.</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">pd</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="reference/pdr_plot_rgba_heatmap.html">pdr_plot_rgba_heatmap</a></span><span class="op">(</span></span>
-<span>    variables <span class="op">=</span> <span class="st">"duration"</span>,</span>
+<span>    pdr_col <span class="op">=</span> <span class="va">palmar</span>, </span>
+<span>    variables <span class="op">=</span> <span class="st">"distance"</span>,</span>
 <span>    background_image <span class="op">=</span> <span class="va">background</span></span>
 <span>  <span class="op">)</span></span></code></pre></div>
 <p><img src="reference/figures/README-plot-heatmap-1.png" alt="Heatmap" width="100%"></p>
@@ -199,7 +195,7 @@
 <div class="section level2">
 <h2 id="importing-your-own-data">Importing your own data<a class="anchor" aria-label="anchor" href="#importing-your-own-data"></a>
 </h2>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Drawings exported as JSON from the REDCap PainDraw module</span></span>
 <span><span class="fu"><a href="reference/pdr_import_json.html">pdr_import_json</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/list.files.html" class="external-link">list.files</a></span><span class="op">(</span><span class="st">"path/to/json"</span>, full.names <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <p>See <code><a href="reference/pdr_import_json.html">?pdr_import_json</a></code> and <code><a href="reference/pdr_import_png.html">?pdr_import_png</a></code> for details.</p>

@@ -1,6 +1,9 @@
 <urlset xmlns = 'http://www.sitemaps.org/schemas/sitemap/0.9'>
 <url><loc>https://steenharsted.github.io/paindrawr/404.html</loc></url>
 <url><loc>https://steenharsted.github.io/paindrawr/LICENSE.html</loc></url>
+<url><loc>https://steenharsted.github.io/paindrawr/articles/how_to_create_stencil.html</loc></url>
+<url><loc>https://steenharsted.github.io/paindrawr/articles/index.html</loc></url>
+<url><loc>https://steenharsted.github.io/paindrawr/articles/paindrawr.html</loc></url>
 <url><loc>https://steenharsted.github.io/paindrawr/authors.html</loc></url>
 <url><loc>https://steenharsted.github.io/paindrawr/index.html</loc></url>
 <url><loc>https://steenharsted.github.io/paindrawr/reference/index.html</loc></url>
@@ -10,6 +13,8 @@
 <url><loc>https://steenharsted.github.io/paindrawr/reference/pdr_example_data.html</loc></url>
 <url><loc>https://steenharsted.github.io/paindrawr/reference/pdr_example_file.html</loc></url>
 <url><loc>https://steenharsted.github.io/paindrawr/reference/pdr_example_geometry.html</loc></url>
+<url><loc>https://steenharsted.github.io/paindrawr/reference/pdr_example_palmar.html</loc></url>
+<url><loc>https://steenharsted.github.io/paindrawr/reference/pdr_example_zealand.html</loc></url>
 <url><loc>https://steenharsted.github.io/paindrawr/reference/pdr_explode.html</loc></url>
 <url><loc>https://steenharsted.github.io/paindrawr/reference/pdr_get_info.html</loc></url>
 <url><loc>https://steenharsted.github.io/paindrawr/reference/pdr_implode.html</loc></url>

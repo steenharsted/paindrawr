@@ -39,8 +39,9 @@ For each input pdr_drawing:
 The output is a pdr_list (see
 [`pdr_match()`](https://steenharsted.github.io/paindrawr/reference/pdr_match.md))
 with a different number of pdr_drawings than the input. The function is
-thus not suited for `mutate()` and similar functions which expect the
-same length of input and output.
+thus not suited for
+[`mutate()`](https://dplyr.tidyverse.org/reference/mutate.html) and
+similar functions which expect the same length of input and output.
 
 **Creation of id string**
 

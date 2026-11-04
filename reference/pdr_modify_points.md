@@ -2,7 +2,8 @@
 
 Performs an operation on the `.points` of each pdr_drawing in a pdr_list
 and returns a pdr_list of the same length. It is thus suited for use
-inside `mutate()`. See
+inside [`mutate()`](https://dplyr.tidyverse.org/reference/mutate.html).
+See
 [`pdr_match()`](https://steenharsted.github.io/paindrawr/reference/pdr_match.md)
 for the definitions of pdr_list and pdr_drawing.
 

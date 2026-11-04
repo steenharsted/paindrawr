@@ -19,7 +19,12 @@ folder of the package."></head><body>
     </button>
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
-      <ul class="navbar-nav me-auto"><li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
+      <ul class="navbar-nav me-auto"><li class="nav-item"><a class="nav-link" href="../articles/paindrawr.html">Get started</a></li>
+<li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
+<li class="nav-item dropdown">
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/how_to_create_stencil.html">How to create a stencil</a></li>
+  </ul></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
 <li class="nav-item"><a class="external-link nav-link" href="https://github.com/steenharsted/paindrawr/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
@@ -71,11 +76,12 @@ nor return one as output (see <code><a href="pdr_match.html">pdr_match()</a></co
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># Get a vector of files in the _example files_ folder</span></span></span>
 <span class="r-in"><span><span class="fu">pdr_example_file</span><span class="op">(</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [1] "9_draw_zealand.json"     "bg_feet.png"            </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [3] "bg_full_body.png"        "bg_head.png"            </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [5] "bg_lower_arm_dorsal.png" "bg_lower_arm_palmar.png"</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [7] "bg_spiral.png"           "bg_spiral_grey.png"     </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [9] "bg_square_paper.png"     "bg_zealand.png"         </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [1] "9_draw_zealand.json"     "LibreCAD_test_1.dxf"    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [3] "bg_feet.png"             "bg_full_body.png"       </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [5] "bg_head.png"             "bg_lower_arm_dorsal.png"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [7] "bg_lower_arm_palmar.png" "bg_spiral.png"          </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [9] "bg_spiral_grey.png"      "bg_square_paper.png"    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [11] "bg_zealand.png"         </span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Get the absolute path to a file in the _example files_</span></span></span>
 <span class="r-in"><span><span class="co"># folder</span></span></span>

@@ -3,8 +3,9 @@
 Modifies the `.rgba` array of each pdr_drawing in a pdr_list, e.g. to
 apply a stencil that restricts a drawing to an anatomical region, or to
 trim low/high alpha values. It returns a pdr_list of the same length and
-is thus suited for use inside `mutate()`. The drawings must already have
-an `.rgba` element (see
+is thus suited for use inside
+[`mutate()`](https://dplyr.tidyverse.org/reference/mutate.html). The
+drawings must already have an `.rgba` element (see
 [`pdr_add_rgba()`](https://steenharsted.github.io/paindrawr/reference/pdr_add_rgba.md)).
 See
 [`pdr_match()`](https://steenharsted.github.io/paindrawr/reference/pdr_match.md)

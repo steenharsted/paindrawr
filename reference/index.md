@@ -64,6 +64,10 @@ Example data and files
   : Local absolute path to example files
 - [`pdr_example_geometry`](https://steenharsted.github.io/paindrawr/reference/pdr_example_geometry.md)
   : Example pain drawings with simple geometric cases
+- [`pdr_example_palmar`](https://steenharsted.github.io/paindrawr/reference/pdr_example_palmar.md)
+  : Example hand drawings of imagined pain (palmar view)
+- [`pdr_example_zealand`](https://steenharsted.github.io/paindrawr/reference/pdr_example_zealand.md)
+  : Example drawings of locations on Zealand
 
 ## Helper functions
 

@@ -19,7 +19,12 @@ becomes a new separate pdr_drawing."></head><body>
     </button>
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
-      <ul class="navbar-nav me-auto"><li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
+      <ul class="navbar-nav me-auto"><li class="nav-item"><a class="nav-link" href="../articles/paindrawr.html">Get started</a></li>
+<li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
+<li class="nav-item dropdown">
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/how_to_create_stencil.html">How to create a stencil</a></li>
+  </ul></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
 <li class="nav-item"><a class="external-link nav-link" href="https://github.com/steenharsted/paindrawr/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
@@ -68,7 +73,7 @@ from the input.</p>
 <li><p>The matching rows (same <code>.index</code>) of <code>.points</code> are retained</p></li>
 <li><p>The <code>.id</code> element is modified – see below.</p></li>
 </ul><p>The output is a pdr_list (see <code><a href="pdr_match.html">pdr_match()</a></code>) with a different number of
-pdr_drawings than the input. The function is thus not suited for <code>mutate()</code>
+pdr_drawings than the input. The function is thus not suited for <code><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate()</a></code>
 and similar functions which expect the same length of input and output.</p>
 <p><strong>Creation of id string</strong></p>
 <p>To ensure unique id strings for all pdr_drawings, the new <code>.id</code> has the
