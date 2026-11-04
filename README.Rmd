@@ -55,14 +55,14 @@ and visualising pain drawings.
 Together, they provide a workflow from digital data collection
 to research-ready results.
 
-
-
 ## Typical workflow
 
 paindrawr functions are organised around a common analysis pipeline:
 
 1. **Import** raw drawings: `pdr_import_json()`, `pdr_import_png()`
-2. **Check** that the data is well-formed: `pdr_match()`
+2. **Check** individual drawings against the background image with
+   `pdr_plot_xy()`, to confirm face validity and to decide how to rasterise
+   them
 3. **Rasterise** the strokes to an RGBA array with `pdr_add_rgba()`. Choose
    `polygon = "none"` to keep strokes as drawn, or `"pen"`, `"spray"` or
    `"both"` to render them as filled polygons.
@@ -78,8 +78,9 @@ name can be used), so that each drawing, with its metadata, strokes and point
 coordinates, travels alongside covariates such as sex, age, symptom duration or
 pain intensity.
 
-The package ships with several examples data sets. `pdr_example_palmar` is
- used in this documentation. See `?pdr_match` for the terminology
+The package ships with several example datasets; this README uses
+`pdr_example_palmar`. In it, the drawing column is called `palmar`, which is
+why later code uses `pdr_col = palmar`. See `?pdr_match` for the terminology
 (pdr_drawing, pdr_list, pdr_tibble).
 
 ## Example
@@ -91,57 +92,59 @@ alongside tidyverse verbs such as `mutate()` and `filter()`.
 #| message: false
 #| warning: false
 library(paindrawr)
-library(tidyverse)
+library(dplyr)
 
 pdr_example_palmar
-
 ```
 
-The example data contains `r nrow(pdr_example_palmar)` respondents. Metadata
-stored inside each drawing can be extracted with `pdr_get_info()`, for example
-the canvas width:
+`pdr_example_palmar` is a small, deliberately silly dataset with `r nrow(pdr_example_palmar)`
+respondents. Each person imagined that an object (`tool`: an apple or a hammer)
+had fallen onto their left hand from a given height (`distance`: 10 cm or 1 m),
+and drew their imaginary pain on a palmar lower-arm template.
 
-```{r get-info}
-pdr_example_palmar |>
-  mutate(width = pdr_get_info(palmar, id1 = ".width"))
-
-pdr_example_data |>
-  mutate(width = pdr_get_info(pdr_data, id1 = ".width"))
-```
 
 ### Plot a single drawing
 
 `pdr_plot_xy()` redraws a drawing from its coordinates. Plots are easier to
-interpret with the background image that was used during data collection;
-read your own PNG with `png::readPNG()`.
+interpret with the background image used during data collection. Use
+`pdr_example_file()` to get an example image, or read your own PNG with
+`png::readPNG()`.
 
 ```{r plot-drawing}
 #| fig-alt: Example plot with background image
-background <- png::readPNG(pdr_example_file("bg_full_body.png"))
+background <- pdr_example_file("bg_lower_arm_palmar.png")
 
-pdr_example_data |>
+pdr_example_palmar |>
   head(1) |>
-  pdr_plot_xy(background_image = background)
+  pdr_plot_xy(
+    pdr_col = palmar,
+    background_image = background)
 ```
 
-Strokes can also be rendered as filled polygons, which is typically sensible
-for pen tools (whereas spray tools produce many individual points):
+Strokes can also be rendered as filled polygons, which usually suits drawings
+made with a pen tool (see `pdr_example_data` and `pdr_example_zeeland`).
+`pdr_example_palmar` was drawn with a spray tool (many individual points), but
+you can still render it as polygons with `polygon = "both"`.
 
 ```{r plot-polygon}
 #| fig-alt: Example polygon plot with background image
-pdr_example_data |>
+pdr_example_palmar |>
   head(1) |>
-  pdr_plot_xy(background_image = background, polygon = "both")
+  pdr_plot_xy(
+    pdr_col = palmar,
+    background_image = background, 
+    polygon = "both")
 ```
 
 ### Quantify drawings
 
 Quantification and heatmaps work on a rasterised representation of each
-drawing, added to the list-column with `pdr_add_rgba()`:
+drawing, added to the list-column with `pdr_add_rgba()`. We store the result
+in `pd` and reuse it below:
 
 ```{r add-rgba}
-pd <- pdr_example_data |>
-  mutate(pdr_data = pdr_add_rgba(pdr_data, polygon = "both"))
+pd <- pdr_example_palmar |>
+  mutate(palmar = pdr_add_rgba(palmar))
 ```
 
 `pdr_summarize_rgba()` then computes summary statistics, such as the number of
@@ -149,8 +152,9 @@ drawn pixels (`px`) and the proportion of the canvas covered (`area_prop`):
 
 ```{r summarize}
 pd |>
-  pdr_summarize_rgba(summary_stat = c("px", "area_prop")) |>
-  select(-pdr_data)
+  pdr_summarize_rgba(
+    pdr_col = palmar,
+    summary_stat = c("px", "area_prop")) 
 ```
 
 Supplying `stencils` (for example body regions) gives statistics per region;
@@ -159,15 +163,16 @@ see `?pdr_summarize_rgba`.
 ### Heatmaps across groups
 
 `pdr_plot_rgba_heatmap()` aggregates many drawings into density heatmaps,
-optionally stratified by one or two grouping variables. Here we stratify by
-symptom duration:
+optionally stratified by one or two grouping variables. Here we compare
+drawings by `distance`, the height the object fell from.
 
 ```{r plot-heatmap}
 #| fig-alt: Heatmap
 #| message: false
 pd |>
   pdr_plot_rgba_heatmap(
-    variables = "duration",
+    pdr_col = palmar, 
+    variables = "distance",
     background_image = background
   )
 ```

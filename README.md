@@ -58,7 +58,9 @@ research-ready results.
 paindrawr functions are organised around a common analysis pipeline:
 
 1.  **Import** raw drawings: `pdr_import_json()`, `pdr_import_png()`
-2.  **Check** that the data is well-formed: `pdr_match()`
+2.  **Check** individual drawings against the background image with
+    `pdr_plot_xy()`, to confirm face validity and to decide how to
+    rasterise them
 3.  **Rasterise** the strokes to an RGBA array with `pdr_add_rgba()`.
     Choose `polygon = "none"` to keep strokes as drawn, or `"pen"`,
     `"spray"` or `"both"` to render them as filled polygons.
@@ -74,9 +76,10 @@ default, but any name can be used), so that each drawing, with its
 metadata, strokes and point coordinates, travels alongside covariates
 such as sex, age, symptom duration or pain intensity.
 
-The package ships with `pdr_example_data`, which has exactly this format
-and is used throughout the documentation. See `?pdr_match` for the
-terminology (pdr_drawing, pdr_list, pdr_tibble).
+The package ships with several example datasets; this README uses
+`pdr_example_palmar`. In it, the drawing column is called `palmar`,
+which is why later code uses `pdr_col = palmar`. See `?pdr_match` for
+the terminology (pdr_drawing, pdr_list, pdr_tibble).
 
 ## Example
 
@@ -85,72 +88,63 @@ The `pdr_*()` functions are designed to be used with the native pipe
 
 ``` r
 library(paindrawr)
-library(tidyverse)
+library(dplyr)
 
-pdr_example_data
-#> # A tibble: 50 × 6
-#>    id                               pdr_data          sex     age duration  pain
-#>    <chr>                            <list>            <fct> <dbl> <fct>    <dbl>
-#>  1 6d63804892233bbb18bc21bcf0d81d0d <named list [10]> Fema…  46   Chronic      6
-#>  2 c8b12cd45d08e94241d4de9990d60f71 <named list [10]> Fema…  35.4 Acute        6
-#>  3 25062ac7dbeb08d8b532ac474a7849ca <named list [10]> Fema…  38.4 Acute        5
-#>  4 0dc657fa6ed70150f9596fe692f2f9a0 <named list [10]> Male   98   Subacute     3
-#>  5 fb61c33ffa09270a5c7931813e9d2d71 <named list [10]> Fema…  58.3 Acute        1
-#>  6 328d31503202db3e5c1b8e78f287810e <named list [10]> Male   68.9 Subacute     7
-#>  7 e07d8d7e7034ba3ae7f907de022af58d <named list [10]> Fema…  67.4 Subacute     6
-#>  8 9996f1a95c8e939c6ab6258bfc76f722 <named list [10]> Fema…  53.4 Chronic      9
-#>  9 41aa308e694ad270b7cfaea054c7c1a2 <named list [10]> Fema…  36.8 Chronic      9
-#> 10 0bcfd36a71b799e857f13c29011d21ff <named list [10]> Fema…  34.9 Subacute     4
-#> # ℹ 40 more rows
+pdr_example_palmar
+#> # A tibble: 30 × 4
+#>       id palmar            tool   distance      
+#>    <dbl> <list>            <fct>  <fct>         
+#>  1     1 <named list [10]> Hammer 10 centimeters
+#>  2     2 <named list [10]> Apple  1 meter       
+#>  3     3 <named list [10]> Apple  1 meter       
+#>  4     4 <named list [10]> Apple  1 meter       
+#>  5     5 <named list [10]> Apple  10 centimeters
+#>  6     6 <named list [10]> Hammer 1 meter       
+#>  7     7 <named list [10]> Hammer 10 centimeters
+#>  8     8 <named list [10]> Apple  10 centimeters
+#>  9     9 <named list [10]> Apple  1 meter       
+#> 10    10 <named list [10]> Hammer 1 meter       
+#> # ℹ 20 more rows
 ```
 
-The example data contains 50 respondents. Metadata stored inside each
-drawing can be extracted with `pdr_get_info()`, for example the canvas
-width:
-
-``` r
-pdr_example_data |>
-  mutate(width = pdr_get_info(pdr_data, id1 = ".width"))
-#> # A tibble: 50 × 7
-#>    id                              pdr_data     sex     age duration  pain width
-#>    <chr>                           <list>       <fct> <dbl> <fct>    <dbl> <int>
-#>  1 6d63804892233bbb18bc21bcf0d81d… <named list> Fema…  46   Chronic      6   450
-#>  2 c8b12cd45d08e94241d4de9990d60f… <named list> Fema…  35.4 Acute        6   450
-#>  3 25062ac7dbeb08d8b532ac474a7849… <named list> Fema…  38.4 Acute        5   450
-#>  4 0dc657fa6ed70150f9596fe692f2f9… <named list> Male   98   Subacute     3   450
-#>  5 fb61c33ffa09270a5c7931813e9d2d… <named list> Fema…  58.3 Acute        1   450
-#>  6 328d31503202db3e5c1b8e78f28781… <named list> Male   68.9 Subacute     7   450
-#>  7 e07d8d7e7034ba3ae7f907de022af5… <named list> Fema…  67.4 Subacute     6   450
-#>  8 9996f1a95c8e939c6ab6258bfc76f7… <named list> Fema…  53.4 Chronic      9   450
-#>  9 41aa308e694ad270b7cfaea054c7c1… <named list> Fema…  36.8 Chronic      9   450
-#> 10 0bcfd36a71b799e857f13c29011d21… <named list> Fema…  34.9 Subacute     4   450
-#> # ℹ 40 more rows
-```
+`pdr_example_palmar` is a small, deliberately silly dataset with 30
+respondents. Each person imagined that an object (`tool`: an apple or a
+hammer) had fallen onto their left hand from a given height (`distance`:
+10 cm or 1 m), and drew their imaginary pain on a palmar lower-arm
+template.
 
 ### Plot a single drawing
 
 `pdr_plot_xy()` redraws a drawing from its coordinates. Plots are easier
-to interpret with the background image that was used during data
-collection; read your own PNG with `png::readPNG()`.
+to interpret with the background image used during data collection. Use
+`pdr_example_file()` to get an example image, or read your own PNG with
+`png::readPNG()`.
 
 ``` r
-background <- png::readPNG(pdr_example_file("bg_full_body.png"))
+background <- pdr_example_file("bg_lower_arm_palmar.png")
 
-pdr_example_data |>
+pdr_example_palmar |>
   head(1) |>
-  pdr_plot_xy(background_image = background)
+  pdr_plot_xy(
+    pdr_col = palmar,
+    background_image = background)
 ```
 
 <img src="man/figures/README-plot-drawing-1.png" alt="Example plot with background image" width="100%" />
 
-Strokes can also be rendered as filled polygons, which is typically
-sensible for pen tools (whereas spray tools produce many individual
-points):
+Strokes can also be rendered as filled polygons, which usually suits
+drawings made with a pen tool (see `pdr_example_data` and
+`pdr_example_zeeland`). `pdr_example_palmar` was drawn with a spray tool
+(many individual points), but you can still render it as polygons with
+`polygon = "both"`.
 
 ``` r
-pdr_example_data |>
+pdr_example_palmar |>
   head(1) |>
-  pdr_plot_xy(background_image = background, polygon = "both")
+  pdr_plot_xy(
+    pdr_col = palmar,
+    background_image = background, 
+    polygon = "both")
 ```
 
 <img src="man/figures/README-plot-polygon-1.png" alt="Example polygon plot with background image" width="100%" />
@@ -158,11 +152,12 @@ pdr_example_data |>
 ### Quantify drawings
 
 Quantification and heatmaps work on a rasterised representation of each
-drawing, added to the list-column with `pdr_add_rgba()`:
+drawing, added to the list-column with `pdr_add_rgba()`. We store the
+result in `pd` and reuse it below:
 
 ``` r
-pd <- pdr_example_data |>
-  mutate(pdr_data = pdr_add_rgba(pdr_data, polygon = "both"))
+pd <- pdr_example_palmar |>
+  mutate(palmar = pdr_add_rgba(palmar))
 ```
 
 `pdr_summarize_rgba()` then computes summary statistics, such as the
@@ -171,22 +166,23 @@ number of drawn pixels (`px`) and the proportion of the canvas covered
 
 ``` r
 pd |>
-  pdr_summarize_rgba(summary_stat = c("px", "area_prop")) |>
-  select(-pdr_data)
-#> # A tibble: 50 × 7
-#>    id                  sex     age duration  pain pdr_data_px pdr_data_area_prop
-#>    <chr>               <fct> <dbl> <fct>    <dbl>       <int>              <dbl>
-#>  1 6d63804892233bbb18… Fema…  46   Chronic      6        4232            0.0188 
-#>  2 c8b12cd45d08e94241… Fema…  35.4 Acute        6       12782            0.0568 
-#>  3 25062ac7dbeb08d8b5… Fema…  38.4 Acute        5        1287            0.00572
-#>  4 0dc657fa6ed70150f9… Male   98   Subacute     3        6291            0.0280 
-#>  5 fb61c33ffa09270a5c… Fema…  58.3 Acute        1         579            0.00257
-#>  6 328d31503202db3e5c… Male   68.9 Subacute     7        3744            0.0166 
-#>  7 e07d8d7e7034ba3ae7… Fema…  67.4 Subacute     6        3355            0.0149 
-#>  8 9996f1a95c8e939c6a… Fema…  53.4 Chronic      9        3399            0.0151 
-#>  9 41aa308e694ad270b7… Fema…  36.8 Chronic      9        1384            0.00615
-#> 10 0bcfd36a71b799e857… Fema…  34.9 Subacute     4        2884            0.0128 
-#> # ℹ 40 more rows
+  pdr_summarize_rgba(
+    pdr_col = palmar,
+    summary_stat = c("px", "area_prop")) 
+#> # A tibble: 30 × 6
+#>       id palmar            tool   distance       palmar_px palmar_area_prop
+#>    <dbl> <list>            <fct>  <fct>              <dbl>            <dbl>
+#>  1     1 <named list [11]> Hammer 10 centimeters      4854          0.0108 
+#>  2     2 <named list [11]> Apple  1 meter            14464          0.0322 
+#>  3     3 <named list [11]> Apple  1 meter             3759          0.00837
+#>  4     4 <named list [11]> Apple  1 meter             2125          0.00473
+#>  5     5 <named list [11]> Apple  10 centimeters      1069          0.00238
+#>  6     6 <named list [11]> Hammer 1 meter            46663          0.104  
+#>  7     7 <named list [11]> Hammer 10 centimeters      4897          0.0109 
+#>  8     8 <named list [11]> Apple  10 centimeters     13610          0.0303 
+#>  9     9 <named list [11]> Apple  1 meter            13161          0.0293 
+#> 10    10 <named list [11]> Hammer 1 meter            11527          0.0257 
+#> # ℹ 20 more rows
 ```
 
 Supplying `stencils` (for example body regions) gives statistics per
@@ -196,12 +192,13 @@ region; see `?pdr_summarize_rgba`.
 
 `pdr_plot_rgba_heatmap()` aggregates many drawings into density
 heatmaps, optionally stratified by one or two grouping variables. Here
-we stratify by symptom duration:
+we compare drawings by `distance`, the height the object fell from.
 
 ``` r
 pd |>
   pdr_plot_rgba_heatmap(
-    variables = "duration",
+    pdr_col = palmar, 
+    variables = "distance",
     background_image = background
   )
 ```
