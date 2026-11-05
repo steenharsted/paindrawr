@@ -53,6 +53,7 @@ stencils created with <code><a href="pdr_add_stencil.html">pdr_add_stencil()</a>
 <span>  <span class="va">.data</span>,</span>
 <span>  pdr_col <span class="op">=</span> <span class="va">pdr_data</span>,</span>
 <span>  background_image <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  include_id <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  ncol <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  nrow <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  invert <span class="op">=</span> <span class="cn">FALSE</span></span>
@@ -64,9 +65,10 @@ stencils created with <code><a href="pdr_add_stencil.html">pdr_add_stencil()</a>
 
 
 <dl><dt id="arg--data">.data<a class="anchor" aria-label="anchor" href="#arg--data"></a></dt>
-<dd><p>A pdr_tibble (see <code><a href="pdr_match.html">pdr_match()</a></code>) whose pdr_drawings contain
-<code>.rgba</code>, <code>.stencil</code> and <code>.stencil_inverted</code> elements. The stencil
-elements are added by <code><a href="pdr_add_stencil.html">pdr_add_stencil()</a></code>.</p></dd>
+<dd><p>A data frame (typically a pdr_tibble, see <code><a href="pdr_match.html">pdr_match()</a></code>) with
+a pdr_list column whose pdr_drawings contain a <code>.stencil</code> element (and
+<code>.stencil_inverted</code> if <code>invert = TRUE</code>). The stencil elements are added
+by <code><a href="pdr_add_stencil.html">pdr_add_stencil()</a></code>.</p></dd>
 
 
 <dt id="arg-pdr-col">pdr_col<a class="anchor" aria-label="anchor" href="#arg-pdr-col"></a></dt>
@@ -80,6 +82,11 @@ Either a path to a PNG file (character string ending in <code>.png</code>) or a
 numeric raster array as returned by <code><a href="https://rdrr.io/pkg/png/man/readPNG.html" class="external-link">png::readPNG()</a></code>. If <code>NULL</code>
 (default), no background is drawn. Use <code><a href="pdr_example_file.html">pdr_example_file()</a></code> to get the
 path to a bundled background.</p></dd>
+
+
+<dt id="arg-include-id">include_id<a class="anchor" aria-label="anchor" href="#arg-include-id"></a></dt>
+<dd><p>Logical. If <code>TRUE</code>, the <code>.id</code> of each drawing is shown as
+a facet strip label above each panel. Default is <code>FALSE</code>.</p></dd>
 
 
 <dt id="arg-ncol-nrow">ncol, nrow<a class="anchor" aria-label="anchor" href="#arg-ncol-nrow"></a></dt>
@@ -101,10 +108,11 @@ the stencil.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p>It is a wrapper for <code><a href="pdr_plot_rgba.html">pdr_plot_rgba()</a></code>: the <code>.rgba</code> of each drawing is
-replaced by a red raster whose alpha channel is the stencil, and the result
-is passed on to <code><a href="pdr_plot_rgba.html">pdr_plot_rgba()</a></code>. The drawings must therefore already have
-an <code>.rgba</code> element (see <code><a href="pdr_add_rgba.html">pdr_add_rgba()</a></code>).</p>
+    <p>It is a wrapper for <code><a href="pdr_plot_rgba.html">pdr_plot_rgba()</a></code>: for each drawing a red raster is
+built whose alpha channel is the stencil, and the result is passed on to
+<code><a href="pdr_plot_rgba.html">pdr_plot_rgba()</a></code>. The drawings do not need an <code>.rgba</code> element, and
+<code>.data</code> does not need an <code>id</code> column; panels are identified by the <code>.id</code>
+of each drawing.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
@@ -122,6 +130,7 @@ an <code>.rgba</code> element (see <code><a href="pdr_add_rgba.html">pdr_add_rgb
 <span class="r-in"><span>  <span class="fu">pdr_plot_stencil</span><span class="op">(</span></span></span>
 <span class="r-in"><span>    <span class="va">pdr_data</span>,</span></span>
 <span class="r-in"><span>    background_image <span class="op">=</span> <span class="fu"><a href="pdr_example_file.html">pdr_example_file</a></span><span class="op">(</span><span class="st">"bg_full_body.png"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>    include_id <span class="op">=</span> <span class="cn">TRUE</span>,</span></span>
 <span class="r-in"><span>    invert <span class="op">=</span> <span class="cn">TRUE</span></span></span>
 <span class="r-in"><span>  <span class="op">)</span></span></span>
 <span class="r-plt img"><img src="pdr_plot_stencil-2.png" alt="" width="700" height="433"></span>

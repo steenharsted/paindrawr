@@ -2,9 +2,9 @@ pandoc: 3.8.3
 pkgdown: 2.2.1
 pkgdown_sha: ~
 articles:
-  how_to_create_stencil: how_to_create_stencil.html
+  articles/how_to_create_stencil: how_to_create_stencil.html
   paindrawr: paindrawr.html
-last_built: 2026-11-04T10:10Z
+last_built: 2026-11-05T10:13Z
 urls:
   reference: https://steenharsted.github.io/paindrawr/reference
   article: https://steenharsted.github.io/paindrawr/articles

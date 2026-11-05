@@ -42,7 +42,7 @@ dim(img)
 ## Inserting a static image
 
 Screenshots and other images that are only displayed live in
-`vignettes/images/` and are included with
+`vignettes/articles/images/` and are included with
 [`knitr::include_graphics()`](https://rdrr.io/pkg/knitr/man/include_graphics.html).
 
 ``` r

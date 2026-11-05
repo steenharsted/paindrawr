@@ -12,6 +12,7 @@ pdr_plot_stencil(
   .data,
   pdr_col = pdr_data,
   background_image = NULL,
+  include_id = FALSE,
   ncol = NULL,
   nrow = NULL,
   invert = FALSE
@@ -22,10 +23,11 @@ pdr_plot_stencil(
 
 - .data:
 
-  A pdr_tibble (see
+  A data frame (typically a pdr_tibble, see
   [`pdr_match()`](https://steenharsted.github.io/paindrawr/reference/pdr_match.md))
-  whose pdr_drawings contain `.rgba`, `.stencil` and `.stencil_inverted`
-  elements. The stencil elements are added by
+  with a pdr_list column whose pdr_drawings contain a `.stencil` element
+  (and `.stencil_inverted` if `invert = TRUE`). The stencil elements are
+  added by
   [`pdr_add_stencil()`](https://steenharsted.github.io/paindrawr/reference/pdr_add_stencil.md).
 
 - pdr_col:
@@ -42,6 +44,11 @@ pdr_plot_stencil(
   `NULL` (default), no background is drawn. Use
   [`pdr_example_file()`](https://steenharsted.github.io/paindrawr/reference/pdr_example_file.md)
   to get the path to a bundled background.
+
+- include_id:
+
+  Logical. If `TRUE`, the `.id` of each drawing is shown as a facet
+  strip label above each panel. Default is `FALSE`.
 
 - ncol, nrow:
 
@@ -66,11 +73,11 @@ object with one facet per drawing, showing the stencil.
 
 It is a wrapper for
 [`pdr_plot_rgba()`](https://steenharsted.github.io/paindrawr/reference/pdr_plot_rgba.md):
-the `.rgba` of each drawing is replaced by a red raster whose alpha
-channel is the stencil, and the result is passed on to
+for each drawing a red raster is built whose alpha channel is the
+stencil, and the result is passed on to
 [`pdr_plot_rgba()`](https://steenharsted.github.io/paindrawr/reference/pdr_plot_rgba.md).
-The drawings must therefore already have an `.rgba` element (see
-[`pdr_add_rgba()`](https://steenharsted.github.io/paindrawr/reference/pdr_add_rgba.md)).
+The drawings do not need an `.rgba` element, and `.data` does not need
+an `id` column; panels are identified by the `.id` of each drawing.
 
 ## See also
 
@@ -89,6 +96,7 @@ pdr_stencil_full_body[1:2, ] |>
   pdr_plot_stencil(
     pdr_data,
     background_image = pdr_example_file("bg_full_body.png"),
+    include_id = TRUE,
     invert = TRUE
   )
 
