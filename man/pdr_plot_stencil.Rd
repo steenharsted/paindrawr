@@ -8,15 +8,17 @@ pdr_plot_stencil(
   .data,
   pdr_col = pdr_data,
   background_image = NULL,
+  include_id = FALSE,
   ncol = NULL,
   nrow = NULL,
   invert = FALSE
 )
 }
 \arguments{
-\item{.data}{A pdr_tibble (see \code{\link[=pdr_match]{pdr_match()}}) whose pdr_drawings contain
-\code{.rgba}, \code{.stencil} and \code{.stencil_inverted} elements. The stencil
-elements are added by \code{\link[=pdr_add_stencil]{pdr_add_stencil()}}.}
+\item{.data}{A data frame (typically a pdr_tibble, see \code{\link[=pdr_match]{pdr_match()}}) with
+a pdr_list column whose pdr_drawings contain a \code{.stencil} element (and
+\code{.stencil_inverted} if \code{invert = TRUE}). The stencil elements are added
+by \code{\link[=pdr_add_stencil]{pdr_add_stencil()}}.}
 
 \item{pdr_col}{The pdr_list column in \code{.data} holding the pain drawings
 (tidy-eval, unquoted). Defaults to \code{pdr_data}.}
@@ -26,6 +28,9 @@ Either a path to a PNG file (character string ending in \code{.png}) or a
 numeric raster array as returned by \code{\link[png:readPNG]{png::readPNG()}}. If \code{NULL}
 (default), no background is drawn. Use \code{\link[=pdr_example_file]{pdr_example_file()}} to get the
 path to a bundled background.}
+
+\item{include_id}{Logical. If \code{TRUE}, the \code{.id} of each drawing is shown as
+a facet strip label above each panel. Default is \code{FALSE}.}
 
 \item{ncol, nrow}{Number of columns and rows in the plot grid, passed to
 \code{\link[ggplot2:facet_wrap]{ggplot2::facet_wrap()}} via \code{\link[=pdr_plot_rgba]{pdr_plot_rgba()}}. If both are \code{NULL}
@@ -45,10 +50,11 @@ inverted stencil) as a red mask. The function is primarily for checking
 stencils created with \code{\link[=pdr_add_stencil]{pdr_add_stencil()}}.
 }
 \details{
-It is a wrapper for \code{\link[=pdr_plot_rgba]{pdr_plot_rgba()}}: the \code{.rgba} of each drawing is
-replaced by a red raster whose alpha channel is the stencil, and the result
-is passed on to \code{\link[=pdr_plot_rgba]{pdr_plot_rgba()}}. The drawings must therefore already have
-an \code{.rgba} element (see \code{\link[=pdr_add_rgba]{pdr_add_rgba()}}).
+It is a wrapper for \code{\link[=pdr_plot_rgba]{pdr_plot_rgba()}}: for each drawing a red raster is
+built whose alpha channel is the stencil, and the result is passed on to
+\code{\link[=pdr_plot_rgba]{pdr_plot_rgba()}}. The drawings do not need an \code{.rgba} element, and
+\code{.data} does not need an \code{id} column; panels are identified by the \code{.id}
+of each drawing.
 }
 \examples{
 \donttest{
@@ -59,6 +65,7 @@ pdr_stencil_full_body[1:2, ] |>
   pdr_plot_stencil(
     pdr_data,
     background_image = pdr_example_file("bg_full_body.png"),
+    include_id = TRUE,
     invert = TRUE
   )
 }

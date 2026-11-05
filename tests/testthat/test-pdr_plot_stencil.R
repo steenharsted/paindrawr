@@ -72,11 +72,43 @@ test_that("input data is not modified", {
 })
 
 test_that("a custom pdr_col name works", {
-  # The tibble must still have a pdr_data column to count as a pdr_tibble
-  with_copy <- dplyr::mutate(stencil_pd, my_col = pdr_data)
+  renamed <- dplyr::rename(stencil_pd, my_col = pdr_data)
 
-  expect_s3_class(pdr_plot_stencil(with_copy, pdr_col = my_col), "ggplot")
+  expect_s3_class(pdr_plot_stencil(renamed, pdr_col = my_col), "ggplot")
   expect_error(pdr_plot_stencil(stencil_pd, pdr_col = my_col))
+})
+
+test_that("no id column and no .rgba are required", {
+  # e.g. the output of a grouped summarise() with pdr_collapse_stencils()
+  minimal <- tibble::tibble(
+    toe = c("a", "b"),
+    pdr_data = lapply(stencil_pd$pdr_data, \(d) d[c(".id", ".stencil")])
+  )
+
+  p <- pdr_plot_stencil(minimal)
+  expect_s3_class(p, "ggplot")
+  expect_equal(layer_geoms(p), rep("GeomRasterAnn", 2))
+})
+
+test_that("panels are labelled by .id, falling back to position", {
+  p <- pdr_plot_stencil(stencil_pd, include_id = TRUE)
+  expect_equal(
+    as.character(ggplot2::ggplot_build(p)$layout$layout$.id),
+    c("1", "2")
+  )
+
+  no_id <- stencil_pd
+  no_id$pdr_data <- lapply(no_id$pdr_data, \(d) d[".stencil"])
+  p <- pdr_plot_stencil(no_id)
+  expect_equal(nrow(ggplot2::ggplot_build(p)$layout$layout), 2)
+})
+
+test_that("include_id toggles the strip labels", {
+  shown <- pdr_plot_stencil(stencil_pd, include_id = TRUE)
+  hidden <- pdr_plot_stencil(stencil_pd)
+
+  expect_false(inherits(shown$theme$strip.text, "element_blank"))
+  expect_s3_class(hidden$theme$strip.text, "element_blank")
 })
 
 test_that("ncol and nrow set the facet layout", {
@@ -127,24 +159,29 @@ test_that("invalid background images give informative errors", {
 
   expect_error(
     pdr_plot_stencil(stencil_pd, background_image = 1:3),
-    "file path to a PNG image"
+    "PNG file path or a raster array"
   )
 })
 
-test_that("non-pdr_tibble input errors", {
-  expect_error(pdr_plot_stencil("not a tibble"), "should be pdr_tibble")
-  expect_error(pdr_plot_stencil(data.frame(x = 1)), "should be pdr_tibble")
+test_that("non-data-frame input and a missing column error", {
+  expect_error(pdr_plot_stencil("not a tibble"), "must be a data frame")
+  expect_error(pdr_plot_stencil(data.frame(x = 1)))
 })
 
 test_that("drawings without .stencil error", {
   no_stencil <- stencil_pd
-  no_stencil$pdr_data <- lapply(no_stencil$pdr_data, \(d) {
-    d$.stencil <- NULL
-    d$.stencil_inverted <- NULL
-    d
-  })
+  no_stencil$pdr_data[[2]]$.stencil <- NULL
 
-  expect_error(pdr_plot_stencil(no_stencil))
+  expect_error(pdr_plot_stencil(no_stencil), "\\.stencil.*drawing 2")
+  # The inverted stencil is still there, so invert = TRUE works
+  expect_s3_class(pdr_plot_stencil(no_stencil, invert = TRUE), "ggplot")
+
+  no_inverted <- stencil_pd
+  no_inverted$pdr_data[[1]]$.stencil_inverted <- NULL
+  expect_error(
+    pdr_plot_stencil(no_inverted, invert = TRUE),
+    "\\.stencil_inverted"
+  )
 })
 
 test_that("works end to end with pdr_add_rgba() and pdr_add_stencil()", {
