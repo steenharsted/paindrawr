@@ -49,6 +49,8 @@ Premade stencils to aid in image analysis
 
 - [`pdr_add_stencil()`](https://steenharsted.github.io/paindrawr/reference/pdr_add_stencil.md)
   : Create and add a stencil to pain drawings.
+- [`pdr_implode_stencils()`](https://steenharsted.github.io/paindrawr/reference/pdr_implode_stencils.md)
+  : Implode the stencils of multiple pain drawings into one
 - [`pdr_plot_stencil()`](https://steenharsted.github.io/paindrawr/reference/pdr_plot_stencil.md)
   : Plot stencil data
 - [`pdr_stencil_full_body`](https://steenharsted.github.io/paindrawr/reference/pdr_stencil_full_body.md)
