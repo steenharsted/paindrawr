@@ -8,12 +8,6 @@
 #' @export
 #' @examples
 
-
-
-
-
-
-
 # pdr_get_rgba_from_polygon <- function(pdr_list, invert=FALSE) {
 
 #   one <- 1

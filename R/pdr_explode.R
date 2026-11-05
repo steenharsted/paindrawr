@@ -52,47 +52,39 @@
 #' # Each pdr_drawing now contains exactly one stroke
 #' nrow(pdr_exploded[[1]]$.strokes)
 pdr_explode <- function(pdr_list) {
-
   # This function takes pain drawing data as input.
   # It explodes/expands each pain drawing (row) into
   # several new pain drawings/row -- one for each stroke
 
-
-
   result <- pdr_list |>
 
-  purrr::imap(\(obj, indx) {
+    purrr::imap(\(obj, indx) {
+      # all stroke indices
+      idx <- obj$.strokes$.index
 
-    # all stroke indices
-    idx <- obj$.strokes$.index
+      purrr::map(idx, \(i) {
+        # copy original object
+        out <- obj
 
-    purrr::map(idx, \(i) {
+        # make unique id
+        out$.id <- paste0(indx, "_", obj$.id, "_", i)
 
-      # copy original object
-      out <- obj
+        # keep only matching stroke row and points
+        if (identical(NA, obj$.strokes) || nrow(obj$.strokes) == 0) {
+          out$.strokes <- NA
+          out$.points <- NA
+        } else {
+          out$.strokes <- obj$.strokes |>
+            dplyr::filter(.index == i)
+          out$.points <- obj$.points |>
+            dplyr::filter(.index == i)
+        }
 
-      # make unique id
-      out$.id <- paste0(indx, "_", obj$.id, "_", i)
-
-      # keep only matching stroke row and points
-      if(identical(NA, obj$.strokes) || nrow(obj$.strokes)==0) {
-        out$.strokes <- NA 
-        out$.points <- NA
-      } else {
-        out$.strokes <- obj$.strokes |>
-          dplyr::filter(.index == i)
-        out$.points <- obj$.points |>
-          dplyr::filter(.index == i)
-      }
-
-      out
+        out
       })
+    }) |>
 
-  }) |>
-
-  purrr::list_flatten()
-
+    purrr::list_flatten()
 
   return(result)
-  
 }

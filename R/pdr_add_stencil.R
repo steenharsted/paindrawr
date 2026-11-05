@@ -1,40 +1,40 @@
 #' Create and add a stencil to pain drawings.
-#' 
-#' Users should only add a stencil to pain drawings that are 
-#' intended to serve as stencils for other pain drawings. To 
+#'
+#' Users should only add a stencil to pain drawings that are
+#' intended to serve as stencils for other pain drawings. To
 #' apply stencils see `pdr_modify_rgba()`.
-#' 
-#' Pain drawings can be used as stencils and applied to 
-#' other pain drawings. This is typically useful, when a 
-#' particular region of a pain drawing is of particular 
-#' interest. E.g. when only a specific anatomical regions of 
+#'
+#' Pain drawings can be used as stencils and applied to
+#' other pain drawings. This is typically useful, when a
+#' particular region of a pain drawing is of particular
+#' interest. E.g. when only a specific anatomical regions of
 #' the pain drawing is relevant.
-#' 
-#' This function reduces a pain drawing to a stencil -- ie. 
-#' the RGBA data is reduced to a single level (alpha) with 
+#'
+#' This function reduces a pain drawing to a stencil -- ie.
+#' the RGBA data is reduced to a single level (alpha) with
 #' just 0 and 1 values.
-#' 
-#' The 'threshold' parameter determines the threshold at 
-#' which a pixel's value is dichotomized to 0 or 1 (FALSE or 
-#' TRUE) as per the 'by' parameter. E.g. a pixel with alpha 
+#'
+#' The 'threshold' parameter determines the threshold at
+#' which a pixel's value is dichotomized to 0 or 1 (FALSE or
+#' TRUE) as per the 'by' parameter. E.g. a pixel with alpha
 #' value 0.4 will evaluate to 0 by '>' a 'threshold' of 0.5.
 #' With the defaults (`threshold = 1`, `by = "<"`, `channel = "A"`)
 #' a pixel is set to 1 when its alpha is below 1, i.e. when it is
 #' not fully opaque. For a drawing rendered with `pdr_add_rgba()`,
 #' this is the transparent (undrawn) area, while fully opaque
 #' (drawn) pixels become 0. The inverse is stored in `.stencil_inverted`.
-#' 
-#' The 'channel' parameter determines which of the R, G, B and 
-#' A channels should be evaluated in reference to the 
-#' threshold. E.g. 'RGBA' evaluates all of the channels by 
+#'
+#' The 'channel' parameter determines which of the R, G, B and
+#' A channels should be evaluated in reference to the
+#' threshold. E.g. 'RGBA' evaluates all of the channels by
 #' 'OR', and 'A' evaluates only the alpha channel.
 #'
 #' @param pdr_list A pdr_list in which every pdr_drawing has an `.rgba`
 #' element (see [pdr_add_rgba()] and [pdr_match()]).
-#' @param threshold A threshold value which determines a 
+#' @param threshold A threshold value which determines a
 #' pixel as being 0 or 1
-#' @param channel A string specifying which channels of the 
-#' RGBA matrix to compare to the threshold. 
+#' @param channel A string specifying which channels of the
+#' RGBA matrix to compare to the threshold.
 #' @param by Either '<' or '>'
 #'
 #' @returns A pdr_list (see [pdr_match()]) where each pdr_drawing has two
@@ -50,19 +50,33 @@
 #'   dplyr::mutate(pdr_data = pdr_add_rgba(pdr_data, polygon = "both")) |>
 #'   dplyr::mutate(pdr_data = pdr_add_stencil(pdr_data, threshold = 0.5, channel = "A", by = "<"))
 #' }
-pdr_add_stencil <- function(pdr_list, threshold=1, channel="A", by = "<") {
+pdr_add_stencil <- function(pdr_list, threshold = 1, channel = "A", by = "<") {
   # NOTE. This function is based on any one of the
-  # R, G, B or A levels/channels of the .rgba array being 
-  # smaller than the threshold value (i.e darker) ... if 
+  # R, G, B or A levels/channels of the .rgba array being
+  # smaller than the threshold value (i.e darker) ... if
   # that is the case for a given pixel, it is represented as
   # a value of 1 in the .stencil, otherwise as 0.
 
   # Sanity checks
-  if(by!="<" & by!=">") {stop("Parameter 'by' is invalid")}
+  if (by != "<" & by != ">") {
+    stop("Parameter 'by' is invalid")
+  }
   # Is pdr_list a valid pdr_list or can it be coerced into such?
-  pdr_list <- pdr_match(pdr_list, action = "coerce", as="pdr_list", mode="superficial")
+  pdr_list <- pdr_match(
+    pdr_list,
+    action = "coerce",
+    as = "pdr_list",
+    mode = "superficial"
+  )
   # Is .rgba an element in all pdr_drawing elements of pdr_list
-  if(!all(pdr_list |> purrr::map_lgl(\(pdr_drawing) {".rgba" %in% names(pdr_drawing)}))) {
+  if (
+    !all(
+      pdr_list |>
+        purrr::map_lgl(\(pdr_drawing) {
+          ".rgba" %in% names(pdr_drawing)
+        })
+    )
+  ) {
     stop("Not all elements of the parameter 'pdr_list' contain a .rgba element")
   }
 
@@ -70,27 +84,31 @@ pdr_add_stencil <- function(pdr_list, threshold=1, channel="A", by = "<") {
   G <- stringr::str_detect(channel, "G")
   B <- stringr::str_detect(channel, "B")
   A <- stringr::str_detect(channel, "A")
-  if(!any(R, G, B, A)) {stop("Invalid parameter 'channel'. ")}
+  if (!any(R, G, B, A)) {
+    stop("Invalid parameter 'channel'. ")
+  }
 
   # This code is a little opaque, but
   # (A && get(by)(pdr_drawing$.rgba[,,4] , threshold))
-  # evaluates to TRUE if A is in 'channel' parameter AND 
+  # evaluates to TRUE if A is in 'channel' parameter AND
   # pdr_drawing$.. is > than threshold, or < than threshold
   # where < or > is determined by the 'by' parameter
-  pdr_list <- pdr_list |> purrr::map(\(pdr_drawing) {
-    pdr_drawing$.stencil <- (
-      (A & get(by)(pdr_drawing$.rgba[,,4] , threshold)) |
-      (R & get(by)(pdr_drawing$.rgba[,,1] , threshold)) |
-      (G & get(by)(pdr_drawing$.rgba[,,2] , threshold)) |
-      (B & get(by)(pdr_drawing$.rgba[,,3] , threshold)) 
-    ) + 0 # Make it integer
-    pdr_drawing # map return
-  })
+  pdr_list <- pdr_list |>
+    purrr::map(\(pdr_drawing) {
+      pdr_drawing$.stencil <- ((A &
+        get(by)(pdr_drawing$.rgba[,, 4], threshold)) |
+        (R & get(by)(pdr_drawing$.rgba[,, 1], threshold)) |
+        (G & get(by)(pdr_drawing$.rgba[,, 2], threshold)) |
+        (B & get(by)(pdr_drawing$.rgba[,, 3], threshold))) +
+        0 # Make it integer
+      pdr_drawing # map return
+    })
 
-  pdr_list <- pdr_list |> purrr::map(\(pdr_drawing) {
-    pdr_drawing$.stencil_inverted <- 
-      (pdr_drawing$.stencil == FALSE) + 0 # Make it integer
-    pdr_drawing # map return
-  })
+  pdr_list <- pdr_list |>
+    purrr::map(\(pdr_drawing) {
+      pdr_drawing$.stencil_inverted <-
+        (pdr_drawing$.stencil == FALSE) + 0 # Make it integer
+      pdr_drawing # map return
+    })
   pdr_list # func return
 }

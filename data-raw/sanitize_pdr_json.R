@@ -9,11 +9,33 @@
 #   - everything else not listed below is removed
 
 sanitize_pdr_json <- function(files) {
-  top_keep <- c("v", "id", "w", "h", "units", "tpl", "tpl_md5", "view", "app",
-                "ts", "crc", "s")
-  stroke_keep <- c("strokeId", "drawInputType", "tool", "color", "lineWidth",
-                   "sprayDensity", "sprayRadius", "alpha", "scaleFactor",
-                   "dpr", "p")
+  top_keep <- c(
+    "v",
+    "id",
+    "w",
+    "h",
+    "units",
+    "tpl",
+    "tpl_md5",
+    "view",
+    "app",
+    "ts",
+    "crc",
+    "s"
+  )
+  stroke_keep <- c(
+    "strokeId",
+    "drawInputType",
+    "tool",
+    "color",
+    "lineWidth",
+    "sprayDensity",
+    "sprayRadius",
+    "alpha",
+    "scaleFactor",
+    "dpr",
+    "p"
+  )
 
   for (f in files) {
     x <- jsonlite::fromJSON(f, simplifyVector = FALSE)
@@ -23,7 +45,12 @@ sanitize_pdr_json <- function(files) {
     x["crc"] <- list(NULL)
     x$s <- lapply(x$s, \(s) s[intersect(names(s), stroke_keep)])
     jsonlite::write_json(
-      x, f, auto_unbox = TRUE, null = "null", digits = NA, pretty = FALSE
+      x,
+      f,
+      auto_unbox = TRUE,
+      null = "null",
+      digits = NA,
+      pretty = FALSE
     )
   }
   invisible(files)

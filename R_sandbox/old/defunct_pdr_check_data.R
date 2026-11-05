@@ -1,6 +1,6 @@
 #' Validate a pain drawing data structure
 #'
-#' A pain drawing data structure must comply with certain criteria -- see Details below. 
+#' A pain drawing data structure must comply with certain criteria -- see Details below.
 #' This function returns TRUE or FALSE and optionally emits diagnostic messages.
 #'
 #' #' @details
@@ -8,7 +8,7 @@
 #'
 #' **Top-level structure**
 #' * An unnamed list with one element per pain drawing
-#' 
+#'
 #' **Second-level structure**
 #' * A list with one named element per variable
 #'     - Must contain elements: `.id`, `.file`, `.version`, `.units`, `.width`, `.height`, `.timestamp`, `.app`, `.strokes`, `.points`
@@ -34,7 +34,7 @@
 #' * Columns: `.index`, `.x`, `.y`
 #' * All integer
 #' * `.index` values correspond to those in the matching `.strokes` tibble
-#' 
+#'
 #' #' **Relationship between `.strokes` and `.points`**
 #' * The `.strokes` tibble defines strokes (one row per stroke)
 #' * The `.points` tibble defines coordinates (multiple rows per stroke)
@@ -42,8 +42,8 @@
 #'   - `.strokes$.index`: unique stroke identifiers
 #'   - `.points$.index`: repeats to associate coordinates with a stroke
 #' * If one is NA, the other must also be NA
-#' 
-#' 
+#'
+#'
 #' @param d An object to validate.
 #'
 #' @returns
@@ -57,7 +57,7 @@
 #' pdr_check_data(letters[1:10]) # Will return FALSE and provide details
 #'
 pdr_check_data <- function(.data, paindrawr_data = pdr_data, verbose = TRUE) {
-  d <- .data |> dplyr::pull({{paindrawr_data}})
+  d <- .data |> dplyr::pull({{ paindrawr_data }})
 
   if (!is.list(d)) {
     warning("Data 'd' is not a list", call. = FALSE)
@@ -89,7 +89,21 @@ pdr_check_data <- function(.data, paindrawr_data = pdr_data, verbose = TRUE) {
   # ---- validators for nested tibbles ----
   valid_strokes_tbl <- function(x) {
     tibble::is_tibble(x) &&
-      setequal(names(x), c(".index", ".draw_input_type", ".tool", ".tool_width", ".color", ".alpha", ".point_density", ".spray_radius", "scaleFactor", "dpr")) &&
+      setequal(
+        names(x),
+        c(
+          ".index",
+          ".draw_input_type",
+          ".tool",
+          ".tool_width",
+          ".color",
+          ".alpha",
+          ".point_density",
+          ".spray_radius",
+          "scaleFactor",
+          "dpr"
+        )
+      ) &&
       is.integer(x$.index) &&
       is.character(x$.draw_input_type) &&
       is.character(x$.tool) &&
@@ -112,33 +126,47 @@ pdr_check_data <- function(.data, paindrawr_data = pdr_data, verbose = TRUE) {
       is.integer(x$.y)
   }
 
-int_checker <- function(d) {
-  # This function checks each element of the pain drawing
-  # data structure (which is a list) -- each element should
-  # also be a list (of named elements)
+  int_checker <- function(d) {
+    # This function checks each element of the pain drawing
+    # data structure (which is a list) -- each element should
+    # also be a list (of named elements)
 
-  if(verbose) {
-    try({    
-      message("") # Empty line
-      message(paste0("Element with ID ", d$.id, ":"))
-    })
-  }
+    if (verbose) {
+      try({
+        message("") # Empty line
+        message(paste0("Element with ID ", d$.id, ":"))
+      })
+    }
 
-  # ---- top-level list ----
-  if (!is.list(d)) {
-    return(fail("Data is a list: FAIL -- NOTE data should not simply be a list of elements '.id', '.units', '.width', '.height', '.timestamp', '.strokes', '.points', but a list of a list of such elements."))
-  }
-  ok("Data is a list: OK")
+    # ---- top-level list ----
+    if (!is.list(d)) {
+      return(fail(
+        "Data is a list: FAIL -- NOTE data should not simply be a list of elements '.id', '.units', '.width', '.height', '.timestamp', '.strokes', '.points', but a list of a list of such elements."
+      ))
+    }
+    ok("Data is a list: OK")
 
-  # ---- required columns ----
-  required_cols <- c(".id", ".file", ".version", ".units", ".width", ".height", ".timestamp", ".app", ".strokes", ".points")
-  if (!has_names(d, required_cols)) {
-    return(fail("Missing required elements"))
-  }
-  ok("Required elements present: OK")
+    # ---- required columns ----
+    required_cols <- c(
+      ".id",
+      ".file",
+      ".version",
+      ".units",
+      ".width",
+      ".height",
+      ".timestamp",
+      ".app",
+      ".strokes",
+      ".points"
+    )
+    if (!has_names(d, required_cols)) {
+      return(fail("Missing required elements"))
+    }
+    ok("Required elements present: OK")
 
-  # ---- column types ----
-  if (!(is.character(d$.id) &&
+    # ---- column types ----
+    if (
+      !(is.character(d$.id) &&
         is.character(d$.file) &&
         is.character(d$.version) &&
         is.integer(d$.width) &&
@@ -147,51 +175,55 @@ int_checker <- function(d) {
         is.character(d$.timestamp) &&
         is.character(d$.app) &&
         (tibble::is_tibble(d$.strokes) || is.na(d$.strokes)) &&
-        (tibble::is_tibble(d$.points) || is.na(d$.points)))) {
-    warning(str(d))
-    return(fail("Element types incorrect"))
-  }
-  ok("Element types: OK")
-
-  # ---- unique IDs ----
-  if (any(duplicated(d$.id))) {
-    return(fail("IDs must be unique"))
-  }
-  ok("IDs unique: OK")
-
-  # ---- list column '.strokes' (allow NA) ----
-  if (!is_na_scalar(d$.strokes) && !valid_strokes_tbl(d$.strokes)) {
-    return(fail("Invalid column in '.strokes'"))
-  }
-  ok("'.strokes' column valid: OK")
-
-  # ---- list column '.points' (allow NA) ----
-  if (!is_na_scalar(d$.points) && !valid_points_tbl(d$.points)) {
-    return(fail("Invalid column in '.points'"))
-  }
-  ok("'.points' column valid: OK")
-
-  # ---- if .points is NA so must .strokes and vice versa ----
-  if(is_na_scalar(d$.points) && !is_na_scalar(d$.points)) {
-    return(fail(".points is NA, but .strokes is not"))
-  }
-  if(is_na_scalar(d$.points) && !is_na_scalar(d$.points)) {
-    return(fail(".strokes is NA, but .points is not"))
-  }
-
-  # ---- identical '.index' in list column '.points' and '.strokes' 
-  if(!is_na_scalar(d$.points) && !is_na_scalar(d$.points)) {
-    if (!setequal(unique(d$.points$.index), d$.strokes$.index)) {
-      return(fail("Discrepancies in column '.index' in columns '.points' and '.strokes'"))
+        (tibble::is_tibble(d$.points) || is.na(d$.points)))
+    ) {
+      warning(str(d))
+      return(fail("Element types incorrect"))
     }
-  }
-  ok("Column '.index' in list columns '.poins' and '.strokes' have same values")
+    ok("Element types: OK")
 
-  ok("Data structure is valid pain drawing data structure: OK")
-  TRUE
+    # ---- unique IDs ----
+    if (any(duplicated(d$.id))) {
+      return(fail("IDs must be unique"))
+    }
+    ok("IDs unique: OK")
+
+    # ---- list column '.strokes' (allow NA) ----
+    if (!is_na_scalar(d$.strokes) && !valid_strokes_tbl(d$.strokes)) {
+      return(fail("Invalid column in '.strokes'"))
+    }
+    ok("'.strokes' column valid: OK")
+
+    # ---- list column '.points' (allow NA) ----
+    if (!is_na_scalar(d$.points) && !valid_points_tbl(d$.points)) {
+      return(fail("Invalid column in '.points'"))
+    }
+    ok("'.points' column valid: OK")
+
+    # ---- if .points is NA so must .strokes and vice versa ----
+    if (is_na_scalar(d$.points) && !is_na_scalar(d$.points)) {
+      return(fail(".points is NA, but .strokes is not"))
+    }
+    if (is_na_scalar(d$.points) && !is_na_scalar(d$.points)) {
+      return(fail(".strokes is NA, but .points is not"))
+    }
+
+    # ---- identical '.index' in list column '.points' and '.strokes'
+    if (!is_na_scalar(d$.points) && !is_na_scalar(d$.points)) {
+      if (!setequal(unique(d$.points$.index), d$.strokes$.index)) {
+        return(fail(
+          "Discrepancies in column '.index' in columns '.points' and '.strokes'"
+        ))
+      }
+    }
+    ok(
+      "Column '.index' in list columns '.poins' and '.strokes' have same values"
+    )
+
+    ok("Data structure is valid pain drawing data structure: OK")
+    TRUE
   }
   # ---- end helpers ----
 
   purrr::every(d, int_checker)
 }
-

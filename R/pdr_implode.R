@@ -41,24 +41,50 @@
 #' three |> pdr_plot_xy(background_image = bg)
 #' three |> pdr_implode() |> pdr_plot_xy(background_image = bg)
 pdr_implode <- function(.data, pdr_col = pdr_data) {
-  pdr <- .data |> dplyr::pull({{pdr_col}})
+  pdr <- .data |> dplyr::pull({{ pdr_col }})
 
   # Sanity checks
   # If only one pain drawing -- return input
-  if(length(pdr)==1) { return(pdr)}
-  # pdr should include only one type of units 
-  if (length(unique(pdr |> purrr::map_chr(\(x) {x$.units})))>1) {
+  if (length(pdr) == 1) {
+    return(pdr)
+  }
+  # pdr should include only one type of units
+  if (
+    length(unique(
+      pdr |>
+        purrr::map_chr(\(x) {
+          x$.units
+        })
+    )) >
+      1
+  ) {
     warning("Can not implode pain drawings with more than one type of unit.")
     return(NA)
   }
   # pdr width and height should be similar -- else, choose largest
-  if(length(unique(pdr |> purrr::map_int(\(x) {x$.width})))>1 ||
-     length(unique(pdr |> purrr::map_int(\(x) {x$.height})))>1) {
-    warning("Different canvas widths and/or heights -- all coerced to max width and height, respectively.")
+  if (
+    length(unique(
+      pdr |>
+        purrr::map_int(\(x) {
+          x$.width
+        })
+    )) >
+      1 ||
+      length(unique(
+        pdr |>
+          purrr::map_int(\(x) {
+            x$.height
+          })
+      )) >
+        1
+  ) {
+    warning(
+      "Different canvas widths and/or heights -- all coerced to max width and height, respectively."
+    )
   }
-  
-  # Result needs to be a tibble with just a single pain 
-  # drawing -- i.e 'pdr_data' should be a list of just one 
+
+  # Result needs to be a tibble with just a single pain
+  # drawing -- i.e 'pdr_data' should be a list of just one
   # element (.id ... .points)
   # We build that by hand keeping a close eye on data types
   #   * `.id`: character (unique identifier)
@@ -78,7 +104,7 @@ pdr_implode <- function(.data, pdr_col = pdr_data) {
   # For units -- we pick the first input value, because sanity
   # checks above would fail if multiple input values
   #
-  # For stroke and poitns, we concatenate multiple data frames 
+  # For stroke and poitns, we concatenate multiple data frames
   # into one (each)
 
   one_or_multiple <- function(pdr, var) {
@@ -86,11 +112,14 @@ pdr_implode <- function(.data, pdr_col = pdr_data) {
     # or the one value found for 'var' in 'pdr' (if unique)
     # We use this to retain variable values where there is only one
     # or replace multiple my "multiple" ... when imploding data
-    var_values <- pdr |> purrr::map_depth(.depth=1, {{var}}) |> purrr::as_vector()
+    var_values <- pdr |>
+      purrr::map_depth(.depth = 1, {{ var }}) |>
+      purrr::as_vector()
     ifelse(
-      length(unique(var_values))>1, 
-      "multiple", 
-      unique(var_values))
+      length(unique(var_values)) > 1,
+      "multiple",
+      unique(var_values)
+    )
   }
 
   tmp_id <- paste0("imploded_", Sys.time())
@@ -99,30 +128,54 @@ pdr_implode <- function(.data, pdr_col = pdr_data) {
       .id = tmp_id,
       .file = one_or_multiple(pdr, ".file"),
       .version = one_or_multiple(pdr, ".version"),
-      .width = max(pdr |> purrr::map_int(\(x) {x$.width})),  
-      .height = max(pdr |> purrr::map_int(\(x) {x$.height})),
-      .units = pdr[[1]]$.units, 
-      .timestamp = max(pdr |> purrr::map_chr(\(x) {x$.timestamp})),
+      .width = max(
+        pdr |>
+          purrr::map_int(\(x) {
+            x$.width
+          })
+      ),
+      .height = max(
+        pdr |>
+          purrr::map_int(\(x) {
+            x$.height
+          })
+      ),
+      .units = pdr[[1]]$.units,
+      .timestamp = max(
+        pdr |>
+          purrr::map_chr(\(x) {
+            x$.timestamp
+          })
+      ),
       .app = one_or_multiple(pdr, ".app"),
-      .strokes = {pdr |> 
-        purrr::imap_dfr(\(x, indx) {rbind(x$.strokes) |> dplyr::mutate(pdr_indx = indx)}) |>
+      .strokes = {
+        pdr |>
+          purrr::imap_dfr(\(x, indx) {
+            rbind(x$.strokes) |> dplyr::mutate(pdr_indx = indx)
+          }) |>
           dplyr::group_by(pdr_indx, .index) |>
-          dplyr::mutate(.index =dplyr::cur_group_id()) |>
+          dplyr::mutate(.index = dplyr::cur_group_id()) |>
           dplyr::ungroup() |>
-          dplyr::select(-pdr_indx)},
-      .points = {pdr |> 
-        purrr::imap_dfr(\(x, indx) {rbind(x$.points) |> dplyr::mutate(pdr_indx = indx)}) |>
+          dplyr::select(-pdr_indx)
+      },
+      .points = {
+        pdr |>
+          purrr::imap_dfr(\(x, indx) {
+            rbind(x$.points) |> dplyr::mutate(pdr_indx = indx)
+          }) |>
           dplyr::group_by(pdr_indx, .index) |>
-          dplyr::mutate(.index =dplyr::cur_group_id()) |>
+          dplyr::mutate(.index = dplyr::cur_group_id()) |>
           dplyr::ungroup() |>
-          dplyr::select(-pdr_indx)}
+          dplyr::select(-pdr_indx)
+      }
     )
   )
 
   result <- tibble::tibble(
     id = tmp_id,
     pdr = result
-  ) |> dplyr::rename({{pdr_col}} := pdr)
+  ) |>
+    dplyr::rename({{ pdr_col }} := pdr)
 
   return(result)
 }

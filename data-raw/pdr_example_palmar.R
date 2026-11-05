@@ -17,16 +17,24 @@ sanitize_pdr_json(files)
 drawings <- pdr_import_json(files) |>
   mutate(
     # Id is the leading number of the file name
-    id = map_int(pdr_data, \(d) as.integer(str_extract(basename(d$.file), "^[0-9]+"))),
+    id = map_int(pdr_data, \(d) {
+      as.integer(str_extract(basename(d$.file), "^[0-9]+"))
+    }),
     pdr_data = map(pdr_data, \(d) {
-      d$.id <- as.character(as.integer(str_extract(basename(d$.file), "^[0-9]+")))
+      d$.id <- as.character(as.integer(str_extract(
+        basename(d$.file),
+        "^[0-9]+"
+      )))
       d$.file <- NA_character_
       d$.timestamp <- NA_character_
       d
     })
   )
 
-pdr_example_palmar <- read_csv("data-raw/palmar/palmar.csv", show_col_types = FALSE) |>
+pdr_example_palmar <- read_csv(
+  "data-raw/palmar/palmar.csv",
+  show_col_types = FALSE
+) |>
   left_join(drawings, by = "id") |>
   rename(palmar = pdr_data) |>
   mutate(

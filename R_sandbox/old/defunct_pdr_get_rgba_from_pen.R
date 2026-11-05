@@ -1,20 +1,29 @@
 pdr_get_rgba_from_pen <- function(pdr_list) {
   #### Sanity checks
-    if(!is.list(pdr_list) || 
-     !all(pdr_list |> purrr::map_lgl(~is.list(.x))) ||
-     !all(pdr_list |> purrr::map_lgl(~".points" %in% names(.x)))) {
-        warning("Parameter 'pdr_list' is not a list of lists with a named element '.points'.")
-        stop()
-    }
+  if (
+    !is.list(pdr_list) ||
+      !all(pdr_list |> purrr::map_lgl(~ is.list(.x))) ||
+      !all(pdr_list |> purrr::map_lgl(~ ".points" %in% names(.x)))
+  ) {
+    warning(
+      "Parameter 'pdr_list' is not a list of lists with a named element '.points'."
+    )
+    stop()
+  }
 
-  pdr_list |> purrr::map(\(pdr_drawing) {
-    if(identical(NA, pdr_drawing$.points)) {
-      pdr_drawings.rgba <- NA
-    } else {
-      image_width <- pdr_drawing$.width
-      image_height <- pdr_drawing$.height
-      base_plot <- 
-        dplyr::left_join(pdr_drawing$.points, pdr_drawing$.strokes, by=".index") |>
+  pdr_list |>
+    purrr::map(\(pdr_drawing) {
+      if (identical(NA, pdr_drawing$.points)) {
+        pdr_drawings.rgba <- NA
+      } else {
+        image_width <- pdr_drawing$.width
+        image_height <- pdr_drawing$.height
+        base_plot <-
+          dplyr::left_join(
+            pdr_drawing$.points,
+            pdr_drawing$.strokes,
+            by = ".index"
+          ) |>
           ggplot2::ggplot(ggplot2::aes(
             x = .x,
             y = .y,
@@ -38,6 +47,6 @@ pdr_get_rgba_from_pen <- function(pdr_list) {
             ),
             linetype = 1
           )
-    }
-  })
+      }
+    })
 }

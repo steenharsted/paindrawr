@@ -8,7 +8,9 @@ spray_pd <- function(n = 1:2) pdr_import_json(vapply(n, json_fixture, ""))
 pen_pd <- pdr_example_data[1:2, ]
 bg_png <- pdr_example_file("bg_full_body.png")
 
-layer_geoms <- function(p) vapply(p$layers, \(l) class(l$geom)[1], character(1), USE.NAMES = FALSE)
+layer_geoms <- function(p) {
+  vapply(p$layers, \(l) class(l$geom)[1], character(1), USE.NAMES = FALSE)
+}
 
 test_that("default output is a rasterized ggplot with one raster layer", {
   p <- pdr_plot_xy(pen_pd)
@@ -224,14 +226,20 @@ test_that("spray dots are squares with side equal to the tool width", {
   tiles <- ggplot2::layer_data(p, which(layer_geoms(p) == "GeomTile"))
   strokes <- spray_pd(1)$pdr_data[[1]]$.strokes
 
-  expect_equal(tiles$xmax - tiles$xmin, rep(strokes$.tool_width[1], nrow(tiles)))
-  expect_equal(tiles$ymax - tiles$ymin, rep(strokes$.tool_width[1], nrow(tiles)))
+  expect_equal(
+    tiles$xmax - tiles$xmin,
+    rep(strokes$.tool_width[1], nrow(tiles))
+  )
+  expect_equal(
+    tiles$ymax - tiles$ymin,
+    rep(strokes$.tool_width[1], nrow(tiles))
+  )
 })
 
 # Comparison with the REDCap PNG export, which contains background AND drawing.
 # Spray jitter is random, so only footprint and ink are compared, with tolerance.
 png_ink <- function(img, bg) {
-  dif <- apply(abs(img[, , 1:3] - bg), c(1, 2), max)
+  dif <- apply(abs(img[,, 1:3] - bg), c(1, 2), max)
   c(ink = sum(dif), px = sum(dif > 0.05))
 }
 
@@ -252,7 +260,11 @@ test_that("spray matches the REDCap PNG export in footprint and ink", {
   bg <- png::readPNG(bg_file)
 
   for (i in 1:2) {
-    ref <- png::readPNG(test_path("fixtures", "png", paste0(i, "_palmar_png.png")))
+    ref <- png::readPNG(test_path(
+      "fixtures",
+      "png",
+      paste0(i, "_palmar_png.png")
+    ))
     set.seed(3100 + i)
     mine <- rowMeans(replicate(5, {
       p <- pdr_plot_xy(spray_pd(i), background_image = bg_file)

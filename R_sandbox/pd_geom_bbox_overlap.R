@@ -1,5 +1,4 @@
 pd_geom_locate_overlapping_bbox <- function(pd) {
-  
   pd$strokes |>
     group_by(id) |>
     group_modify(\(strokes_by_id) {
@@ -8,13 +7,10 @@ pd_geom_locate_overlapping_bbox <- function(pd) {
       p1 <- 1 # pointer 1
       p2 <- 2 # pointer 2
 
-    while (p1 < n_strokes) {
-      while (p2 <=n_strokes) {
-       #bbox_overlap <- {strokes_by_id |> dplyr:: filter()}
-
-
+      while (p1 < n_strokes) {
+        while (p2 <= n_strokes) {
+          #bbox_overlap <- {strokes_by_id |> dplyr:: filter()}
+        }
       }
-    }
-
-  })
+    })
 }

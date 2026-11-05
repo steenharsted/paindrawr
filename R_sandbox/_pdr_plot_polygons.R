@@ -5,7 +5,6 @@ pdr_plot_polygons <- function(
   include_id = FALSE,
   multi = "facet"
 ) {
-  
   #### From SHFs plot drawing function:
   # Validate and process background_image
   if (!is.null(background_image)) {
@@ -31,36 +30,58 @@ pdr_plot_polygons <- function(
     }
   }
 
+  dd <- pdr_tib |> dplyr::pull({{ pdr_list }})
 
-  dd <- pdr_tib |> dplyr::pull({{pdr_list}})
-  
-  width <- dd |> purrr::map_int(\(pdr_drawing) {pdr_drawing$width}) |> max()
-  height <- dd |> purrr::map_int(\(pdr_drawing) {pdr_drawing$height}) |> max()
+  width <- dd |>
+    purrr::map_int(\(pdr_drawing) {
+      pdr_drawing$width
+    }) |>
+    max()
+  height <- dd |>
+    purrr::map_int(\(pdr_drawing) {
+      pdr_drawing$height
+    }) |>
+    max()
 
   dd <- dd |> pdr_get_info()
 
-  if(!is.null(background_image)) {
+  if (!is.null(background_image)) {
     gp <- ggplot() +
       ggplot2::scale_x_continuous(limits = c(0, width), expand = c(0, 0)) +
       ggplot2::scale_y_continuous(limits = c(0, height), expand = c(0, 0)) +
       ggplot2::annotation_raster(
-      as.raster(background_image),
-      0, width, 0, height
-    )
+        as.raster(background_image),
+        0,
+        width,
+        0,
+        height
+      )
   } else {
     gp <- ggplot() +
       ggplot2::scale_x_continuous(limits = c(0, width), expand = c(0, 0)) +
       ggplot2::scale_y_continuous(limits = c(0, height), expand = c(0, 0))
   }
 
-  if(identical(NA, dd$.polygons)) {
-    gp 
-  } else {    
-    if(multi=="facet") {
-      gp + ggplot2::geom_sf(data = dd$.polygons, color="black", fill="white", alpha=0.6) + facet_wrap(~dd$.id)
+  if (identical(NA, dd$.polygons)) {
+    gp
+  } else {
+    if (multi == "facet") {
+      gp +
+        ggplot2::geom_sf(
+          data = dd$.polygons,
+          color = "black",
+          fill = "white",
+          alpha = 0.6
+        ) +
+        facet_wrap(~ dd$.id)
     } else {
-      gp + ggplot2::geom_sf(data = dd$.polygons, color=forcats::as_factor(dd$.id), fill="white", alpha=0.6)
+      gp +
+        ggplot2::geom_sf(
+          data = dd$.polygons,
+          color = forcats::as_factor(dd$.id),
+          fill = "white",
+          alpha = 0.6
+        )
     }
   }
-  
 }

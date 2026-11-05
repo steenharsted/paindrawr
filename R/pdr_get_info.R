@@ -35,12 +35,12 @@
 #'
 #' @export
 
-pdr_get_info <- function(pdr_list, id1=".id", id2=NULL) {
+pdr_get_info <- function(pdr_list, id1 = ".id", id2 = NULL) {
   # pdr_list is expected to be a valid data_col list-col
   # elements[1] should be an element name in data_col (list)
   # elements[2] should be an element in var1, if var1 is tibble/list
 
-  if(is.null(id1)) {
+  if (is.null(id1)) {
     stop("Parameter 'id1' is NULL.")
   }
 
@@ -50,21 +50,20 @@ pdr_get_info <- function(pdr_list, id1=".id", id2=NULL) {
   # a vector, if id1 class is int, num, chr, lgl, etc
   # a list, if id1 class list, tibble, matrix, array, etc
 
-  if(is.null(id2)) {
-    if(id1 %in% c(".points", ".strokes", ".polygons", ".rgba", ".stencil")) {
-      pdr_list |> 
+  if (is.null(id2)) {
+    if (id1 %in% c(".points", ".strokes", ".polygons", ".rgba", ".stencil")) {
+      pdr_list |>
         purrr::map(id1)
     } else {
-      pdr_list |> 
-        purrr::map(id1) |>     # Just the one element
-        purrr::list_simplify(strict=FALSE) # Convert to int, chr, num, ..
-        
+      pdr_list |>
+        purrr::map(id1) |> # Just the one element
+        purrr::list_simplify(strict = FALSE) # Convert to int, chr, num, ..
     }
   } else {
     # Should probably check to see if id2 is in names(id1)
     pdr_list |>
       purrr::map(id1) |>
-      purrr::map(~dplyr::pull(.x, id2)) |>
-      purrr::list_simplify(strict=FALSE)
+      purrr::map(~ dplyr::pull(.x, id2)) |>
+      purrr::list_simplify(strict = FALSE)
   }
 }
