@@ -97,7 +97,10 @@ without directory and <code>.png</code> extension. If <code>FALSE</code>, <code>
     <p>A pdr_tibble (see <code><a href="pdr_match.html">pdr_match()</a></code>; as from <code><a href="pdr_import_json.html">pdr_import_json()</a></code>) with
 one row per file and columns <code>pdr_data</code> (a pdr_list of pdr_drawings, each
 containing <code>.id</code>, <code>.file</code>, <code>.version</code>, <code>.width</code>, <code>.height</code>, <code>.units</code>,
-<code>.timestamp</code>, <code>.app</code>, <code>.points</code>, <code>.strokes</code> and <code>.rgba</code>) and <code>id</code>.</p>
+<code>.timestamp</code>, <code>.app</code>, <code>.points</code>, <code>.strokes</code> and <code>.rgba</code>) and <code>id</code>.
+<code>NA</code> entries in <code>files</code> give <code>NA</code> in <code>pdr_data</code> and <code>id</code>. Non-existing files
+give a warning and <code>NA</code> in <code>pdr_data</code>, with <code>id</code> derived from the file name
+(if <code>id_from_filename</code>).</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>

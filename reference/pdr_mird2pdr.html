@@ -153,8 +153,8 @@ origin in the upper left corner whereas paindrawr uses the lower left.</p></dd>
 
 <table class="table table"><tr><td>x</td><td>y</td><td>index</td></tr><tr><td>1</td><td>2</td><td>1</td></tr><tr><td>5</td><td>4</td><td>1</td></tr><tr><td>8</td><td>8</td><td>2</td></tr><tr><td>7</td><td>7</td><td>2</td></tr></table><p>This function takes a vector of length n of such MIRD strings and converts
 it into a pdr_list of length n (see <code><a href="pdr_match.html">pdr_match()</a></code> for the terminology).
-Strings that are <code>NA</code> or too short to hold a point give a pdr_drawing
-without points and strokes.</p>
+Strings that are <code>NA</code> give an <code>NA</code> element (NA in, NA out); strings too
+short to hold a point give a pdr_drawing without points and strokes.</p>
 <p>The intended use case is a data frame (tibble) of MIRD data including pain
 drawing data. A new pdr_list column can be generated with a simple
 <code><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">dplyr::mutate()</a></code> call.</p>
@@ -188,7 +188,7 @@ same length as <code>mird_pd</code> or of length 1, in which case it is repeated
 <span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                                       <span style="color: #949494; font-style: italic;">&lt;list&gt;</span>           </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> a     (,460,709,463,709,464,719,448,720,449,712,) <span style="color: #949494;">&lt;named list [10]&gt;</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span> b     (,393,682,430,672,429,682,)                 <span style="color: #949494;">&lt;named list [10]&gt;</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">3</span> c     <span style="color: #BB0000;">NA</span>                                          <span style="color: #949494;">&lt;named list [10]&gt;</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">3</span> c     <span style="color: #BB0000;">NA</span>                                          <span style="color: #949494;">&lt;lgl [1]&gt;</span>        </span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

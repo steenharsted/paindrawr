@@ -22,10 +22,12 @@ pdr_import_json(files)
 A pdr_tibble (see
 [`pdr_match()`](https://steenharsted.github.io/paindrawr/reference/pdr_match.md))
 with one row per successfully file in `files` and columns `pdr_data` (a
-pdr_list of pdr_drawings) and `id` (copied from `.id`). Files that could
-not be read give an empty [`list()`](https://rdrr.io/r/base/list.html)
-in `pdr_data` and `NA` in `id`. On invalid `files` input, an empty
-[`list()`](https://rdrr.io/r/base/list.html).
+pdr_list of pdr_drawings) and `id` (copied from `.id`). Non-existing
+files give a warning and `NA` in `pdr_data`, with `id` derived from the
+file name; files with invalid JSON give an empty
+[`list()`](https://rdrr.io/r/base/list.html) and `NA` in `id`; `NA`
+entries in `files` give `NA` in `pdr_data` and `id`. On invalid `files`
+input, an empty [`list()`](https://rdrr.io/r/base/list.html).
 
 ## Details
 
@@ -92,6 +94,9 @@ its `pdr_data` element is an empty
 [`list()`](https://rdrr.io/r/base/list.html) and its `id` is
 `NA_character_`. Downstream functions drop such placeholder rows with a
 warning.
+
+An `NA` entry in `files` is not a failure: its `pdr_data` element is
+`NA` and its `id` is `NA_character_` (NA in, NA out).
 
 A valid file without any strokes (`s` is empty) is not a failure: it
 gives a drawing whose `.points` and `.strokes` are zero-row tibbles with

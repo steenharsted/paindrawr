@@ -119,8 +119,9 @@ of length `length(mird_pd)`.
 This function takes a vector of length n of such MIRD strings and
 converts it into a pdr_list of length n (see
 [`pdr_match()`](https://steenharsted.github.io/paindrawr/reference/pdr_match.md)
-for the terminology). Strings that are `NA` or too short to hold a point
-give a pdr_drawing without points and strokes.
+for the terminology). Strings that are `NA` give an `NA` element (NA in,
+NA out); strings too short to hold a point give a pdr_drawing without
+points and strokes.
 
 The intended use case is a data frame (tibble) of MIRD data including
 pain drawing data. A new pdr_list column can be generated with a simple
@@ -157,5 +158,5 @@ tibble::tibble(id = c("a", "b", "c"), mird = mird) |>
 #>   <chr> <chr>                                       <list>           
 #> 1 a     (,460,709,463,709,464,719,448,720,449,712,) <named list [10]>
 #> 2 b     (,393,682,430,672,429,682,)                 <named list [10]>
-#> 3 c     NA                                          <named list [10]>
+#> 3 c     NA                                          <lgl [1]>        
 ```

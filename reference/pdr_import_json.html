@@ -61,8 +61,10 @@ them into a pdr_tibble (see <code><a href="pdr_match.html">pdr_match()</a></code
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A pdr_tibble (see <code><a href="pdr_match.html">pdr_match()</a></code>) with one row per successfully
 file in <code>files</code> and columns <code>pdr_data</code> (a pdr_list of pdr_drawings) and
-<code>id</code> (copied from <code>.id</code>). Files that could not be read give an empty
-<code><a href="https://rdrr.io/r/base/list.html" class="external-link">list()</a></code> in <code>pdr_data</code> and <code>NA</code> in <code>id</code>. On invalid <code>files</code> input, an empty <code><a href="https://rdrr.io/r/base/list.html" class="external-link">list()</a></code>.</p>
+<code>id</code> (copied from <code>.id</code>). Non-existing files give a warning and <code>NA</code>
+in <code>pdr_data</code>, with <code>id</code> derived from the file name; files with invalid
+JSON give an empty <code><a href="https://rdrr.io/r/base/list.html" class="external-link">list()</a></code> and <code>NA</code> in <code>id</code>; <code>NA</code> entries in <code>files</code> give
+<code>NA</code> in <code>pdr_data</code> and <code>id</code>. On invalid <code>files</code> input, an empty <code><a href="https://rdrr.io/r/base/list.html" class="external-link">list()</a></code>.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
@@ -103,6 +105,8 @@ not exist, or whose content is not valid JSON, gives a warning and is kept as
 a placeholder row, so that rows stay aligned with <code>files</code>: its <code>pdr_data</code>
 element is an empty <code><a href="https://rdrr.io/r/base/list.html" class="external-link">list()</a></code> and its <code>id</code> is <code>NA_character_</code>. Downstream
 functions drop such placeholder rows with a warning.</p>
+<p>An <code>NA</code> entry in <code>files</code> is not a failure: its <code>pdr_data</code> element is <code>NA</code>
+and its <code>id</code> is <code>NA_character_</code> (NA in, NA out).</p>
 <p>A valid file without any strokes (<code>s</code> is empty) is not a failure: it gives a
 drawing whose <code>.points</code> and <code>.strokes</code> are zero-row tibbles with the usual
 columns.</p>
