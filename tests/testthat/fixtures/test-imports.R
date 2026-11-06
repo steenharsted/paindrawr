@@ -36,3 +36,12 @@ mird_data |>
   dplyr::mutate(
     pdr_data = pdr_mird2pdr("paindrawing_LBP")
   )
+
+
+mird_data[4, ] |>
+  as_tibble() |>
+  mutate(
+    pdr_data = pdr_mird2pdr(paindrawing_LBP)
+  )
+
+my_mird[2, ]$pdr_data

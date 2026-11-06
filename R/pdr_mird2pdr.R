@@ -130,9 +130,11 @@ pdr_mird2pdr <- function(
     # tibble of x and y coordinate points.
     # The ms mird string looks like:
     # e.g. "(,293,201,300,202,303,202,)"
-    if (is.na(ms) || !is.character(ms) || stringr::str_length(ms) < 7) {
-      # "(,x,y,)" is length 7
-      #return(NA)
+
+    if (is.na(ms)) {
+      return(NA)
+    } else if (stringr::str_length(ms) < 7) {
+      # minimal valid input: "(,x,y,)" is length 7
       return(tibble::tibble(
         .index = as.integer(),
         .x = as.integer(),
@@ -184,7 +186,9 @@ pdr_mird2pdr <- function(
   ) {
     # This function creates a new .strokes tibble from a
     # .points tibble
-    if (nrow(p) == 0) {
+    if (identical(NA, p)) {
+      return(NA)
+    } else if (nrow(p) == 0) {
       return(
         tibble::tibble(
           .index = as.integer(),

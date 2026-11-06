@@ -147,13 +147,13 @@ test_that("zero-length input returns an empty list", {
   expect_identical(pdr_mird2pdr(character()), list())
 })
 
-test_that("NA, empty and too short strings give drawings without points", {
-  mird <- c("(,1,2,)", NA, "", "(,1,)")
-  res <- pdr_mird2pdr(mird, id = letters[1:4], flipy = FALSE)
+test_that("empty and too short strings give drawings without points", {
+  mird <- c("(,1,2,)", "", "(,1,)")
+  res <- pdr_mird2pdr(mird, id = letters[1:3], flipy = FALSE)
 
-  expect_length(res, 4)
+  expect_length(res, 3)
   expect_equal(nrow(res[[1]]$.points), 1)
-  for (i in 2:4) {
+  for (i in 2:3) {
     expect_equal(nrow(res[[i]]$.points), 0, info = paste("element", i))
     expect_equal(nrow(res[[i]]$.strokes), 0, info = paste("element", i))
     expect_setequal(names(res[[i]]$.points), c(".index", ".x", ".y"))
@@ -162,6 +162,8 @@ test_that("NA, empty and too short strings give drawings without points", {
     expect_equal(res[[i]]$.width, 450)
   }
 })
+
+test_that
 
 test_that("parameters of length n are applied per drawing", {
   res <- pdr_mird2pdr(
