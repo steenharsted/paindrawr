@@ -53,6 +53,9 @@
 #' element is an empty `list()` and its `id` is `NA_character_`. Downstream
 #' functions drop such placeholder rows with a warning.
 #'
+#' An `NA` entry in `files` is not a failure: its `pdr_data` element is `NA`
+#' and its `id` is `NA_character_` (NA in, NA out).
+#'
 #' A valid file without any strokes (`s` is empty) is not a failure: it gives a
 #' drawing whose `.points` and `.strokes` are zero-row tibbles with the usual
 #' columns.
@@ -61,8 +64,10 @@
 #'
 #' @returns A pdr_tibble (see [pdr_match()]) with one row per successfully
 #'   file in `files` and columns `pdr_data` (a pdr_list of pdr_drawings) and
-#'   `id` (copied from `.id`). Files that could not be read give an empty
-#'   `list()` in `pdr_data` and `NA` in `id`. On invalid `files` input, an empty `list()`.
+#'   `id` (copied from `.id`). Non-existing files give a warning and `NA`
+#'   in `pdr_data`, with `id` derived from the file name; files with invalid
+#'   JSON give an empty `list()` and `NA` in `id`; `NA` entries in `files` give
+#'   `NA` in `pdr_data` and `id`. On invalid `files` input, an empty `list()`.
 #'
 #' @export
 #'
@@ -95,10 +100,13 @@ pdr_import_json <- function(files) {
   # Iterate files and parse data
   result <- list()
   for (f in files) {
-    # Sanity check -- does such a file exist?
-    if (!file.exists(f)) {
-      warning(paste0("Non-exisiting JSON files specified: ", f))
-      result <- c(result, list(list())) # Add empty placeholder element
+    # Sanity check -- is the entry NA? (NA in, NA out; not an error)
+    if (is.na(f)) {
+      result <- c(result, list(NA)) # Add NA placeholder element
+      # Sanity check -- does such a file exist?
+    } else if (!file.exists(f)) {
+      warning(paste0("Non-existing JSON files specified: ", f))
+      result <- c(result, list(NA)) # Missing file: NA, like NA input
     } else {
       # Sanity check -- is content valid json?
       content <- readLines(f)
@@ -165,9 +173,19 @@ pdr_import_json <- function(files) {
 
   tibble::tibble(pdr_data = result) |>
     dplyr::mutate(
-      id = purrr::map_chr(
+      id = purrr::map2_chr(
         pdr_data,
-        \(x) if (is.null(x$.id)) NA_character_ else x$.id
+        files,
+        \(x, file) {
+          if (is.list(x) && !is.null(x$.id)) {
+            x$.id
+          } else if (!is.na(file) && !file.exists(file)) {
+            # Non-existing file: id still traceable from the path
+            tools::file_path_sans_ext(basename(file))
+          } else {
+            NA_character_
+          }
+        }
       )
     ) # return
 }

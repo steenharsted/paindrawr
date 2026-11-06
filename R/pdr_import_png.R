@@ -33,6 +33,9 @@
 #'   one row per file and columns `pdr_data` (a pdr_list of pdr_drawings, each
 #'   containing `.id`, `.file`, `.version`, `.width`, `.height`, `.units`,
 #'   `.timestamp`, `.app`, `.points`, `.strokes` and `.rgba`) and `id`.
+#'   `NA` entries in `files` give `NA` in `pdr_data` and `id`. Non-existing files
+#'   give a warning and `NA` in `pdr_data`, with `id` derived from the file name
+#'   (if `id_from_filename`).
 #'
 #' @export
 #'
@@ -70,13 +73,17 @@ pdr_import_png <- function(
     }
     bg_rgb <- as.vector(grDevices::col2rgb(background)) / 255
   }
-  missing_files <- files[!file.exists(files)]
-  if (length(missing_files) > 0) {
-    stop("File(s) not found: ", paste(missing_files, collapse = ", "))
+  missing <- !is.na(files) & !file.exists(files)
+  if (any(missing)) {
+    warning("Non-existing PNG files specified: ", paste(files[missing], collapse = ", "))
   }
 
   pdr_data <- files |>
     purrr::map(\(file) {
+      # NA in, NA out; non-existing files also give NA (row alignment is kept)
+      if (is.na(file) || !file.exists(file)) {
+        return(NA)
+      }
       img <- png::readPNG(file)
       has_alpha <- length(dim(img)) == 3 && dim(img)[3] %in% c(2, 4)
       rgba <- to_rgba(img, file)
@@ -117,7 +124,20 @@ pdr_import_png <- function(
 
   tibble::tibble(
     pdr_data = pdr_data,
-    id = purrr::map_chr(pdr_data, ".id")
+    id = purrr::map2_chr(
+      pdr_data,
+      files,
+      \(x, file) {
+        if (is.list(x)) {
+          x$.id
+        } else if (id_from_filename && !is.na(file)) {
+          # Non-existing file: id still traceable from the path
+          tools::file_path_sans_ext(basename(file))
+        } else {
+          NA_character_
+        }
+      }
+    )
   )
 }
 

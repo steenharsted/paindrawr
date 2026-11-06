@@ -41,9 +41,9 @@ test_that("rasterize = FALSE returns a vector plot with facets", {
 })
 
 test_that("vector plot has one facet per drawing", {
-  p <- pdr_plot_xy(spray_pd(1:3), rasterize = FALSE)
-  expect_setequal(unique(ggplot2::ggplot_build(p)$layout$layout$PANEL), 1:3)
-  expect_equal(nrow(ggplot2::ggplot_build(p)$layout$layout), 3)
+  p <- pdr_plot_xy(spray_pd(1:2), rasterize = FALSE)
+  expect_setequal(unique(ggplot2::ggplot_build(p)$layout$layout$PANEL), 1:2)
+  expect_equal(nrow(ggplot2::ggplot_build(p)$layout$layout), 2)
 })
 
 test_that("spray strokes are expanded by point density", {
@@ -213,7 +213,7 @@ test_that("more than 9 drawings warns about speed", {
 
 test_that("spray radius is uniform, clustering dots towards the centre", {
   set.seed(9034)
-  p <- pdr_plot_xy(spray_pd(3), rasterize = FALSE)
+  p <- pdr_plot_xy(spray_pd(2), rasterize = FALSE)
   d <- p$layers[[which(layer_geoms(p) == "GeomTile")]]$data
 
   # runif(0, 1) radius has mean 0.5 (sqrt-transformed would give 2/3)

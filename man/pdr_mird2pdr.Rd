@@ -81,8 +81,8 @@ which corresponds to:
 
 This function takes a vector of length n of such MIRD strings and converts
 it into a pdr_list of length n (see \code{\link[=pdr_match]{pdr_match()}} for the terminology).
-Strings that are \code{NA} or too short to hold a point give a pdr_drawing
-without points and strokes.
+Strings that are \code{NA} give an \code{NA} element (NA in, NA out); strings too
+short to hold a point give a pdr_drawing without points and strokes.
 
 The intended use case is a data frame (tibble) of MIRD data including pain
 drawing data. A new pdr_list column can be generated with a simple

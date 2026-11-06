@@ -163,12 +163,20 @@ test_that("`files` must be a non-empty character vector", {
   expect_error(pdr_import_png(list(png_fixture(1))), "`files` must be")
 })
 
-test_that("missing files give an error naming the files", {
-  expect_error(
+test_that("missing files give a warning naming the files", {
+  expect_warning(
     pdr_import_png(c(png_fixture(1), "nope_a.png", "nope_b.png")),
     "nope_a.png, nope_b.png",
     fixed = TRUE
   )
+})
+
+test_that("NA entries give NA out, without error", {
+  res <- pdr_import_png(c(png_fixture(1), NA))
+  expect_equal(nrow(res), 2)
+  expect_identical(res$pdr_data[[2]], NA)
+  expect_identical(res$id[[2]], NA_character_)
+  expect_equal(dim(res$pdr_data[[1]]$.rgba)[3], 4)
 })
 
 test_that("`background_tolerance` is validated", {
@@ -200,6 +208,22 @@ test_that("`background` is validated", {
     "single colour"
   )
   expect_error(pdr_import_png(path, background = "not_a_colour"))
+})
+
+test_that("non-existing files warn and give NA with a file-derived id", {
+  expect_warning(
+    res <- pdr_import_png(c(png_fixture(1), "does_not_exist.png", NA)),
+    "Non-existing PNG files"
+  )
+  expect_equal(nrow(res), 3)
+  expect_identical(res$pdr_data[[2]], NA)
+  expect_identical(res$pdr_data[[3]], NA)
+  expect_identical(res$id, c("1_palmar_png", "does_not_exist", NA_character_))
+
+  res <- suppressWarnings(
+    pdr_import_png("does_not_exist.png", id_from_filename = FALSE)
+  )
+  expect_identical(res$id, NA_character_)
 })
 
 test_that("to_rgba() rejects unsupported channel layouts", {

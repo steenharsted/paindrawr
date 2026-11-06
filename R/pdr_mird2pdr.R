@@ -13,8 +13,8 @@
 #'
 #' This function takes a vector of length n of such MIRD strings and converts
 #' it into a pdr_list of length n (see [pdr_match()] for the terminology).
-#' Strings that are `NA` or too short to hold a point give a pdr_drawing
-#' without points and strokes.
+#' Strings that are `NA` give an `NA` element (NA in, NA out); strings too
+#' short to hold a point give a pdr_drawing without points and strokes.
 #'
 #' The intended use case is a data frame (tibble) of MIRD data including pain
 #' drawing data. A new pdr_list column can be generated with a simple
@@ -131,10 +131,8 @@ pdr_mird2pdr <- function(
     # The ms mird string looks like:
     # e.g. "(,293,201,300,202,303,202,)"
 
-    if (is.na(ms)) {
-      return(NA)
-    } else if (stringr::str_length(ms) < 7) {
-      # minimal valid input: "(,x,y,)" is length 7
+    # NA is handled by the caller; minimal valid input: "(,x,y,)" is length 7
+    if (is.na(ms) || stringr::str_length(ms) < 7) {
       return(tibble::tibble(
         .index = as.integer(),
         .x = as.integer(),
@@ -186,9 +184,7 @@ pdr_mird2pdr <- function(
   ) {
     # This function creates a new .strokes tibble from a
     # .points tibble
-    if (identical(NA, p)) {
-      return(NA)
-    } else if (nrow(p) == 0) {
+    if (nrow(p) == 0) {
       return(
         tibble::tibble(
           .index = as.integer(),
@@ -260,6 +256,10 @@ pdr_mird2pdr <- function(
         i_alpha,
         i_color
       ) {
+        # NA in, NA out: keep the element NA to preserve row alignment
+        if (is.na(i_mird_pd)) {
+          return(NA)
+        }
         # Function
         i_points <- convert_mird_to_tibble(i_mird_pd) # tibble
         i_strokes <- convert_points_to_strokes(

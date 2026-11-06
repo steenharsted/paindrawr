@@ -58,7 +58,7 @@ pdr_modify_points <- function(pdr_list, op = "flipy") {
 
     pdr |>
       purrr::map(\(e) {
-        if (!identical(NA, e$.points) && !is.null(e$.points)) {
+        if (is.list(e) && !is.null(e$.points)) {
           e$.points$.y <- e$.height - e$.points$.y
         }
         e # map return

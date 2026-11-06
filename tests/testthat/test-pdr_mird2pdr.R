@@ -163,7 +163,17 @@ test_that("empty and too short strings give drawings without points", {
   }
 })
 
-test_that
+test_that("NA in gives NA out", {
+  res <- pdr_mird2pdr(c(two_strokes, NA), id = c("a", "b"), flipy = FALSE)
+
+  expect_length(res, 2)
+  expect_identical(res[[1]]$.points$.x, c(1L, 5L, 8L, 7L))
+  expect_identical(res[[2]], NA)
+  # flipy handles NA elements (skips them)
+  res_flipy <- pdr_mird2pdr(c(two_strokes, NA), id = c("a", "b"), flipy = TRUE)
+  expect_identical(res_flipy[[2]], NA)
+  expect_equal(res_flipy[[1]]$.points$.y, 500 - res[[1]]$.points$.y)
+})
 
 test_that("parameters of length n are applied per drawing", {
   res <- pdr_mird2pdr(
@@ -208,9 +218,10 @@ test_that("the result works as a pdr_list column in a tibble", {
     dplyr::mutate(pdr_data = pdr_mird2pdr(mird, id = id))
 
   expect_equal(nrow(res), 3)
+  expect_identical(res$pdr_data[[2]], NA)
   expect_equal(
-    vapply(res$pdr_data, \(x) x$.id, character(1)),
-    c("a", "b", "c")
+    vapply(res$pdr_data[c(1, 3)], \(x) x$.id, character(1)),
+    c("a", "c")
   )
 })
 
@@ -245,7 +256,7 @@ test_that("`alpha` must be numeric between 0 and 1", {
 
 test_that("empty and non-empty .strokes have the same column types", {
   filled <- pdr_mird2pdr(two_strokes, id = "a")[[1]]$.strokes
-  empty <- pdr_mird2pdr(NA_character_, id = "a")[[1]]$.strokes
+  empty <- pdr_mird2pdr("(,)", id = "a")[[1]]$.strokes
 
   expect_identical(
     vapply(empty, \(x) class(x)[1], character(1)),

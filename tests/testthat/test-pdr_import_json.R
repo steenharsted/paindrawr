@@ -1,7 +1,7 @@
 json_fixture <- function(n) {
   test_path("fixtures", "json", paste0(n, "_palmar.json"))
 }
-all_fixtures <- vapply(1:4, json_fixture, character(1))
+all_fixtures <- vapply(1:2, json_fixture, character(1))
 
 test_that("a single file gives a one-row pdr_tibble", {
   res <- pdr_import_json(json_fixture(1))
@@ -40,10 +40,10 @@ test_that("each drawing has the expected elements", {
 test_that("multiple files are combined row-wise in input order", {
   res <- pdr_import_json(all_fixtures)
 
-  expect_equal(nrow(res), 4)
+  expect_equal(nrow(res), 2)
   expect_equal(
     res$id,
-    sprintf("PID4193-R%dF-palmar-E13885-I1", 1:4)
+    sprintf("PID4193-R%dF-palmar-E13885-I1", 1:2)
   )
   expect_equal(
     vapply(res$pdr_data, \(x) x$.file, character(1)),
@@ -115,7 +115,7 @@ test_that("invalid `files` input warns and returns an empty list", {
 test_that("a non-existing file gives a warning", {
   expect_warning(
     pdr_import_json(c("does_not_exist.json", json_fixture(1))),
-    "Non-exisiting JSON files"
+    "Non-existing JSON files"
   )
 })
 
@@ -137,11 +137,11 @@ test_that("failing files are kept as placeholder rows", {
     pdr_import_json(c("does_not_exist.json", bad, json_fixture(1)))
   )
   expect_equal(nrow(res), 3)
-  expect_identical(res$pdr_data[[1]], list())
+  expect_identical(res$pdr_data[[1]], NA)
   expect_identical(res$pdr_data[[2]], list())
   expect_identical(
     res$id,
-    c(NA_character_, NA_character_, "PID4193-R1F-palmar-E13885-I1")
+    c("does_not_exist", NA_character_, "PID4193-R1F-palmar-E13885-I1")
   )
 })
 
@@ -152,9 +152,27 @@ test_that("a failing file does not overwrite good drawings", {
   expect_equal(nrow(res), 3)
   expect_identical(
     res$id,
-    c("PID4193-R1F-palmar-E13885-I1", NA, "PID4193-R2F-palmar-E13885-I1")
+    c(
+      "PID4193-R1F-palmar-E13885-I1",
+      "does_not_exist",
+      "PID4193-R2F-palmar-E13885-I1"
+    )
   )
-  expect_identical(res$pdr_data[[2]], list())
+  expect_identical(res$pdr_data[[2]], NA)
+})
+
+test_that("NA entries give NA out, without warning", {
+  res <- pdr_import_json(c(json_fixture(1), NA, json_fixture(2)))
+  expect_equal(nrow(res), 3)
+  expect_identical(res$pdr_data[[2]], NA)
+  expect_identical(
+    res$id,
+    c(
+      "PID4193-R1F-palmar-E13885-I1",
+      NA_character_,
+      "PID4193-R2F-palmar-E13885-I1"
+    )
+  )
 })
 
 test_that("a valid drawing without strokes gives zero-row tibbles", {

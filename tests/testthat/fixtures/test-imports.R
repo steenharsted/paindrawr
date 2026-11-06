@@ -15,6 +15,7 @@ json_files <- list.files(
 
 ## add NA
 json_files[4] <- NA
+json_files[5] <- "Not_a_file_that_exists.json"
 
 # Data from png
 png_files <- list.files(
@@ -25,23 +26,17 @@ png_files <- list.files(
 
 ## add NA
 png_files[9] <- NA
+png_files[10] <- "Not_a_file_that_exists.json"
 
 ## Data from Mird
 mird_data <- read.csv("tests/testthat/fixtures/mird/mird_test.csv")
 
 
-paindrawr::pdr_import_png(png_files)
 paindrawr::pdr_import_json(json_files)
+paindrawr::pdr_import_png(png_files)
 mird_data |>
+  tibble::as.tibble() |>
   dplyr::mutate(
-    pdr_data = pdr_mird2pdr("paindrawing_LBP")
+    pdr_data = pdr_mird2pdr(paindrawing_LBP),
+    .after = id
   )
-
-
-mird_data[4, ] |>
-  as_tibble() |>
-  mutate(
-    pdr_data = pdr_mird2pdr(paindrawing_LBP)
-  )
-
-my_mird[2, ]$pdr_data
